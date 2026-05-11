@@ -11,8 +11,6 @@
 import axios from 'axios'
 import type { SensorDataSet, SensorPoint } from '@/stores/dataviz'
 
-const BASE = import.meta.env.VITE_BASEURL || ''
-
 /** 生成带噪声的模拟传感器数据 */
 function noise(base: number, amplitude: number, prev?: number): number {
   const walk = prev !== undefined ? (prev - base) * 0.7 : 0
@@ -86,7 +84,7 @@ export function generateHistoricalData(
 /** 从API获取场景数据 */
 export async function fetchSceneData(sceneName: string): Promise<any> {
   try {
-    const res = await axios.get(`${BASE}/scene/loadScene`, { params: { scene: sceneName } })
+    const res = await axios.get('/scene/loadScene', { params: { scene: sceneName } })
     return res.data
   } catch {
     return null
@@ -96,7 +94,7 @@ export async function fetchSceneData(sceneName: string): Promise<any> {
 /** 获取模型关联的数据 */
 export async function fetchModelData(dataId: string): Promise<any> {
   try {
-    const res = await axios.get(`${BASE}/datasvr/dataIndex`, { params: { dataId } })
+    const res = await axios.get('/datasvr/dataIndex', { params: { dataId } })
     return res.data
   } catch {
     return null
@@ -106,7 +104,7 @@ export async function fetchModelData(dataId: string): Promise<any> {
 /** 获取数据索引列表 */
 export async function fetchDataIndexList(): Promise<any[]> {
   try {
-    const res = await axios.get(`${BASE}/datasvr/list`)
+    const res = await axios.get('/datasvr/list')
     return res.data?.data || []
   } catch {
     return []

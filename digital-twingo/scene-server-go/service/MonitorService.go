@@ -167,8 +167,8 @@ func (s *MonitorService) loadRecentAverages() (map[string]metricSnapshot, error)
 
 func (s *MonitorService) loadRecentAlerts(limit int) ([]vo.MonitorAlertVo, error) {
 	rows, err := s.dao.FindRecentAlerts(limit)
-	if err != nil || len(rows) == 0 {
-		return s.defaultAlerts(), err
+	if err != nil {
+		return nil, err
 	}
 	alerts := make([]vo.MonitorAlertVo, 0, len(rows))
 	for _, row := range rows {
@@ -463,14 +463,6 @@ func (s *MonitorService) defaultLatestMetrics() map[string]map[string]metricSnap
 		}
 	}
 	return result
-}
-
-func (s *MonitorService) defaultAlerts() []vo.MonitorAlertVo {
-	now := time.Now()
-	return []vo.MonitorAlertVo{
-		{Id: 1, DeviceId: "iot-irrigation-01", AlertType: "threshold", Severity: "warning", Message: "东区水肥管网压力波动，建议巡检过滤器。", Acknowledged: false, CreatedAt: now.Add(-18 * time.Minute).Format(time.RFC3339)},
-		{Id: 2, DeviceId: "iot-greenhouse-01", AlertType: "anomaly", Severity: "info", Message: "1号温室 CO2 浓度回落至适宜区间。", Acknowledged: true, CreatedAt: now.Add(-42 * time.Minute).Format(time.RFC3339)},
-	}
 }
 
 func defaultDeviceName(deviceId string) string {

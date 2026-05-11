@@ -1,5 +1,7 @@
 package iot
 
+import "time"
+
 func NewDataMapper() *DataMapper {
 	return &DataMapper{}
 }
@@ -7,9 +9,13 @@ func NewDataMapper() *DataMapper {
 type DataMapper struct{}
 
 func (m *DataMapper) InsertDataPoint(dp *IotDataPoint) error {
+	timestamp := dp.Timestamp
+	if timestamp.IsZero() {
+		timestamp = time.Now()
+	}
 	_, err := db.Exec(`INSERT INTO iot_data (deviceId, metricKey, metricValue, unit, timestamp)
-		VALUES (?, ?, ?, ?, NOW())`,
-		dp.DeviceId, dp.MetricKey, dp.MetricValue, dp.Unit)
+		VALUES (?, ?, ?, ?, ?)`,
+		dp.DeviceId, dp.MetricKey, dp.MetricValue, dp.Unit, timestamp)
 	return err
 }
 

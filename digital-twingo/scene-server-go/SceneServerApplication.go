@@ -104,6 +104,7 @@ func main() {
 		controller.RegisterAssetRoutes(api)
 		controller.RegisterAdminRoutes(api)
 		controller.RegisterMonitorRoutes(api)
+		controller.RegisterBusinessRoutes(api)
 
 		// Phase 4: IoT routes
 		iot.RegisterIotRoutes(api)

@@ -76,12 +76,16 @@ func (s *DeviceService) StartSimulator() {
 }
 
 func (s *DeviceService) HandleSensorData(data SensorData) {
+	timestamp := time.Now()
+	if data.Timestamp > 0 {
+		timestamp = time.UnixMilli(data.Timestamp)
+	}
 	for metricKey, metricValue := range data.Metrics {
 		dp := &IotDataPoint{
 			DeviceId:    data.DeviceId,
 			MetricKey:   metricKey,
 			MetricValue: metricValue,
-			Timestamp:   time.Now(),
+			Timestamp:   timestamp,
 		}
 
 		unit := ""

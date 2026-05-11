@@ -1,5 +1,7 @@
 package iot
 
+import "time"
+
 type AlertMapper struct{}
 
 func NewAlertMapper() *AlertMapper {
@@ -7,9 +9,20 @@ func NewAlertMapper() *AlertMapper {
 }
 
 func (m *AlertMapper) Insert(alert *AlertLog) error {
-	_, err := db.Exec(`INSERT INTO alert_log (deviceId, alertType, severity, message, acknowledged)
-		VALUES (?, ?, ?, ?, ?)`,
-		alert.DeviceId, alert.AlertType, alert.Severity, alert.Message, alert.Acknowledged)
+	createdAt := alert.CreatedAt
+	if createdAt.IsZero() {
+		createdAt = time.Now()
+	}
+	result, err := db.Exec(`INSERT INTO alert_log (deviceId, alertType, severity, message, acknowledged, createdAt)
+		VALUES (?, ?, ?, ?, ?, ?)`,
+		alert.DeviceId, alert.AlertType, alert.Severity, alert.Message, alert.Acknowledged, createdAt)
+	if err != nil {
+		return err
+	}
+	if id, err := result.LastInsertId(); err == nil {
+		alert.Id = id
+	}
+	alert.CreatedAt = createdAt
 	return err
 }
 

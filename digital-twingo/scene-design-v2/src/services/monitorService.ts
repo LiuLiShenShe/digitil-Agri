@@ -4,8 +4,6 @@
 
 import axios from 'axios'
 
-const BASE = (import.meta.env.VITE_BASEURL as string) || ''
-
 export interface MonitorDashboard {
   updatedAt: string
   overview: MonitorOverview
@@ -117,7 +115,7 @@ export interface MonitorRealtimeMetric {
 }
 
 export async function fetchMonitorDashboard(): Promise<MonitorDashboard | null> {
-  const res = await axios.get(`${BASE}/monitor/dashboard`)
+  const res = await axios.get('/monitor/dashboard')
   if (res.data?.code === 200) {
     return res.data.data as MonitorDashboard
   }

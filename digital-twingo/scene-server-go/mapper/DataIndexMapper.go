@@ -42,6 +42,12 @@ func (m *DataIndexMapper) SelectByPrimaryKey(dataId string) (*vo.DataIndexVo, er
 	return &record, nil
 }
 
+func (m *DataIndexMapper) SelectAll() ([]vo.DataIndexVo, error) {
+	var list []vo.DataIndexVo
+	err := db.Select(&list, "SELECT dataId, category, name FROM dataindex ORDER BY category, name")
+	return list, err
+}
+
 func (m *DataIndexMapper) UpdateByPrimaryKeySelective(record *vo.DataIndexVo) (int, error) {
 	result, err := db.Exec("UPDATE dataindex SET category = ?, name = ? WHERE dataId = ?",
 		record.Category, record.Name, record.DataId)

@@ -19,6 +19,7 @@
         <el-tooltip content="全屏" placement="bottom">
           <el-button :icon="FullScreen" circle size="small" plain @click="toggleFullscreen" />
         </el-tooltip>
+        <el-button :icon="DataBoard" size="small" plain @click="router.push('/business')">业务中心</el-button>
         <el-button :icon="Back" size="small" plain @click="router.push('/')">返回</el-button>
       </div>
     </header>
@@ -185,6 +186,7 @@ import { ElMessage } from 'element-plus'
 import {
   Back,
   Connection,
+  DataBoard,
   DataAnalysis,
   Document,
   FullScreen,

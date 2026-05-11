@@ -2,6 +2,7 @@ package iot
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -20,13 +21,23 @@ func NewDeviceMapper() *DeviceMapper {
 
 func (m *DeviceMapper) FindAll() ([]IotDevice, error) {
 	var devices []IotDevice
-	err := db.Select(&devices, "SELECT * FROM iot_device ORDER BY createdAt DESC")
+	err := db.Select(&devices, `SELECT deviceId, deviceName, deviceType, modelId,
+		COALESCE(CAST(position AS CHAR), '') AS position,
+		mqttTopic, status, lastDataTime,
+		COALESCE(CAST(config AS CHAR), '') AS config,
+		createdAt
+		FROM iot_device ORDER BY createdAt DESC`)
 	return devices, err
 }
 
 func (m *DeviceMapper) FindById(deviceId string) (*IotDevice, error) {
 	var device IotDevice
-	err := db.Get(&device, "SELECT * FROM iot_device WHERE deviceId = ?", deviceId)
+	err := db.Get(&device, `SELECT deviceId, deviceName, deviceType, modelId,
+		COALESCE(CAST(position AS CHAR), '') AS position,
+		mqttTopic, status, lastDataTime,
+		COALESCE(CAST(config AS CHAR), '') AS config,
+		createdAt
+		FROM iot_device WHERE deviceId = ?`, deviceId)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +55,13 @@ func (m *DeviceMapper) Insert(device *IotDevice) error {
 func (m *DeviceMapper) Upsert(device *IotDevice) error {
 	position := jsonOrNull(device.Position)
 	config := jsonOrNull(device.Config)
+	lastDataTime := device.LastDataTime
+	if lastDataTime == nil {
+		now := time.Now()
+		lastDataTime = &now
+	}
 	_, err := db.Exec(`INSERT INTO iot_device (deviceId, deviceName, deviceType, modelId, position, mqttTopic, status, config, lastDataTime)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON DUPLICATE KEY UPDATE
 			deviceName = VALUES(deviceName),
 			deviceType = VALUES(deviceType),
@@ -53,21 +69,29 @@ func (m *DeviceMapper) Upsert(device *IotDevice) error {
 			mqttTopic = VALUES(mqttTopic),
 			status = VALUES(status),
 			config = COALESCE(VALUES(config), config),
-			lastDataTime = NOW()`,
+			lastDataTime = VALUES(lastDataTime)`,
 		device.DeviceId, device.DeviceName, device.DeviceType, device.ModelId,
-		position, device.MqttTopic, device.Status, config)
+		position, device.MqttTopic, device.Status, config, lastDataTime)
 	return err
 }
 
 func (m *DeviceMapper) Update(device *IotDevice) error {
-	_, err := db.Exec(`UPDATE iot_device SET deviceName=?, deviceType=?, modelId=?, position=?, mqttTopic=?, status=?, config=? WHERE deviceId=?`,
-		device.DeviceName, device.DeviceType, device.ModelId, device.Position,
-		device.MqttTopic, device.Status, device.Config, device.DeviceId)
+	_, err := db.Exec(`UPDATE iot_device SET
+			deviceName = COALESCE(NULLIF(?, ''), deviceName),
+			deviceType = COALESCE(NULLIF(?, ''), deviceType),
+			modelId = COALESCE(?, modelId),
+			position = COALESCE(?, position),
+			mqttTopic = COALESCE(NULLIF(?, ''), mqttTopic),
+			status = COALESCE(NULLIF(?, ''), status),
+			config = COALESCE(?, config)
+		WHERE deviceId=?`,
+		device.DeviceName, device.DeviceType, device.ModelId, jsonOrNull(device.Position),
+		device.MqttTopic, device.Status, jsonOrNull(device.Config), device.DeviceId)
 	return err
 }
 
 func (m *DeviceMapper) UpdateStatus(deviceId, status string) error {
-	_, err := db.Exec("UPDATE iot_device SET status=?, lastDataTime=NOW() WHERE deviceId=?", status, deviceId)
+	_, err := db.Exec("UPDATE iot_device SET status=?, lastDataTime=? WHERE deviceId=?", status, time.Now(), deviceId)
 	return err
 }
 
@@ -78,7 +102,12 @@ func (m *DeviceMapper) Delete(deviceId string) error {
 
 func (m *DeviceMapper) FindByModelId(modelId int) ([]IotDevice, error) {
 	var devices []IotDevice
-	err := db.Select(&devices, "SELECT * FROM iot_device WHERE modelId = ?", modelId)
+	err := db.Select(&devices, `SELECT deviceId, deviceName, deviceType, modelId,
+		COALESCE(CAST(position AS CHAR), '') AS position,
+		mqttTopic, status, lastDataTime,
+		COALESCE(CAST(config AS CHAR), '') AS config,
+		createdAt
+		FROM iot_device WHERE modelId = ?`, modelId)
 	return devices, err
 }
 

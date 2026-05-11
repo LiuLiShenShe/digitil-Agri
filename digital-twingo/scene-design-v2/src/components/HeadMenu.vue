@@ -98,6 +98,10 @@
       <el-menu-item index="7" @click="openMonitorCenter">
         <span class="nav-item">大屏</span>
       </el-menu-item>
+
+      <el-menu-item index="8" @click="openBusinessCenter">
+        <span class="nav-item">业务</span>
+      </el-menu-item>
     </el-menu>
   </el-header>
 </template>
@@ -214,6 +218,10 @@ function toggleCameraPanel() {
 
 function openMonitorCenter() {
   router.push('/monitor')
+}
+
+function openBusinessCenter() {
+  router.push('/business')
 }
 
 async function loadIoTData() {

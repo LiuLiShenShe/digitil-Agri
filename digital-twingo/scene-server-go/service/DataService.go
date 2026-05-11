@@ -36,6 +36,14 @@ func (s *DataService) GetData(dataId string) vo.ResultVo {
 	return vo.ResultVo{Code: 200, Data: dataMap}
 }
 
+func (s *DataService) QueryAll() vo.ResultVo {
+	list, err := s.dao.SelectAll()
+	if err != nil {
+		return vo.ResultVo{Code: 999, Data: err.Error()}
+	}
+	return vo.ResultVo{Code: 200, Data: list}
+}
+
 func (s *DataService) simulateData(dataId string, dataMap map[string]interface{}) {
 	dataMap["loadcurve"] = s.createCurveData()
 	dataMap["carbon"] = 30 + rand.Float64()*20

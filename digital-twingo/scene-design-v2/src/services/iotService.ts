@@ -14,8 +14,6 @@ import { useAlertStore } from '@/stores/alert'
 import type { IotDevice, IotDataPoint, SimulatedDevice } from '@/stores/iot'
 import type { AlertLog } from '@/stores/alert'
 
-const BASE = (import.meta.env.VITE_BASEURL as string) || ''
-
 let wsConnection: WebSocket | null = null
 let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null
 let wsReconnectAttempts = 0
@@ -28,7 +26,7 @@ function defaultWsBase(): string {
 }
 
 export async function fetchDevices(): Promise<IotDevice[]> {
-  const res = await axios.get(`${BASE}/iot/devices`)
+  const res = await axios.get('/iot/devices')
   if (res.data.code === 200) {
     useIotStore().setDevices(res.data.data || [])
     return res.data.data
@@ -37,7 +35,7 @@ export async function fetchDevices(): Promise<IotDevice[]> {
 }
 
 export async function fetchDevice(deviceId: string): Promise<IotDevice | null> {
-  const res = await axios.get(`${BASE}/iot/devices/${deviceId}`)
+  const res = await axios.get(`/iot/devices/${deviceId}`)
   if (res.data.code === 200) {
     return res.data.data
   }
@@ -45,7 +43,7 @@ export async function fetchDevice(deviceId: string): Promise<IotDevice | null> {
 }
 
 export async function createDevice(device: Partial<IotDevice>): Promise<IotDevice | null> {
-  const res = await axios.post(`${BASE}/iot/devices`, device)
+  const res = await axios.post('/iot/devices', device)
   if (res.data.code === 200) {
     useIotStore().addDevice(res.data.data)
     return res.data.data
@@ -54,7 +52,7 @@ export async function createDevice(device: Partial<IotDevice>): Promise<IotDevic
 }
 
 export async function updateDevice(deviceId: string, updates: Partial<IotDevice>): Promise<boolean> {
-  const res = await axios.put(`${BASE}/iot/devices/${deviceId}`, updates)
+  const res = await axios.put(`/iot/devices/${deviceId}`, updates)
   if (res.data.code === 200) {
     useIotStore().updateDevice(deviceId, updates)
     return true
@@ -63,7 +61,7 @@ export async function updateDevice(deviceId: string, updates: Partial<IotDevice>
 }
 
 export async function deleteDevice(deviceId: string): Promise<boolean> {
-  const res = await axios.delete(`${BASE}/iot/devices/${deviceId}`)
+  const res = await axios.delete(`/iot/devices/${deviceId}`)
   if (res.data.code === 200) {
     useIotStore().removeDevice(deviceId)
     return true
@@ -72,7 +70,7 @@ export async function deleteDevice(deviceId: string): Promise<boolean> {
 }
 
 export async function bindDeviceModel(deviceId: string, modelId: number): Promise<boolean> {
-  const res = await axios.post(`${BASE}/iot/devices/${deviceId}/bind/${modelId}`)
+  const res = await axios.post(`/iot/devices/${deviceId}/bind/${modelId}`)
   if (res.data.code === 200) {
     useIotStore().bindModel(deviceId, modelId)
     return true
@@ -81,7 +79,7 @@ export async function bindDeviceModel(deviceId: string, modelId: number): Promis
 }
 
 export async function fetchDeviceData(deviceId: string, limit = 100): Promise<IotDataPoint[]> {
-  const res = await axios.get(`${BASE}/iot/devices/${deviceId}/data`, { params: { limit } })
+  const res = await axios.get(`/iot/devices/${deviceId}/data`, { params: { limit } })
   if (res.data.code === 200) {
     return res.data.data || []
   }
@@ -89,7 +87,7 @@ export async function fetchDeviceData(deviceId: string, limit = 100): Promise<Io
 }
 
 export async function fetchDeviceMetricData(deviceId: string, metricKey: string, limit = 100): Promise<IotDataPoint[]> {
-  const res = await axios.get(`${BASE}/iot/devices/${deviceId}/metrics/${metricKey}`, { params: { limit } })
+  const res = await axios.get(`/iot/devices/${deviceId}/metrics/${metricKey}`, { params: { limit } })
   if (res.data.code === 200) {
     return res.data.data || []
   }
@@ -97,7 +95,7 @@ export async function fetchDeviceMetricData(deviceId: string, metricKey: string,
 }
 
 export async function fetchAlerts(limit = 50): Promise<AlertLog[]> {
-  const res = await axios.get(`${BASE}/iot/alerts`, { params: { limit } })
+  const res = await axios.get('/iot/alerts', { params: { limit } })
   if (res.data.code === 200) {
     useAlertStore().setAlerts(res.data.data || [])
     return res.data.data
@@ -106,7 +104,7 @@ export async function fetchAlerts(limit = 50): Promise<AlertLog[]> {
 }
 
 export async function fetchUnackedCount(): Promise<number> {
-  const res = await axios.get(`${BASE}/iot/alerts/unacked-count`)
+  const res = await axios.get('/iot/alerts/unacked-count')
   if (res.data.code === 200) {
     return res.data.data?.count || 0
   }
@@ -114,7 +112,7 @@ export async function fetchUnackedCount(): Promise<number> {
 }
 
 export async function acknowledgeAlert(alertId: number): Promise<boolean> {
-  const res = await axios.put(`${BASE}/iot/alerts/${alertId}/acknowledge`)
+  const res = await axios.put(`/iot/alerts/${alertId}/acknowledge`)
   if (res.data.code === 200) {
     useAlertStore().acknowledgeAlert(alertId)
     return true
@@ -123,7 +121,7 @@ export async function acknowledgeAlert(alertId: number): Promise<boolean> {
 }
 
 export async function fetchSimulatorDevices(): Promise<SimulatedDevice[]> {
-  const res = await axios.get(`${BASE}/iot/simulator/devices`)
+  const res = await axios.get('/iot/simulator/devices')
   if (res.data.code === 200) {
     return res.data.data || []
   }

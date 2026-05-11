@@ -3,6 +3,8 @@ package iot
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"scene-server-go/config"
 )
@@ -11,12 +13,15 @@ type AlertService struct {
 	mapper        *AlertMapper
 	deviceMapper  *DeviceMapper
 	deviceService *DeviceService
+	alertMu       sync.Mutex
+	recentAlerts  map[string]time.Time
 }
 
 func NewAlertService() *AlertService {
 	return &AlertService{
 		mapper:       NewAlertMapper(),
 		deviceMapper: NewDeviceMapper(),
+		recentAlerts: map[string]time.Time{},
 	}
 }
 
@@ -42,12 +47,14 @@ func (s *AlertService) CheckThreshold(deviceId, metricKey string, value float64)
 		return
 	}
 
-	var severity, msg string
+	var severity, msg, direction string
 	if value < thresh.Min {
 		severity = thresh.Severity
+		direction = "low"
 		msg = fmt.Sprintf("%s %s=%.2f 低于阈值下限 %.2f", device.DeviceName, metricKey, value, thresh.Min)
 	} else if value > thresh.Max {
 		severity = thresh.Severity
+		direction = "high"
 		msg = fmt.Sprintf("%s %s=%.2f 超过阈值上限 %.2f", device.DeviceName, metricKey, value, thresh.Max)
 	} else {
 		return
@@ -55,6 +62,10 @@ func (s *AlertService) CheckThreshold(deviceId, metricKey string, value float64)
 
 	if severity == "" {
 		severity = "warning"
+	}
+
+	if s.shouldSuppressAlert(deviceId, metricKey, severity, direction, 5*time.Minute) {
+		return
 	}
 
 	alert := &AlertLog{
@@ -74,6 +85,20 @@ func (s *AlertService) CheckThreshold(deviceId, metricKey string, value float64)
 	if s.deviceService != nil {
 		s.deviceService.PublishAlert(alert)
 	}
+}
+
+func (s *AlertService) shouldSuppressAlert(deviceId, metricKey, severity, direction string, window time.Duration) bool {
+	key := fmt.Sprintf("%s:%s:%s:%s", deviceId, metricKey, severity, direction)
+	now := time.Now()
+
+	s.alertMu.Lock()
+	defer s.alertMu.Unlock()
+
+	if last, ok := s.recentAlerts[key]; ok && now.Sub(last) < window {
+		return true
+	}
+	s.recentAlerts[key] = now
+	return false
 }
 
 func (s *AlertService) GetRecentAlerts(limit int) ([]AlertLog, error) {
