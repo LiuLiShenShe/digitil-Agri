@@ -1,0 +1,141 @@
+definitions:
+  vo.ResultVo:
+    properties:
+      code:
+        type: integer
+      data: {}
+    type: object
+info:
+  contact:
+    email: tiany@yupont.com
+    name: 北京煜邦电力技术股份有限公司
+    url: www.yupont.com
+  description: 三维数字孪生场景设计器接口文档
+  title: 三维数字孪生场景设计器接口文档
+  version: v1.0.0
+paths:
+  /sceneApi/background/gdTextures:
+    get:
+      description: 获取当前系统中支持的地面纹理列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 地面纹理
+      tags:
+      - 背景纹理接口
+  /sceneApi/background/list:
+    get:
+      description: 获取当前系统中支持的天空盒子背景列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 天空盒子
+      tags:
+      - 背景纹理接口
+  /sceneApi/datasvr/getData:
+    get:
+      description: 根据dataId返回对应数据对象，实际项目中需要扩充此接口，依据不同类型返回具体的数据项目
+      parameters:
+      - description: 数据ID
+        in: query
+        name: dataId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 数据服务
+      tags:
+      - 数据服务接口
+  /sceneApi/model/list:
+    get:
+      description: 获取当前系统中支持的三维模型列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 模型列表
+      tags:
+      - 三维模型接口
+  /sceneApi/scene/defaultScene:
+    get:
+      description: 读取缺省场景名，如果没有指定缺省场景返回库中第一条记录，如果库中没有记录，返回scene001
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 缺省场景名
+      tags:
+      - 场景保存加载接口
+  /sceneApi/scene/loadScene:
+    get:
+      description: 根据场景名加载场景
+      parameters:
+      - description: 场景名称
+        in: query
+        name: scene
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 加载场景
+      tags:
+      - 场景保存加载接口
+  /sceneApi/scene/saveScene:
+    post:
+      consumes:
+      - application/json
+      description: 关键字sceneName保存场景，如场景存在则更新覆盖，不存在则新建
+      parameters:
+      - description: 场景配置信息
+        in: body
+        name: sceneData
+        required: true
+        schema: {}
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 保存场景
+      tags:
+      - 场景保存加载接口
+  /sceneApi/scene/sceneList:
+    get:
+      description: 获取当前系统中场景列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.ResultVo'
+      summary: 场景列表
+      tags:
+      - 场景保存加载接口
+swagger: "2.0"

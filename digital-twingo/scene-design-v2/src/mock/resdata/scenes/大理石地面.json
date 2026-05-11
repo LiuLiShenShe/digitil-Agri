@@ -1,0 +1,14 @@
+{
+  "scene": {
+    "background": { "texturePath": "./textures/", "imgs": ["posx_gray.jpg","negx_gray.jpg","posy_gray.jpg","negy_gray.jpg","posz_gray.jpg","negz_gray.jpg"] },
+    "ambientLight": { "color": "#C5BCBC", "intensity": 0.6 },
+    "directionalLight": { "color": "#ffffff", "intensity": 0.6, "pos": { "x": 20, "y": 1000, "z": 200 } },
+    "spotLight": { "color": "#A0EDE7", "intensity": 0.4, "angle": 20, "hight": 204, "distance": 391 },
+    "grid": { "size": 1000, "division": 10, "color1": "#FF0000", "color2": "#444444" },
+    "groundPane": { "color": "#88cc88", "turnOff": false, "texture": "./textures/marble.jpg" }
+  },
+  "models": [
+    { "url": "./models/building01.glb", "options": { "scale": 270.42, "offset": { "x": 0.003, "y": -0.15, "z": 0 }, "angle": "0", "dataId": "1" } },
+    { "url": "./models/factory.glb", "options": { "scale": 12.94, "offset": { "x": 0, "y": -5.27, "z": 0 }, "angle": "0" } }
+  ]
+}

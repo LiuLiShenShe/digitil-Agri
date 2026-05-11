@@ -1,0 +1,216 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "三维数字孪生场景设计器接口文档",
+        "title": "三维数字孪生场景设计器接口文档",
+        "contact": {
+            "name": "北京煜邦电力技术股份有限公司",
+            "url": "www.yupont.com",
+            "email": "tiany@yupont.com"
+        },
+        "version": "v1.0.0"
+    },
+    "paths": {
+        "/sceneApi/background/gdTextures": {
+            "get": {
+                "description": "获取当前系统中支持的地面纹理列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "背景纹理接口"
+                ],
+                "summary": "地面纹理",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/background/list": {
+            "get": {
+                "description": "获取当前系统中支持的天空盒子背景列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "背景纹理接口"
+                ],
+                "summary": "天空盒子",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/datasvr/getData": {
+            "get": {
+                "description": "根据dataId返回对应数据对象，实际项目中需要扩充此接口，依据不同类型返回具体的数据项目",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "数据服务接口"
+                ],
+                "summary": "数据服务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "数据ID",
+                        "name": "dataId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/model/list": {
+            "get": {
+                "description": "获取当前系统中支持的三维模型列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "三维模型接口"
+                ],
+                "summary": "模型列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/scene/defaultScene": {
+            "get": {
+                "description": "读取缺省场景名，如果没有指定缺省场景返回库中第一条记录，如果库中没有记录，返回scene001",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "场景保存加载接口"
+                ],
+                "summary": "缺省场景名",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/scene/loadScene": {
+            "get": {
+                "description": "根据场景名加载场景",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "场景保存加载接口"
+                ],
+                "summary": "加载场景",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "场景名称",
+                        "name": "scene",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/scene/saveScene": {
+            "post": {
+                "description": "关键字sceneName保存场景，如场景存在则更新覆盖，不存在则新建",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "场景保存加载接口"
+                ],
+                "summary": "保存场景",
+                "parameters": [
+                    {
+                        "description": "场景配置信息",
+                        "name": "sceneData",
+                        "in": "body",
+                        "required": true,
+                        "schema": {}
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        },
+        "/sceneApi/scene/sceneList": {
+            "get": {
+                "description": "获取当前系统中场景列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "场景保存加载接口"
+                ],
+                "summary": "场景列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ResultVo"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "vo.ResultVo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {}
+            }
+        }
+    }
+}

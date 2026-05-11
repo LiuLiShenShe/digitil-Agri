@@ -1,0 +1,38 @@
+{
+  "name": "scene-design-v2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode debug",
+    "serve": "vite",
+    "serve-view": "vite --mode mockview",
+    "build": "vue-tsc --noEmit && vite build",
+    "build-view": "vue-tsc --noEmit && vite build --mode viewmode",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "echarts": "^5.6.0",
+    "echarts-gl": "^2.0.9",
+    "element-plus": "^2.9.7",
+    "lodash": "^4.17.21",
+    "mitt": "^3.0.1",
+    "mockjs": "^1.1.0",
+    "pinia": "^2.3.1",
+    "three": "^0.170.0",
+    "v-contextmenu": "^3.0.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.14",
+    "@types/mockjs": "^1.0.10",
+    "@types/three": "^0.170.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "less": "^4.2.2",
+    "typescript": "~5.7.0",
+    "vite": "^6.0.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

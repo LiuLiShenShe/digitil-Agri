@@ -1,0 +1,7 @@
+[
+  { "alias": "乡村黄昏", "path": "./textures/", "left": "r_left.png", "right": "r_right.png", "front": "r_front.png", "back": "r_back.png", "top": "r_up.png", "bottom": "r_down.png" },
+  { "alias": "山间日出", "path": "./textures/", "left": "nn_left.png", "right": "nn_right.png", "front": "nn_front.png", "back": "nn_back.png", "top": "nn_up.png", "bottom": "nn_down.png" },
+  { "alias": "星河夜景", "path": "./textures/", "left": "night3.jpg", "right": "night1.jpg", "front": "night2.jpg", "back": "night4.jpg", "top": "night5.jpg", "bottom": "night6.jpg" },
+  { "alias": "蓝天白云", "path": "./textures/", "left": "negz.jpg", "right": "posz.jpg", "front": "posx.jpg", "back": "negx.jpg", "top": "posy.jpg", "bottom": "negy.jpg" },
+  { "alias": "阴天", "path": "./textures/", "left": "negz_gray.jpg", "right": "posz_gray.jpg", "front": "posx_gray.jpg", "back": "negx_gray.jpg", "top": "posy_gray.jpg", "bottom": "negy_gray.jpg" }
+]

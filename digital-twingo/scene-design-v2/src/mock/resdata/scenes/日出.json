@@ -1,0 +1,18 @@
+{
+  "scene": {
+    "ambientLight": { "color": "#444444", "intensity": 1.2 },
+    "directionalLight": { "color": "#E7922A", "intensity": 0.6, "pos": { "x": 20, "y": 1000, "z": 200 } },
+    "spotLight": { "color": "#E0ABAB", "intensity": 1, "angular": 76 },
+    "background": { "texturePath": "./textures/", "imgs": ["r_front.png","r_back.png","r_up.png","r_down.png","r_right.png","r_left.png"] },
+    "groundPane": { "color": "#88cc88", "turnOff": false, "texture": "./textures/concrete.jpg" },
+    "grid": { "size": 1000, "division": 10, "color1": "#FF0000", "color2": "#444444" }
+  },
+  "models": [
+    { "url": "./models/building02.glb", "options": { "dataId": "2", "offset": { "x": -300, "y": 0, "z": 0 }, "scale": 317.84 } },
+    { "url": "./models/building01.glb", "options": { "dataId": "1", "offset": { "x": 0, "y": 0, "z": 0 }, "scale": 270.43 } },
+    { "url": "./models/factory.glb", "options": { "dataId": "7", "offset": { "x": 250, "y": 0, "z": 0 }, "scale": 10 } },
+    { "url": "./models/wind0.glb", "options": { "dataId": "4", "offset": { "x": -300, "y": 0, "z": 100 }, "scale": 1.8 } },
+    { "url": "./models/wind0.glb", "options": { "dataId": "3", "offset": { "x": -300, "y": 0, "z": -200 }, "scale": 1.8 } },
+    { "url": "./models/skyscrapper.glb", "options": { "dataId": "6", "offset": { "x": 61, "y": 0, "z": 137 }, "scale": 5.12 } }
+  ]
+}

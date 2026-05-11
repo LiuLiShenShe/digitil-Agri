@@ -1,0 +1,20 @@
+{
+  "scene": {
+    "ambientLight": { "color": "#444444", "intensity": 1.2 },
+    "directionalLight": { "color": "#ffffff", "intensity": 0.6, "pos": { "x": 20, "y": 1000, "z": 200 } },
+    "spotLight": { "color": "#E0ABAB", "intensity": 1, "angle": 0 },
+    "background": { "texturePath": "./textures/", "imgs": ["posx.jpg","negx.jpg","posy.jpg","negy.jpg","posz.jpg","negz.jpg"] },
+    "groundPane": { "color": "#88cc88", "turnOff": false, "texture": "./textures/concrete.jpg" },
+    "grid": { "size": 1000, "division": 10, "color1": "#FF0000", "color2": "#444444" }
+  },
+  "models": [
+    { "url": "./models/building04.glb", "options": { "dataId": "0", "offset": { "x": 270, "y": 0, "z": 142 }, "scale": 6.01, "angle": "0" } },
+    { "url": "./models/solar.glb", "options": { "dataId": "0", "offset": { "x": 237, "y": 0, "z": -149 }, "scale": 10.58, "angle": "0" } },
+    { "url": "./models/building01.glb", "options": { "dataId": "1", "offset": { "x": 0, "y": 0, "z": 0 }, "scale": 270.43, "angle": "0" } },
+    { "url": "./models/factory.glb", "options": { "dataId": "7", "offset": { "x": 250, "y": 0, "z": 0 }, "scale": 10, "angle": "0" } },
+    { "url": "./models/building02.glb", "options": { "dataId": "2", "offset": { "x": -300, "y": 0, "z": 0 }, "scale": 317.84, "angle": "0" } },
+    { "url": "./models/wind0.glb", "options": { "dataId": "3", "offset": { "x": -300, "y": 0, "z": -200 }, "scale": 1.8, "angle": "0" } },
+    { "url": "./models/wind0.glb", "options": { "modelId": "4", "offset": { "x": -300, "y": 0, "z": 100 }, "scale": 1.8, "angle": "0" } },
+    { "url": "./models/skyscrapper.glb", "options": { "dataId": "6", "offset": { "x": 61, "y": 0, "z": 137 }, "scale": 5.12, "angle": "90" } }
+  ]
+}

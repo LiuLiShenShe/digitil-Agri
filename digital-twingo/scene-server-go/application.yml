@@ -1,0 +1,19 @@
+server:
+  port: 9010
+  servlet:
+    context-path: /sceneApi
+
+spring:
+  datasource:
+    driver-class-name: mysql
+    url: root:root@tcp(127.0.0.1:3306)/scene?charset=utf8mb4&parseTime=True&loc=Local
+    username: root
+    password: root
+
+swagger:
+  enable: true
+
+iot:
+  mqtt-broker: tcp://127.0.0.1:1883
+  mqtt-client-id: scene-server-go
+  simulator-enabled: true
