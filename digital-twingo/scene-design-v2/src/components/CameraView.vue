@@ -9,8 +9,15 @@
 
 <template>
   <transition name="viz-slide">
-    <div class="camera-panel glass-panel" v-show="dialogStore.cameraPanel">
-      <div class="panel-head">
+    <div
+      ref="panelRef"
+      class="camera-panel glass-panel"
+      :class="{ dragging }"
+      :style="panelStyle"
+      v-show="dialogStore.cameraPanel"
+      @pointerdown="bringToFront"
+    >
+      <div class="panel-head" title="拖动移动面板，双击回到默认位置" @pointerdown="startDrag" @dblclick="resetPosition">
         <div class="panel-head-left">
           <span class="panel-dot live"></span>
           <span class="panel-title">视频监控</span>
@@ -73,9 +80,17 @@ import { ref, computed, onUnmounted } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { useDialogStore } from '@/stores/dialog'
 import { useIotStore } from '@/stores/iot'
+import { useDraggablePanel } from '@/composables/useDraggablePanel'
 
 const dialogStore = useDialogStore()
 const iotStore = useIotStore()
+const { panelRef, panelStyle, dragging, startDrag, resetPosition, bringToFront } = useDraggablePanel({
+  storageKey: 'scene-design:panel:camera',
+  initialTop: 60,
+  initialRight: 720,
+  width: 400,
+  zIndex: 740
+})
 
 const videoEl = ref<HTMLVideoElement | null>(null)
 const selectedCamera = ref<string | null>(null)
@@ -155,10 +170,7 @@ onUnmounted(() => {
 <style scoped>
 .camera-panel {
   position: fixed;
-  right: 720px;
-  top: 60px;
   width: 400px;
-  z-index: 102;
   background: rgba(7, 11, 24, 0.92);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(0, 212, 255, 0.15);
@@ -167,12 +179,24 @@ onUnmounted(() => {
   color: #e8ecf1;
 }
 
+.camera-panel.dragging {
+  cursor: grabbing;
+  opacity: 0.96;
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.camera-panel.dragging .panel-head {
+  cursor: grabbing;
 }
 
 .panel-head-left {

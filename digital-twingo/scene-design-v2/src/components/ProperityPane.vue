@@ -18,6 +18,17 @@
       </div>
 
       <el-collapse v-model="activeNames" class="prop-collapse">
+        <el-collapse-item title="模型信息" name="0">
+          <el-descriptions :column="1" border size="small" class="prop-desc">
+            <el-descriptions-item label="模型名称">{{ activeModelInfo.label }}</el-descriptions-item>
+            <el-descriptions-item label="资产类型">{{ activeModelInfo.assetKey }}</el-descriptions-item>
+            <el-descriptions-item label="分类">{{ activeModelInfo.category }}</el-descriptions-item>
+            <el-descriptions-item label="区域/布局">{{ activeModelInfo.placement }}</el-descriptions-item>
+            <el-descriptions-item label="数据ID">{{ activeModelInfo.dataId }}</el-descriptions-item>
+            <el-descriptions-item label="模型URL">{{ activeModelInfo.url }}</el-descriptions-item>
+          </el-descriptions>
+        </el-collapse-item>
+
         <el-collapse-item title="模型调整" name="1" v-if="$envCfg.editMode">
           <el-form label-width="72px" size="small" class="prop-form">
             <el-form-item label="数据关联">
@@ -75,7 +86,7 @@ const { $envCfg } = useGlobals()
 const modelStore = useModelStore()
 const dialogStore = useDialogStore()
 
-const activeNames = ref(['2'])
+const activeNames = ref(['0', '2'])
 const scale = ref(1)
 const formDataId = ref('')
 const formData = reactive({
@@ -89,6 +100,20 @@ let myChart: any = null
 const activeObject = computed(() => modelStore.activeModel)
 const activeName = computed(() => activeObject.value?.name || '未选择')
 const activeData = computed(() => activeObject.value?.getData || {})
+const activeOptions = computed(() => activeObject.value?.getOptions || {})
+const activeMeta = computed(() => activeOptions.value?.meta || {})
+const activeModelInfo = computed(() => {
+  const saved = activeObject.value?.saveModel()
+  const meta = activeMeta.value
+  return {
+    label: meta.label || activeObject.value?.name || '--',
+    assetKey: meta.assetKey || guessAssetKey(saved?.url) || '--',
+    category: categoryLabel(meta.category),
+    placement: [areaLabel(meta.area), layoutLabel(meta.layout)].filter(item => item !== '--').join(' / ') || '--',
+    dataId: activeOptions.value?.dataId || '未绑定',
+    url: saved?.url || '--'
+  }
+})
 
 watch(() => modelStore.offset, (val) => {
   formData.offset.x = val.x
@@ -136,6 +161,67 @@ function modelPropChange() {
 
 function formatSliderValue(val: number) {
   return val / 100
+}
+
+function guessAssetKey(url = '') {
+  if (url.includes('Silo_House')) return 'greenhouse'
+  if (url.includes('Corn_Crop')) return 'corn'
+  if (url.includes('Wheat_Crop')) return 'wheat'
+  if (url.includes('Rice_Crop')) return 'rice'
+  if (url.includes('Tomato_Crop')) return 'tomato'
+  if (url.includes('Lettuce_Crop')) return 'lettuce'
+  if (url.includes('Pumpkin_Crop')) return 'pumpkin'
+  if (url.includes('TowerWindmill')) return 'weather_station'
+  if (url.includes('Well')) return 'irrigation'
+  if (url.includes('WaterTower')) return 'water_tower'
+  if (url.includes('BigBarn')) return 'warehouse'
+  if (url.includes('building-type-i')) return 'admin_building'
+  if (url.includes('path-long')) return 'road'
+  if (url.includes('fence')) return 'fence'
+  if (url.includes('Windmill')) return 'windmill'
+  if (url.includes('solar')) return 'solar'
+  return ''
+}
+
+function categoryLabel(category = '') {
+  const labels: Record<string, string> = {
+    facility: '设施',
+    crop: '作物',
+    device: '设备',
+    building: '建筑',
+    infrastructure: '基础设施',
+    energy: '能源',
+    vehicle: '车辆'
+  }
+  return labels[category] || category || '--'
+}
+
+function areaLabel(area = '') {
+  const labels: Record<string, string> = {
+    west: '左侧',
+    east: '右侧',
+    north: '北侧',
+    south: '南侧',
+    center: '中心',
+    left: '左侧',
+    right: '右侧',
+    northwest: '西北',
+    northeast: '东北',
+    southwest: '西南',
+    southeast: '东南'
+  }
+  return labels[area] || area || '--'
+}
+
+function layoutLabel(layout = '') {
+  const labels: Record<string, string> = {
+    single: '单个',
+    row: '横排',
+    column: '纵列',
+    grid: '网格',
+    along_path: '沿路'
+  }
+  return labels[layout] || layout || '--'
 }
 
 function buildChart() {
@@ -249,6 +335,7 @@ function buildChart() {
 .prop-desc :deep(.el-descriptions__content) {
   background: rgba(255,255,255,0.02);
   color: #c8d0da;
+  word-break: break-all;
 }
 
 .prop-chart {

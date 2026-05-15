@@ -22,6 +22,7 @@ export const useDialogStore = defineStore('dialog', () => {
   const iotPanel = ref(false)
   const alertPanel = ref(false)
   const cameraPanel = ref(false)
+  const semanticBuilderPanel = ref(false)
 
   function showPropPane(show: boolean) {
     propPane.value = show
@@ -63,6 +64,10 @@ export const useDialogStore = defineStore('dialog', () => {
     cameraPanel.value = show
   }
 
+  function showSemanticBuilderPanel(show: boolean) {
+    semanticBuilderPanel.value = show
+  }
+
   return {
     propPane,
     sceneSettingPane,
@@ -74,6 +79,7 @@ export const useDialogStore = defineStore('dialog', () => {
     iotPanel,
     alertPanel,
     cameraPanel,
+    semanticBuilderPanel,
     showPropPane,
     showSceneSettingPane,
     showSaveDialog,
@@ -83,6 +89,7 @@ export const useDialogStore = defineStore('dialog', () => {
     showDataVizPanel,
     showIotPanel,
     showAlertPanel,
-    showCameraPanel
+    showCameraPanel,
+    showSemanticBuilderPanel
   }
 })

@@ -9,8 +9,15 @@
 
 <template>
   <transition name="viz-slide">
-    <div class="iot-panel glass-panel" v-show="dialogStore.iotPanel">
-      <div class="panel-head">
+    <div
+      ref="panelRef"
+      class="iot-panel glass-panel"
+      :class="{ dragging }"
+      :style="panelStyle"
+      v-show="dialogStore.iotPanel"
+      @pointerdown="bringToFront"
+    >
+      <div class="panel-head" title="拖动移动面板，双击回到默认位置" @pointerdown="startDrag" @dblclick="resetPosition">
         <div class="panel-head-left">
           <span class="panel-dot"></span>
           <span class="panel-title">IoT 设备管理</span>
@@ -75,9 +82,17 @@ import { Refresh, Close } from '@element-plus/icons-vue'
 import { useDialogStore } from '@/stores/dialog'
 import { useIotStore } from '@/stores/iot'
 import { fetchDevices } from '@/services/iotService'
+import { useDraggablePanel } from '@/composables/useDraggablePanel'
 
 const dialogStore = useDialogStore()
 const iotStore = useIotStore()
+const { panelRef, panelStyle, dragging, startDrag, resetPosition, bringToFront } = useDraggablePanel({
+  storageKey: 'scene-design:panel:iot',
+  initialTop: 60,
+  initialRight: 720,
+  width: 340,
+  zIndex: 710
+})
 
 const typeLabels: Record<string, string> = {
   sensor: '传感器',
@@ -107,12 +122,9 @@ async function loadDevices() {
 <style scoped>
 .iot-panel {
   position: fixed;
-  right: 720px;
-  top: 60px;
   width: 340px;
   max-height: calc(100vh - 80px);
   overflow-y: auto;
-  z-index: 100;
   background: rgba(7, 11, 24, 0.92);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(0, 212, 255, 0.15);
@@ -121,12 +133,24 @@ async function loadDevices() {
   color: #e8ecf1;
 }
 
+.iot-panel.dragging {
+  cursor: grabbing;
+  opacity: 0.96;
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.iot-panel.dragging .panel-head {
+  cursor: grabbing;
 }
 
 .panel-head-left {

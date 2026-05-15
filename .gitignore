@@ -5,7 +5,8 @@ node_modules/
 dist/
 
 # Large external tools
-TRELLIS.2/
+TRELLIS.2/modelscope_models/
+TRELLIS.2/TRELLIS.2-4B/
 
 # Archives
 *.zip

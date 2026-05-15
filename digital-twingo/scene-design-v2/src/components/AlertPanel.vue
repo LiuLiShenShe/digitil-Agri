@@ -9,8 +9,15 @@
 
 <template>
   <transition name="viz-slide">
-    <div class="alert-panel glass-panel" v-show="dialogStore.alertPanel">
-      <div class="panel-head">
+    <div
+      ref="panelRef"
+      class="alert-panel glass-panel"
+      :class="{ dragging }"
+      :style="panelStyle"
+      v-show="dialogStore.alertPanel"
+      @pointerdown="bringToFront"
+    >
+      <div class="panel-head" title="拖动移动面板，双击回到默认位置" @pointerdown="startDrag" @dblclick="resetPosition">
         <div class="panel-head-left">
           <span class="panel-dot" :class="{ critical: alertStore.criticalCount > 0 }"></span>
           <span class="panel-title">告警中心</span>
@@ -69,9 +76,17 @@ import { Close } from '@element-plus/icons-vue'
 import { useDialogStore } from '@/stores/dialog'
 import { useAlertStore } from '@/stores/alert'
 import { fetchAlerts, acknowledgeAlert } from '@/services/iotService'
+import { useDraggablePanel } from '@/composables/useDraggablePanel'
 
 const dialogStore = useDialogStore()
 const alertStore = useAlertStore()
+const { panelRef, panelStyle, dragging, startDrag, resetPosition, bringToFront } = useDraggablePanel({
+  storageKey: 'scene-design:panel:alert',
+  initialTop: 60,
+  initialRight: 720,
+  width: 360,
+  zIndex: 720
+})
 
 const typeLabels: Record<string, string> = {
   threshold: '阈值告警',
@@ -100,12 +115,9 @@ async function acknowledgeAllServer() {
 <style scoped>
 .alert-panel {
   position: fixed;
-  right: 720px;
-  top: 60px;
   width: 360px;
   max-height: calc(100vh - 80px);
   overflow-y: auto;
-  z-index: 101;
   background: rgba(7, 11, 24, 0.92);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 68, 68, 0.2);
@@ -114,12 +126,24 @@ async function acknowledgeAllServer() {
   color: #e8ecf1;
 }
 
+.alert-panel.dragging {
+  cursor: grabbing;
+  opacity: 0.96;
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.alert-panel.dragging .panel-head {
+  cursor: grabbing;
 }
 
 .panel-head-left {

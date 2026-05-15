@@ -17,3 +17,14 @@ iot:
   mqtt-broker: tcp://127.0.0.1:1883
   mqtt-client-id: scene-server-go
   simulator-enabled: true
+
+llm:
+  enabled: false
+  base-url: ""
+  api-key: ""
+  model: ""
+  timeout-seconds: 30
+  max-tool-rounds: 2
+
+rag:
+  enabled: false

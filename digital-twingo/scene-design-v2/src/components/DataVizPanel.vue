@@ -9,9 +9,16 @@
 
 <template>
   <transition name="viz-slide">
-    <div class="dataviz" v-show="dialogStore.dataVizPanel">
+    <div
+      ref="panelRef"
+      class="dataviz"
+      :class="{ dragging }"
+      :style="panelStyle"
+      v-show="dialogStore.dataVizPanel"
+      @pointerdown="bringToFront"
+    >
       <!-- 面板头部 -->
-      <div class="viz-head">
+      <div class="viz-head" title="拖动移动面板，双击回到默认位置" @pointerdown="startDrag" @dblclick="resetPosition">
         <div class="viz-head-left">
           <span class="viz-dot"></span>
           <span class="viz-title">数据可视化</span>
@@ -113,6 +120,7 @@ import { useDataVizStore } from '@/stores/dataviz'
 import { useDialogStore } from '@/stores/dialog'
 import { getRealtimeService } from '@/services/websocket'
 import { generateHistoricalData } from '@/services/dataService'
+import { useDraggablePanel } from '@/composables/useDraggablePanel'
 
 import RealtimeLineChart from '@/components/charts/RealtimeLineChart.vue'
 import GaugeChart from '@/components/charts/GaugeChart.vue'
@@ -124,6 +132,13 @@ import PieChart from '@/components/charts/PieChart.vue'
 const store = useDataVizStore()
 const dialogStore = useDialogStore()
 const wsService = getRealtimeService()
+const { panelRef, panelStyle, dragging, startDrag, resetPosition, bringToFront } = useDraggablePanel({
+  storageKey: 'scene-design:panel:dataviz',
+  initialTop: 80,
+  initialRight: 372,
+  width: 420,
+  zIndex: 730
+})
 
 const typeIcons: Record<string, string> = {
   greenhouse: '🏠',
@@ -207,19 +222,21 @@ onUnmounted(() => {
 .dataviz {
   display: flex;
   flex-direction: column;
-  position: absolute;
-  right: 372px;
-  top: 80px;
+  position: fixed;
   width: 420px;
-  max-height: calc(100% - 100px);
+  max-height: calc(100vh - 100px);
   background: rgba(12, 20, 36, 0.92);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   color: #c8d0da;
-  z-index: 500;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 212, 255, 0.1);
+}
+
+.dataviz.dragging {
+  cursor: grabbing;
+  opacity: 0.96;
 }
 
 .viz-slide-enter-active { transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -235,6 +252,13 @@ onUnmounted(() => {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.dataviz.dragging .viz-head {
+  cursor: grabbing;
 }
 
 .viz-head-left {

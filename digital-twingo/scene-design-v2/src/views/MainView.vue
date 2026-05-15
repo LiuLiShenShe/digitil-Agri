@@ -18,6 +18,7 @@
   <IoTDevicePanel />
   <AlertPanel />
   <CameraView />
+  <SemanticBuilderPanel />
   <SaveDialog />
   <ModelTreeDialog />
 </template>
@@ -33,6 +34,7 @@ import DataVizPanel from '@/components/DataVizPanel.vue'
 import IoTDevicePanel from '@/components/IoTDevicePanel.vue'
 import AlertPanel from '@/components/AlertPanel.vue'
 import CameraView from '@/components/CameraView.vue'
+import SemanticBuilderPanel from '@/components/SemanticBuilderPanel.vue'
 import SaveDialog from '@/components/SaveDialog.vue'
 import ModelTreeDialog from '@/components/ModelTreeDialg.vue'
 </script>

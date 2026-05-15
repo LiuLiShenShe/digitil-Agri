@@ -18,6 +18,18 @@ const gltfLoader = new GLTFLoader()
 
 type stringKeyData = Record<string, any>
 
+const cropModelFiles = new Set([
+  'Apple_Crop.glb',
+  'Beet_Crop.glb',
+  'Carrot_Crop.glb',
+  'Corn_Crop.glb',
+  'Lettuce_Crop.glb',
+  'Pumpkin_Crop.glb',
+  'Rice_Crop.glb',
+  'Tomato_Crop.glb',
+  'Wheat_Crop.glb'
+])
+
 export class Model {
   public rootObject = new THREE.Group()
   private options = {} as any
@@ -32,17 +44,18 @@ export class Model {
     this.url = ''
   }
 
-  public loadModel(url: string, options: any, onProgress?: (pct: number) => void): any {
+  public loadModel(url: string, options: any, onProgress?: (pct: number) => void): Promise<Model> {
     this.url = url
     this.options = _.cloneDeep(options)
     if (url.endsWith('.gltf') || url.endsWith('.glb')) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         this.loadGltfModel(url, onProgress).then((modelObj: any) => {
           this.setModel(modelObj, this.options)
           resolve(this)
-        })
+        }).catch(reject)
       })
     }
+    return Promise.reject(new Error(`Unsupported model format: ${url}`))
   }
 
   public get getData() {
@@ -54,10 +67,18 @@ export class Model {
   }
 
   public get name(): string {
-    if (!this.options.dataId) {
-      return '未关联数据'
+    const metaName = this.options.meta?.label || this.options.label || this.options.name
+    if (metaName) {
+      return metaName
     }
-    return this.data.name
+    if (this.data.name) {
+      return this.data.name
+    }
+    const fileName = this.url.split('/').pop()
+    if (fileName) {
+      return fileName.replace(/\.(glb|gltf)$/i, '')
+    }
+    return this.options.dataId ? `数据#${this.options.dataId}` : '未命名模型'
   }
 
   public get animator() {
@@ -138,7 +159,12 @@ export class Model {
   }
 
   private setModel(modelObj: any, options: any) {
-    this.options.scale = options.scale || modelObj.fitScale
+    if (Number.isFinite(options.semanticScale) && options.semanticScale > 0) {
+      this.options.scale = modelObj.fitScale * options.semanticScale
+      delete this.options.semanticScale
+    } else {
+      this.options.scale = options.scale || modelObj.fitScale
+    }
     this.options.offset = options.offset || modelObj.fitOffset
     this.options.angle = options.angle || '0'
 
@@ -171,7 +197,20 @@ export class Model {
     obj.castShadow = true
   }
 
-  private loadGltfModel(url: string, onProgress?: (pct: number) => void) {
+  private async loadGltfModel(url: string, onProgress?: (pct: number) => void) {
+    const candidates = getModelUrlCandidates(url)
+    const errors = [] as string[]
+    for (const candidate of candidates) {
+      try {
+        return await this.loadGltfModelUrl(candidate, onProgress)
+      } catch (err: any) {
+        errors.push(`${candidate}: ${err?.message || err || 'load failed'}`)
+      }
+    }
+    throw new Error(`模型加载失败：${url}；已尝试 ${errors.join(' | ')}`)
+  }
+
+  private loadGltfModelUrl(url: string, onProgress?: (pct: number) => void) {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader()
       const loadingManager = new THREE.LoadingManager()
@@ -215,9 +254,71 @@ export class Model {
           onProgress(Math.round((xhr.loaded / xhr.total) * 100))
         }
       }, (err: any) => {
-        console.error('Model load error:', url, err)
         reject(err)
       })
     })
   }
+}
+
+function getModelUrlCandidates(url: string) {
+  const candidates = [url]
+  if (url.startsWith('/scene-assets/')) {
+    candidates.push(...sceneAssetUrlCandidates(url))
+  }
+  const publicFallback = publicModelFallback(url)
+  if (publicFallback) {
+    candidates.push(publicFallback)
+  }
+  return uniqueStrings(candidates)
+}
+
+function sceneAssetUrlCandidates(url: string) {
+  const candidates = [] as string[]
+  const assetBase = (import.meta.env.VITE_SCENE_ASSET_BASEURL as string | undefined)?.trim()
+  if (assetBase) {
+    candidates.push(joinBaseUrl(assetBase, url))
+  }
+
+  const apiBase = ((import.meta.env.VITE_BASEURL as string | undefined) || '').trim()
+  const apiOrigin = absoluteOrigin(apiBase)
+  if (apiOrigin) {
+    candidates.push(joinBaseUrl(apiOrigin, url))
+  }
+
+  if (import.meta.env.DEV && typeof window !== 'undefined' && window.location.port !== '9010') {
+    candidates.push(`${window.location.protocol}//${window.location.hostname}:9010${url}`)
+  }
+  return candidates
+}
+
+function publicModelFallback(url: string) {
+  const fileName = modelFileName(url)
+  if (!cropModelFiles.has(fileName)) {
+    return ''
+  }
+  return `${import.meta.env.BASE_URL}models/crops/${fileName}`
+}
+
+function modelFileName(url: string) {
+  const cleanUrl = url.split(/[?#]/)[0].replace(/\\/g, '/')
+  return cleanUrl.split('/').pop() || ''
+}
+
+function absoluteOrigin(url: string) {
+  if (!/^https?:\/\//i.test(url)) {
+    return ''
+  }
+  try {
+    return new URL(url).origin
+  } catch {
+    return ''
+  }
+}
+
+function joinBaseUrl(base: string, path: string) {
+  return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
+}
+
+function uniqueStrings(items: string[]) {
+  return Array.from(new Set(items.filter(Boolean)))
 }

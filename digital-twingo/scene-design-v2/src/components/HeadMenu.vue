@@ -102,6 +102,14 @@
       <el-menu-item index="8" @click="openBusinessCenter">
         <span class="nav-item">业务</span>
       </el-menu-item>
+
+      <el-menu-item index="9" @click="openAssistant">
+        <span class="nav-item">AI助手</span>
+      </el-menu-item>
+
+      <el-menu-item index="10" @click="toggleSemanticBuilder" v-if="editMode">
+        <span class="nav-item">AI搭建</span>
+      </el-menu-item>
     </el-menu>
   </el-header>
 </template>
@@ -222,6 +230,14 @@ function openMonitorCenter() {
 
 function openBusinessCenter() {
   router.push('/business')
+}
+
+function openAssistant() {
+  router.push('/assistant')
+}
+
+function toggleSemanticBuilder() {
+  dialogStore.showSemanticBuilderPanel(!dialogStore.semanticBuilderPanel)
 }
 
 async function loadIoTData() {
