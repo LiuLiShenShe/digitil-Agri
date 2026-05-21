@@ -1,0 +1,158 @@
+# AGENTS.md instructions for /data/fj/数字孪生
+
+## Project Overview
+
+This repository is a smart-agriculture 3D digital twin workspace. It combines:
+
+- `digital-twingo/scene-design-v2/`: Vue 3 + TypeScript + Vite frontend for 3D scene editing, GLB model loading, data visualization, semantic scene building, and digital twin dashboards.
+- `digital-twingo/scene-server-go/`: Go 1.24 + Gin + MySQL backend for scene APIs, asset/model services, IoT/mock data, semantic scene generation, and Agent-related services.
+- `TRELLIS.2/`: Python-based image-to-3D / texture-generation research code used for GLB asset generation experiments.
+- `openspec/`: OpenSpec planning/specification workspace for PRD-driven changes.
+- `docs/`, `openspec/reference/references/`, `审计报告/`, `基于 Eino DeepAgents 的详细实施方案/`: product, design, research, audit, and implementation notes.
+
+For deeper frontend/backend conventions, read `digital-twingo/CLAUDE.md`.
+
+## Context7 / ctx7 Documentation Rule
+
+Use the `ctx7` CLI to fetch current documentation whenever the user asks about a library, framework, SDK, API, CLI tool, or cloud service, even well-known ones like React, Vue, Vite, Three.js, Gin, Eino, Prisma, Express, Tailwind, Django, or Spring Boot. This includes API syntax, configuration, version migration, library-specific debugging, setup instructions, and CLI tool usage. Prefer this over web search for library docs.
+
+Do not use `ctx7` for refactoring, writing scripts from scratch, debugging business logic, code review, or general programming concepts.
+
+Steps:
+
+1. Resolve library:
+
+   ```bash
+   npx ctx7@latest library <name> "<user's question>"
+   ```
+
+2. Pick the best match by exact name, description relevance, code snippet count, source reputation, and benchmark score.
+3. Fetch docs:
+
+   ```bash
+   npx ctx7@latest docs <libraryId> "<user's question>"
+   ```
+
+4. Answer using the fetched documentation.
+
+Rules:
+
+- Call `library` first unless the user provides a `/org/project` library ID directly.
+- Use the user's full question as the query.
+- Do not run more than 3 Context7 commands per question.
+- Do not include secrets, API keys, passwords, or credentials in queries.
+- If a command fails with quota errors, tell the user and suggest `npx ctx7@latest login` or setting `CONTEXT7_API_KEY`.
+- If a command fails with DNS, host resolution, or fetch errors, retry according to the active execution environment's network/sandbox rules.
+
+## OpenSpec Workflow
+
+The project uses OpenSpec for PRD-to-implementation planning.
+
+Key files:
+
+- `openspec/README.md`: OpenSpec index.
+- `openspec/project.md`: project-level product/spec context.
+- `openspec/roadmap.md`: milestone plan and active change order.
+- `openspec/changes/<change-id>/`: change proposals with `proposal.md`, `design.md`, `tasks.md`, and `specs/**/spec.md`.
+- `openspec/reference/references/`: research and design source material.
+
+Before implementing PRD-level product changes:
+
+1. Check existing OpenSpec changes with:
+
+   ```bash
+   openspec list
+   openspec status --change <change-id>
+   ```
+
+2. Read the target change's `proposal.md`, `design.md`, `tasks.md`, and delta specs.
+3. Keep implementation scoped to the relevant change.
+4. Validate OpenSpec changes after editing specs:
+
+   ```bash
+   openspec validate --all --strict
+   ```
+
+Current active changes:
+
+- `add-agricultural-object-model`
+- `bind-scene-objects-to-business-objects`
+- `add-farm-memory-layer`
+- `add-agent-operation-trace`
+- `add-asset-metadata-and-fidelity-routing`
+
+## Frontend Notes
+
+Frontend path: `digital-twingo/scene-design-v2/`
+
+Common commands:
+
+```bash
+npm install
+npm run serve
+npm run dev
+npm run build
+npm run build-view
+```
+
+Important conventions:
+
+- Start Vite with project scripts or `./node_modules/.bin/vite`; do not use `npx vite`.
+- Base path is `/scene/`.
+- Main stack: Vue 3, TypeScript, Vite, Three.js, Pinia, Element Plus, ECharts, ECharts GL.
+- Preserve the dark glassmorphism UI style and existing panel patterns.
+- Panel visibility is usually managed through Pinia dialog state.
+- Scene operations go through the existing `Scene` singleton and event bus patterns.
+- Keep existing typos that are API-compatible, such as `laodScene` and `winowResize`, unless a change explicitly migrates them.
+
+## Backend Notes
+
+Backend path: `digital-twingo/scene-server-go/`
+
+Common commands:
+
+```bash
+go build -o scene-server
+go run SceneServerApplication.go
+```
+
+Backend conventions:
+
+- Go 1.24, Gin, sqlx, MySQL.
+- Server runs on port `9010` with context path `/sceneApi`.
+- Follow the existing controller/service/mapper/vo structure.
+- Prefer additive API changes that keep existing frontend flows working.
+- Do not bypass services with direct database writes from Agent tools.
+
+Database:
+
+```bash
+docker exec gofast-mysql mysql -u root -proot scene < scene.sql
+```
+
+## TRELLIS.2 / Asset Generation Notes
+
+`TRELLIS.2/` is a heavy Python research dependency for 3D generation. Treat it as an asset-generation subsystem, not as the main app runtime.
+
+- Avoid running GPU-heavy training or inference unless explicitly requested.
+- For platform integration, prefer task records, metadata, and generated GLB handoff rather than blocking UI/backend flows.
+- Generated assets should be validated before becoming managed scene assets.
+
+## Verification
+
+Use focused verification based on touched areas:
+
+- OpenSpec docs: `openspec validate --all --strict`
+- Frontend: `npm run build` from `digital-twingo/scene-design-v2/`
+- Backend: `go test ./...` or `go build -o scene-server` from `digital-twingo/scene-server-go/`
+
+If verification is not run, state that clearly in the final response.
+
+## Collaboration And Safety
+
+- The worktree may already contain user changes. Do not revert or overwrite changes you did not make.
+- Keep edits scoped to the user's request.
+- Prefer existing project patterns over new abstractions.
+- Do not commit unless the user explicitly asks.
+- Do not add secrets to docs, code, prompts, logs, or Context7 queries.
+

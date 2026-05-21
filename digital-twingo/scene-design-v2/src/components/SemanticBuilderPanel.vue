@@ -93,6 +93,28 @@
           </div>
         </div>
 
+        <div v-if="result?.agentTrace" class="agent-box">
+          <div class="section-title">Agent 调度</div>
+          <div class="context-row">
+            <span>模式</span>
+            <strong>{{ agentModeLabel }}</strong>
+          </div>
+          <div class="context-row">
+            <span>耗时</span>
+            <strong>{{ result.agentTrace.durationMs }} ms</strong>
+          </div>
+          <div class="tool-flow">
+            <span
+              v-for="tool in result.agentTrace.tools"
+              :key="`${tool.name}-${tool.durationMs}-${tool.status}`"
+              class="tool-chip"
+              :class="{ error: tool.status !== 'success' }"
+            >
+              {{ tool.name }}
+            </span>
+          </div>
+        </div>
+
         <div v-if="result?.warnings.length" class="notice-list warning-list">
           <div v-for="item in result.warnings" :key="item" class="notice-item">{{ item }}</div>
         </div>
@@ -100,8 +122,59 @@
         <div v-if="result?.missingAssets.length" class="missing-box">
           <div class="section-title">缺失资产</div>
           <div v-for="asset in result.missingAssets" :key="asset.assetKey" class="missing-item">
-            <span>{{ asset.name }}</span>
-            <small>{{ asset.reason }}</small>
+            <div class="missing-main">
+              <div>
+                <span>{{ asset.name }}</span>
+                <small>{{ asset.reason }}</small>
+              </div>
+              <strong :class="assetGenerationClass(asset)">{{ assetGenerationLabel(asset) }}</strong>
+            </div>
+            <div class="asset-generation-meta">
+              <span>参考图：{{ referenceImageLabel(asset) }}</span>
+              <span v-if="asset.generation?.taskId">任务：{{ asset.generation.taskId }}</span>
+            </div>
+            <div v-if="asset.referenceImage?.url" class="reference-preview">
+              <img :src="asset.referenceImage.url" :alt="asset.name" />
+            </div>
+            <el-progress
+              v-if="asset.generation?.status === 'queued' || asset.generation?.status === 'running'"
+              :percentage="asset.generation?.progress || 0"
+              :stroke-width="4"
+              class="asset-progress"
+            />
+            <div v-if="asset.generation?.errorMessage" class="asset-error">
+              {{ asset.generation.errorMessage }}
+            </div>
+            <div class="asset-generation-actions">
+              <el-upload
+                :auto-upload="false"
+                :show-file-list="false"
+                accept="image/png,image/jpeg"
+                :disabled="assetSubmitting[asset.assetKey]"
+                :on-change="referenceUploadHandler(asset)"
+              >
+                <el-button size="small" plain :loading="assetSubmitting[asset.assetKey]">
+                  上传参考图
+                </el-button>
+              </el-upload>
+              <el-button
+                v-if="asset.generation?.taskId && (asset.generation.status === 'queued' || asset.generation.status === 'running')"
+                size="small"
+                plain
+                @click="pollMissingAssetJob(asset)"
+              >
+                刷新状态
+              </el-button>
+              <el-button
+                v-if="asset.generation?.status === 'completed' && asset.generation.resultUrl"
+                size="small"
+                type="primary"
+                plain
+                @click="replaceGeneratedAsset(asset)"
+              >
+                替换占位模型
+              </el-button>
+            </div>
           </div>
         </div>
 
@@ -139,7 +212,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { Scene } from '@/lib/scene'
@@ -149,9 +222,13 @@ import { useSceneStore } from '@/stores/scene'
 import { useDraggablePanel } from '@/composables/useDraggablePanel'
 import {
   buildSemanticPlan,
+  createAssetGenerationJob,
+  fetchAssetGenerationJob,
+  type AssetJobResponse,
   fetchSemanticSamples,
   type BuildModel,
   type BuildSample,
+  type MissingAsset,
   type SemanticBuildContext,
   type SemanticBuildResponse,
   type SemanticObjectSummary
@@ -175,17 +252,30 @@ const applying = ref(false)
 const result = ref<SemanticBuildResponse | null>(null)
 const resultPrompt = ref('')
 const samples = ref<BuildSample[]>([])
+const assetSubmitting = reactive<Record<string, boolean>>({})
+let assetPollTimer: number | null = null
 const sourceLabel = computed(() => {
-  if (!result.value) return 'LLM 版'
-  return result.value.planSource?.mode === 'llm' ? 'LLM 版' : '规则回退'
+  if (!result.value) return 'Agent 版'
+  if (result.value.agentTrace?.mode === 'deepagents') return 'DeepAgents'
+  if (result.value.planSource?.mode === 'llm') return 'LLM 版'
+  return 'Agent 编排'
 })
 const sourceDetail = computed(() => {
   const source = result.value?.planSource
   if (!source) return '待生成'
+  if (result.value?.agentTrace) {
+    return `${result.value.agentTrace.framework} / ${agentModeLabel.value}`
+  }
   if (source.mode === 'llm') {
     return `${source.model || 'LLM'} / 第 ${source.attempt || 1} 次`
   }
   return source.reason || '规则版解析'
+})
+const agentModeLabel = computed(() => {
+  const mode = result.value?.agentTrace?.mode
+  if (mode === 'deepagents') return 'DeepAgents'
+  if (mode === 'tool-pipeline') return '工具流水线'
+  return mode || '未运行'
 })
 const formattedRawPlan = computed(() => {
   const raw = result.value?.rawLlmPlan
@@ -206,6 +296,10 @@ onMounted(async () => {
       { title: '标准温室场景', message: '创建标准温室场景，两个大棚纵向排列，每个大棚旁边放灌溉设备。' }
     ]
   }
+})
+
+onBeforeUnmount(() => {
+  stopAssetPolling()
 })
 
 function useSample(text: string) {
@@ -257,10 +351,12 @@ async function buildPlanForCurrentMessage(text: string) {
     message: text,
     sceneName: sceneStore.sceneName || undefined,
     mode: context.appendMode ? 'append' : 'preview',
+    ownerKey: getOwnerKey(),
     context
   })
   result.value = plan
   resultPrompt.value = text
+  startAssetPolling()
   return { plan, context }
 }
 
@@ -391,6 +487,210 @@ function layoutLabel(layout: string) {
 
 function formatOffset(offset: { x: number; y: number; z: number }) {
   return `x ${Math.round(offset.x)}, z ${Math.round(offset.z)}`
+}
+
+function getOwnerKey(): string {
+  let key = localStorage.getItem('ownerKey')
+  if (!key) {
+    key = 'user_' + Math.random().toString(36).slice(2, 10)
+    localStorage.setItem('ownerKey', key)
+  }
+  return key
+}
+
+function referenceImageLabel(asset: MissingAsset) {
+  const status = asset.referenceImage?.status
+  const source = asset.referenceImage?.source
+  if (status === 'uploaded') return '用户上传'
+  if (status === 'resolved') return source === 'preset' ? '预置图库' : source || '已匹配'
+  if (status === 'generated') return '图片生成'
+  return '待上传'
+}
+
+function assetGenerationLabel(asset: MissingAsset) {
+  const status = asset.generation?.status
+  const map: Record<string, string> = {
+    waiting_image: '待补图',
+    queued: '排队中',
+    running: '生成中',
+    completed: '已完成',
+    failed: '失败',
+    cancelled: '已取消',
+    not_created: '未创建'
+  }
+  return map[status || 'waiting_image'] || status || '待补图'
+}
+
+function assetGenerationClass(asset: MissingAsset) {
+  const status = asset.generation?.status || 'waiting_image'
+  return {
+    waiting: status === 'waiting_image' || status === 'not_created',
+    running: status === 'queued' || status === 'running',
+    completed: status === 'completed',
+    failed: status === 'failed' || status === 'cancelled'
+  }
+}
+
+async function submitReferenceImage(asset: MissingAsset, file: any) {
+  const raw = file.raw as File
+  if (!raw) return
+  assetSubmitting[asset.assetKey] = true
+  try {
+    const base64 = await fileToBase64(raw)
+    const job = await createAssetGenerationJob({
+      imageBase64: base64,
+      imageFileName: raw.name,
+      ownerKey: getOwnerKey(),
+      assetKey: asset.assetKey,
+      assetName: asset.name,
+      prompt: asset.prompt || `${asset.name} 数字孪生 3D 资产`,
+      referenceImageSource: 'upload',
+      resolution: 512,
+      decimationTarget: 300000,
+      textureSize: 2048
+    })
+    mergeAssetJob(asset, job)
+    ElMessage.success('参考图已提交，正在创建 TRELLIS.2 生成任务')
+    startAssetPolling()
+  } catch (err: any) {
+    ElMessage.error(err?.message || '参考图提交失败')
+  } finally {
+    assetSubmitting[asset.assetKey] = false
+  }
+}
+
+function referenceUploadHandler(asset: MissingAsset) {
+  return (file: any) => submitReferenceImage(asset, file)
+}
+
+async function pollMissingAssetJob(asset: MissingAsset) {
+  const taskId = asset.generation?.taskId
+  if (!taskId) return false
+  try {
+    const job = await fetchAssetGenerationJob(taskId)
+    mergeAssetJob(asset, job)
+    return job.status === 'completed' || job.status === 'failed' || job.status === 'approved' || job.status === 'rejected'
+  } catch {
+    return false
+  }
+}
+
+function startAssetPolling() {
+  stopAssetPolling()
+  if (!result.value?.missingAssets.some(asset => asset.generation?.taskId && ['queued', 'running'].includes(asset.generation.status))) {
+    return
+  }
+  assetPollTimer = window.setInterval(async () => {
+    const assets = result.value?.missingAssets || []
+    let hasRunning = false
+    for (const asset of assets) {
+      if (asset.generation?.taskId && ['queued', 'running'].includes(asset.generation.status)) {
+        hasRunning = true
+        await pollMissingAssetJob(asset)
+      }
+    }
+    if (!hasRunning) {
+      stopAssetPolling()
+    }
+  }, 3000)
+}
+
+function stopAssetPolling() {
+  if (assetPollTimer !== null) {
+    window.clearInterval(assetPollTimer)
+    assetPollTimer = null
+  }
+}
+
+function mergeAssetJob(asset: MissingAsset, job: AssetJobResponse) {
+  asset.referenceImage = {
+    status: job.sourceImageUrl ? 'uploaded' : asset.referenceImage?.status || 'missing',
+    source: job.referenceImageSource || 'upload',
+    url: job.sourceImageUrl || asset.referenceImage?.url,
+    candidates: asset.referenceImage?.candidates || []
+  }
+  asset.generation = {
+    enabled: true,
+    taskId: job.jobId,
+    status: mapJobStatus(job.status),
+    progress: Number(job.progress || 0),
+    resultUrl: job.modelUrl || asset.generation?.resultUrl,
+    thumbnailUrl: job.thumbUrl || asset.generation?.thumbnailUrl,
+    errorMessage: job.errorMsg || '',
+    reviewStatus: job.status === 'approved' ? 'approved' : 'personal_draft'
+  }
+  result.value?.models.forEach(model => {
+    if (model.meta.placeholder && model.meta.missingAssetKey === asset.assetKey) {
+      model.meta.generationTaskId = job.jobId
+    }
+  })
+}
+
+function mapJobStatus(status: string) {
+  if (status === 'approved') return 'completed'
+  if (status === 'rejected') return 'failed'
+  return status || 'waiting_image'
+}
+
+async function replaceGeneratedAsset(asset: MissingAsset) {
+  const url = asset.generation?.resultUrl
+  if (!url) return
+  const scene = Scene.getInstance()
+  const placeholders = findPlaceholderModels(asset)
+  const targets = placeholders.length > 0 ? placeholders : [{ modelId: '', offset: { x: 0, y: 0, z: 0 }, angle: 0, semanticScale: 0.5 }]
+  try {
+    await Promise.all(targets.map(target => scene.loadModel(url, {
+        offset: target.offset,
+        angle: target.angle,
+        semanticScale: target.semanticScale,
+        meta: {
+          label: asset.name,
+          assetKey: asset.assetKey,
+          category: asset.category || 'generated',
+          generatedFromTaskId: asset.generation?.taskId
+        }
+      })
+    ))
+    placeholders.forEach(item => scene.removeModel(item.modelId))
+    scene.refreshLayerStore()
+    ElMessage.success(`${asset.name} 已替换占位模型`)
+  } catch (err: any) {
+    ElMessage.error(err?.message || '生成模型加载失败')
+  }
+}
+
+function findPlaceholderModels(asset: MissingAsset) {
+  const scene = Scene.getInstance()
+  const placementSet = new Set(asset.placementRefs || [])
+  const result: Array<{ modelId: string; offset: { x: number; y: number; z: number }; angle: number; semanticScale: number }> = []
+  for (const model of Object.values(scene.getSceneModels)) {
+    const saved = model.saveModel()
+    const meta = saved.options?.meta || {}
+    if (
+      (meta.placeholder && meta.missingAssetKey === asset.assetKey) ||
+      placementSet.has(meta.id)
+    ) {
+      result.push({
+        modelId: model.getModelId,
+        offset: saved.options?.offset,
+        angle: saved.options?.angle,
+        semanticScale: saved.options?.semanticScale || 0.5
+      })
+    }
+  }
+  return result
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const raw = String(reader.result || '')
+      resolve(raw.split(',')[1] || raw)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 </script>
 
@@ -555,6 +855,7 @@ function formatOffset(offset: { x: number; y: number; z: number }) {
 .notice-list,
 .missing-box,
 .context-box,
+.agent-box,
 .object-list,
 .model-list,
 .raw-plan {
@@ -581,7 +882,8 @@ function formatOffset(offset: { x: number; y: number; z: number }) {
   color: #8899aa;
 }
 
-.context-box {
+.context-box,
+.agent-box {
   padding: 10px;
   border-radius: 8px;
   background: rgba(255,255,255,0.035);
@@ -601,6 +903,31 @@ function formatOffset(offset: { x: number; y: number; z: number }) {
   color: #d9e8f6;
   font-weight: 500;
   text-align: right;
+}
+
+.tool-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tool-chip {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 4px;
+  color: #8be7ff;
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.18);
+  font-size: 11px;
+}
+
+.tool-chip.error {
+  color: #ffbd7a;
+  background: rgba(255,166,77,0.1);
+  border-color: rgba(255,166,77,0.2);
 }
 
 .missing-item,
@@ -632,6 +959,96 @@ function formatOffset(offset: { x: number; y: number; z: number }) {
   color: #7f91a5;
   font-size: 11px;
   line-height: 16px;
+}
+
+.missing-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.missing-main strong {
+  flex: 0 0 auto;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.missing-main strong.waiting {
+  color: #ffbd7a;
+  background: rgba(255,166,77,0.1);
+  border: 1px solid rgba(255,166,77,0.2);
+}
+
+.missing-main strong.running {
+  color: #8be7ff;
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.18);
+}
+
+.missing-main strong.completed {
+  color: #8df0b4;
+  background: rgba(62,204,124,0.1);
+  border: 1px solid rgba(62,204,124,0.2);
+}
+
+.missing-main strong.failed {
+  color: #ff9e9e;
+  background: rgba(255,94,94,0.1);
+  border: 1px solid rgba(255,94,94,0.2);
+}
+
+.asset-generation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+  color: #7f91a5;
+  font-size: 11px;
+}
+
+.reference-preview {
+  margin-top: 8px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.reference-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.asset-progress {
+  margin-top: 8px;
+}
+
+.asset-error {
+  margin-top: 8px;
+  color: #ff9e9e;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.asset-generation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.asset-generation-actions :deep(.el-button) {
+  margin-left: 0;
 }
 
 .object-main {

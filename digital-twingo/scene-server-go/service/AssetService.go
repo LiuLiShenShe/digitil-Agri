@@ -99,23 +99,31 @@ func (s *AssetService) CreateJob(req *vo.AssetJobRequest) (*vo.AssetJobResponse,
 
 	// Store job in DB using Python's job_id
 	record := &mapper.AssetJobRecord{
-		JobID:            pyResp.JobID,
-		OwnerKey:         req.OwnerKey,
-		Status:           "queued",
-		Progress:         0,
-		Resolution:       req.Resolution,
-		DecimationTarget: req.DecimationTarget,
-		TextureSize:      req.TextureSize,
-		SourceImageURL:   "/" + sourceImagePath,
+		JobID:                pyResp.JobID,
+		OwnerKey:             req.OwnerKey,
+		AssetKey:             req.AssetKey,
+		AssetName:            req.AssetName,
+		Prompt:               req.Prompt,
+		ReferenceImageSource: req.ReferenceImageSource,
+		Status:               "queued",
+		Progress:             0,
+		Resolution:           req.Resolution,
+		DecimationTarget:     req.DecimationTarget,
+		TextureSize:          req.TextureSize,
+		SourceImageURL:       "/" + sourceImagePath,
 	}
 	s.assetMapper.Insert(record)
 	config.Log("INFO", "[Asset] Job %s created by %s (resolution=%d, size=%d bytes)",
 		pyResp.JobID, req.OwnerKey, req.Resolution, len(imgData))
 
 	return &vo.AssetJobResponse{
-		JobID:    pyResp.JobID,
-		OwnerKey: req.OwnerKey,
-		Status:   "queued",
+		JobID:                pyResp.JobID,
+		OwnerKey:             req.OwnerKey,
+		AssetKey:             req.AssetKey,
+		AssetName:            req.AssetName,
+		Prompt:               req.Prompt,
+		ReferenceImageSource: req.ReferenceImageSource,
+		Status:               "queued",
 	}, nil
 }
 
@@ -206,20 +214,24 @@ func (s *AssetService) pollPythonStatus(jobID string) (*pyStatusResp, error) {
 
 func jobToResponse(job *mapper.AssetJobRecord) *vo.AssetJobResponse {
 	return &vo.AssetJobResponse{
-		JobID:            job.JobID,
-		OwnerKey:         job.OwnerKey,
-		Status:           job.Status,
-		Progress:         job.Progress,
-		Resolution:       job.Resolution,
-		DecimationTarget: job.DecimationTarget,
-		TextureSize:      job.TextureSize,
-		ModelName:        job.ModelName,
-		ModelURL:         job.ModelURL,
-		ThumbURL:         job.ThumbURL,
-		SourceImageURL:   job.SourceImageURL,
-		FileSize:         job.FileSize,
-		ErrorMsg:         job.ErrorMsg,
-		CreatedAt:        job.CreatedAt.Format("2006-01-02 15:04:05"),
-		UpdatedAt:        job.UpdatedAt.Format("2006-01-02 15:04:05"),
+		JobID:                job.JobID,
+		OwnerKey:             job.OwnerKey,
+		AssetKey:             job.AssetKey,
+		AssetName:            job.AssetName,
+		Prompt:               job.Prompt,
+		ReferenceImageSource: job.ReferenceImageSource,
+		Status:               job.Status,
+		Progress:             job.Progress,
+		Resolution:           job.Resolution,
+		DecimationTarget:     job.DecimationTarget,
+		TextureSize:          job.TextureSize,
+		ModelName:            job.ModelName,
+		ModelURL:             job.ModelURL,
+		ThumbURL:             job.ThumbURL,
+		SourceImageURL:       job.SourceImageURL,
+		FileSize:             job.FileSize,
+		ErrorMsg:             job.ErrorMsg,
+		CreatedAt:            job.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:            job.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }

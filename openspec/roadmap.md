@@ -1,0 +1,49 @@
+# 智慧农业数字孪生智能体平台 OpenSpec 路线图
+
+## Milestones
+
+| 里程碑 | 周期 | 目标 | OpenSpec 变更 |
+| --- | --- | --- | --- |
+| M1: 孪生对象底座 | 1-2 周 | 建立农业对象图谱和 3D 绑定锚点 | `add-agricultural-object-model`, `bind-scene-objects-to-business-objects` |
+| M2: 状态与记忆层 | 2-3 周 | 将 IoT、事件、告警和日级归档按对象组织 | `add-farm-memory-layer` |
+| M3: Agent 运维闭环 | 2-3 周 | 扩展 Agent 工具白名单、trace 和可回退运维能力 | `add-agent-operation-trace` |
+| M4: 资产治理与保真度路由 | 2-3 周 | 建多保真资产元数据、质量审计和路由策略 | `add-asset-metadata-and-fidelity-routing` |
+| M5: 业务子系统拆分 | 3-4 周 | 在统一底座上拆土壤、气象、灌溉、温室、视频、环境子系统 | 待新增 changes |
+| M6: 生产化补齐 | 持续 | 补真实设备、安全、权限、测试和部署 | 待新增 changes |
+
+## Recommended Order
+
+1. `add-agricultural-object-model`
+2. `bind-scene-objects-to-business-objects`
+3. `add-farm-memory-layer`
+4. `add-agent-operation-trace`
+5. `add-asset-metadata-and-fidelity-routing`
+
+推荐优先做 1 和 2。没有对象模型和绑定层，后续 Agent、日报、资产路由和业务子系统都会缺少统一锚点。
+
+## Success Metrics
+
+- 3D 对象业务绑定率：核心演示场景中可观测对象绑定率不低于 90%。
+- 数据绑定完整率：核心业务对象至少绑定一个实时或日级指标。
+- Agent trace 完整率：所有 Agent 任务均有可查询 trace。
+- 资产元数据完整率：公开资产基础元数据完整率不低于 80%。
+- 缺失资产不中断率：语义搭建中缺 GLB 时能用占位模型继续生成场景。
+- 日报生成成功率：温室日报可基于对象、指标、事件和告警生成。
+
+## Acceptance Demonstrations
+
+- 典型提示词“搭建番茄温室，包含 20 株番茄、气象站、水泵、摄像头和传感器”能生成可加载场景、资产选择理由、布局结果和 trace。
+- 点选温室模型能看到温室对象、传感器、设备、指标、告警和事件。
+- 点选异常设备能看到最近指标、告警原因和建议动作。
+- 对一个完整场景运行校验，能列出缺绑定、缺数据、缺缩略图和缺元数据的问题。
+- 生成一份温室日报，内容包含环境摘要、设备状态、告警、灌溉事件和建议。
+
+## Open Questions
+
+1. 首个 MVP 场景是否固定为“番茄温室”，还是同时保留“综合农业园区”和“智慧示范田”？
+2. 真实设备联调优先级是否确定为气象站、土壤传感器、灌溉控制器？
+3. 关键植株高保真重建是否已有 F2DMAS 输出样本和采集规范？
+4. 是否需要在下一阶段引入正式登录、RBAC 和操作审计，还是先用演示级用户标识？
+5. 日报优先做温室日报、园区日报，还是告警处置报告？
+6. 资产元数据来源和许可证是否需要满足正式交付审计，还是先满足内部演示和论文验证？
+

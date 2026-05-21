@@ -4,6 +4,7 @@ export interface SemanticBuildRequest {
   message: string
   sceneName?: string
   mode?: 'preview' | 'append'
+  ownerKey?: string
   context?: SemanticBuildContext
 }
 
@@ -59,13 +60,66 @@ export interface BuildModel {
     category: string
     area: string
     layout: string
+    placeholder?: boolean
+    missingAssetKey?: string
+    generationTaskId?: string
   }
 }
 
 export interface MissingAsset {
   assetKey: string
   name: string
+  category?: string
   reason: string
+  prompt?: string
+  fallbackModelKey?: string
+  placementRefs?: string[]
+  referenceImage?: MissingAssetReferenceImage
+  generation?: MissingAssetGeneration
+}
+
+export interface MissingAssetReferenceImage {
+  status: 'missing' | 'resolved' | 'uploaded' | 'generated' | 'rejected' | string
+  source?: string
+  url?: string
+  candidates?: ReferenceImageCandidate[]
+}
+
+export interface ReferenceImageCandidate {
+  id: string
+  source: string
+  url: string
+  score: number
+}
+
+export interface MissingAssetGeneration {
+  enabled: boolean
+  taskId?: string
+  status: 'not_created' | 'waiting_image' | 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | string
+  progress?: number
+  resultUrl?: string
+  thumbnailUrl?: string
+  errorMessage?: string
+  reviewStatus?: string
+}
+
+export interface AssetJobResponse {
+  jobId: string
+  ownerKey: string
+  assetKey?: string
+  assetName?: string
+  prompt?: string
+  referenceImageSource?: string
+  status: string
+  progress: number
+  modelName?: string
+  modelUrl?: string
+  thumbUrl?: string
+  sourceImageUrl?: string
+  fileSize?: number
+  errorMsg?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface BuildSample {
@@ -129,6 +183,30 @@ export interface SemanticBuildResponse {
   planSource: SemanticPlanSource
   context: SemanticBuildContext
   rawLlmPlan?: string
+  agentTrace?: SceneAgentTrace
+}
+
+export interface SceneAgentTrace {
+  invocationId: string
+  agentName: string
+  framework: string
+  mode: string
+  startedAt: string
+  finishedAt: string
+  durationMs: number
+  userInput: string
+  tools: SceneAgentToolCall[]
+  finalSummary: string
+  error?: string
+}
+
+export interface SceneAgentToolCall {
+  name: string
+  status: string
+  durationMs: number
+  inputSummary?: string
+  outputSummary?: string
+  error?: string
 }
 
 export async function buildSemanticPlan(request: SemanticBuildRequest): Promise<SemanticBuildResponse> {
@@ -153,4 +231,31 @@ export async function fetchAssetSemantics(): Promise<AssetSemantic[]> {
     return res.data.data as AssetSemantic[]
   }
   return []
+}
+
+export async function createAssetGenerationJob(request: {
+  imageBase64: string
+  imageFileName: string
+  ownerKey: string
+  assetKey?: string
+  assetName?: string
+  prompt?: string
+  referenceImageSource?: string
+  resolution?: number
+  decimationTarget?: number
+  textureSize?: number
+}): Promise<AssetJobResponse> {
+  const res = await axios.post('/asset/jobs', request)
+  if (res.data?.code === 200) {
+    return res.data.data as AssetJobResponse
+  }
+  throw new Error(res.data?.data || '资产生成任务提交失败')
+}
+
+export async function fetchAssetGenerationJob(jobId: string): Promise<AssetJobResponse> {
+  const res = await axios.get(`/asset/jobs/${jobId}`)
+  if (res.data?.code === 200) {
+    return res.data.data as AssetJobResponse
+  }
+  throw new Error(res.data?.data || '资产生成任务查询失败')
 }

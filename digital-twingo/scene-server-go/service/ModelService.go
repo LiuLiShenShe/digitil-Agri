@@ -7,7 +7,7 @@ import (
 
 // ModelService handles model-related business logic.
 type ModelService struct {
-	dao        *mapper.ModelMapper
+	dao         *mapper.ModelMapper
 	assetMapper *mapper.AssetMapper
 }
 
@@ -67,6 +67,9 @@ func (s *ModelService) QueryAllWithAI(ownerKey string) vo.ResultVo {
 		})
 		for _, job := range aiJobs {
 			modelName := job.ModelName
+			if modelName == "" {
+				modelName = job.AssetName
+			}
 			if modelName == "" {
 				modelName = job.JobID
 			}

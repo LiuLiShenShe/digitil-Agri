@@ -45,6 +45,9 @@ func createJob(c *gin.Context) {
 	if req.ImageFileName == "" {
 		req.ImageFileName = "image.png"
 	}
+	if req.ReferenceImageSource == "" {
+		req.ReferenceImageSource = "upload"
+	}
 
 	result, err := assetService.CreateJob(&req)
 	if err != nil {

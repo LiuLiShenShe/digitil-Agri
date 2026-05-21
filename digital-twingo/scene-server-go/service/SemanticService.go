@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"scene-server-go/config"
+	"scene-server-go/mapper"
 	"scene-server-go/vo"
 )
 
@@ -77,7 +78,10 @@ const semanticSystemPrompt = `你是数字孪生平台的场景规划器。
 - 如果用户是在补全当前场景，优先利用 context 里的已有对象和当前选中对象。`
 
 type SemanticService struct {
-	httpClient *http.Client
+	httpClient        *http.Client
+	agent             *SceneBuilderAgent
+	referenceResolver *ReferenceImageResolver
+	assetMapper       *mapper.AssetMapper
 }
 
 type semanticLLMResponse struct {
@@ -114,7 +118,13 @@ type objectIntent struct {
 }
 
 func NewSemanticService() *SemanticService {
-	return &SemanticService{httpClient: &http.Client{}}
+	svc := &SemanticService{
+		httpClient:        &http.Client{},
+		referenceResolver: NewReferenceImageResolver(),
+		assetMapper:       mapper.NewAssetMapper(),
+	}
+	svc.agent = NewSceneBuilderAgent(svc)
+	return svc
 }
 
 func (s *SemanticService) BuildPlan(req vo.SemanticBuildRequest) vo.ResultVo {
@@ -135,57 +145,17 @@ func (s *SemanticService) BuildPlan(req vo.SemanticBuildRequest) vo.ResultVo {
 	context.SceneName = sceneName
 
 	catalog := semanticCatalog()
-	attempt := s.tryBuildPlanWithLLM(req, context, mode, catalog)
-	plan := attempt.plan
-	warnings := append([]string{}, attempt.warnings...)
-	planSource := attempt.source
-	rawLLMPlan := attempt.raw
-	if len(plan.Objects) == 0 {
-		rulePlan, ruleWarnings := s.buildRulePlan(message, sceneName, mode)
-		plan = rulePlan
-		planSource = vo.SemanticPlanSource{
-			Mode:     "rule",
-			Model:    "",
-			Provider: "",
-			Attempt:  attempt.source.Attempt,
-			Reason:   "LLM 不可用、返回无效 JSON 或解析失败，已回退到规则版",
-		}
-		rawLLMPlan = ""
-		warnings = append(warnings, ruleWarnings...)
-	}
-
-	normalizeScenePlan(&plan, sceneName, message, mode)
-
-	models, missing, layoutWarnings := solveLayout(plan.Objects, plan.Ground)
-	missing = mergeMissingAssets(attempt.missingAssets, missing)
-	warnings = append(warnings, layoutWarnings...)
-	missing = filterAvailableMissingAssets(missing, catalog)
-	warnings = filterMissingAssetWarnings(warnings, missing)
-	if len(models) == 0 {
-		warnings = append(warnings, "没有生成可加载模型，请补充温室、农田、仓库、道路等农业资产描述。")
-	}
-	if planSource.Mode == "" {
-		planSource = vo.SemanticPlanSource{
-			Mode:     "rule",
-			Model:    "",
-			Provider: "",
-			Attempt:  0,
-			Reason:   "规则版解析",
-		}
-	}
+	agentResult := s.agent.Build(sceneAgentRequest{
+		Request: req,
+		Context: context,
+		Mode:    mode,
+		Catalog: catalog,
+	})
+	s.enrichMissingAssetWorkflow(&agentResult.Response, req.OwnerKey, catalog)
 
 	return vo.ResultVo{
 		Code: 200,
-		Data: vo.SemanticBuildResponse{
-			ScenePlan:     plan,
-			Models:        models,
-			Warnings:      uniqueStrings(warnings),
-			MissingAssets: uniqueMissingAssets(missing),
-			Samples:       s.Samples(),
-			PlanSource:    planSource,
-			Context:       context,
-			RawLLMPlan:    rawLLMPlan,
-		},
+		Data: agentResult.Response,
 	}
 }
 
@@ -222,7 +192,7 @@ func (s *SemanticService) tryBuildPlanWithLLM(req vo.SemanticBuildRequest, conte
 	if config.AppConfig == nil || !config.AppConfig.LLM.Enabled {
 		return semanticLLMPlanAttempt{
 			plan:     vo.ScenePlan{},
-			warnings: []string{"LLM 未启用，已使用规则版解析。"},
+			warnings: []string{},
 			source: vo.SemanticPlanSource{
 				Mode:     "rule",
 				Model:    "",
@@ -235,7 +205,7 @@ func (s *SemanticService) tryBuildPlanWithLLM(req vo.SemanticBuildRequest, conte
 	if config.AppConfig.LLM.BaseURL == "" || config.AppConfig.LLM.APIKey == "" || config.AppConfig.LLM.Model == "" {
 		return semanticLLMPlanAttempt{
 			plan:     vo.ScenePlan{},
-			warnings: []string{"LLM 配置不完整，已使用规则版解析。"},
+			warnings: []string{},
 			source: vo.SemanticPlanSource{
 				Mode:     "rule",
 				Model:    "",
@@ -722,11 +692,20 @@ func uniqueMissingAssets(items []vo.MissingAssetVo) []vo.MissingAssetVo {
 	seen := map[string]bool{}
 	result := make([]vo.MissingAssetVo, 0, len(items))
 	for _, item := range items {
-		key := strings.TrimSpace(item.AssetKey) + "|" + strings.TrimSpace(item.Name)
+		assetKey := strings.TrimSpace(item.AssetKey)
+		key := assetKey + "|" + strings.TrimSpace(item.Name)
 		if key == "|" {
 			continue
 		}
 		if seen[key] {
+			if len(result) > 0 && assetKey != "" {
+				for i := range result {
+					if result[i].AssetKey == assetKey {
+						result[i].PlacementRefs = uniqueStrings(append(result[i].PlacementRefs, item.PlacementRefs...))
+						break
+					}
+				}
+			}
 			continue
 		}
 		seen[key] = true
@@ -745,6 +724,15 @@ func filterAvailableMissingAssets(items []vo.MissingAssetVo, catalog semanticAss
 		if asset, ok := catalog.byKey[assetKey]; ok && strings.TrimSpace(asset.URL) != "" {
 			continue
 		}
+		if asset, ok := catalog.byKey[assetKey]; ok {
+			item.AssetKey = asset.AssetKey
+			if strings.TrimSpace(item.Name) == "" {
+				item.Name = asset.Name
+			}
+			if strings.TrimSpace(item.Category) == "" {
+				item.Category = asset.Category
+			}
+		}
 		result = append(result, item)
 	}
 	return result
@@ -756,12 +744,131 @@ func filterMissingAssetWarnings(warnings []string, missing []vo.MissingAssetVo) 
 	}
 	result := make([]string, 0, len(warnings))
 	for _, warning := range warnings {
-		if strings.Contains(warning, "缺失") || strings.Contains(warning, "模型URL") || strings.Contains(warning, "没有可用模型") {
+		if strings.Contains(warning, "LLM 未启用") ||
+			strings.Contains(warning, "LLM 配置不完整") ||
+			strings.Contains(warning, "白名单工具流水线") ||
+			strings.Contains(warning, "跳过加载") ||
+			strings.Contains(warning, "缺失") ||
+			strings.Contains(warning, "模型URL") ||
+			strings.Contains(warning, "没有可用模型") {
 			continue
 		}
 		result = append(result, warning)
 	}
 	return result
+}
+
+func (s *SemanticService) enrichMissingAssetWorkflow(resp *vo.SemanticBuildResponse, ownerKey string, catalog semanticAssetCatalog) {
+	if resp == nil || len(resp.MissingAssets) == 0 {
+		return
+	}
+	ownerKey = strings.TrimSpace(ownerKey)
+	jobsByAsset := s.latestAssetJobsByKey(ownerKey)
+	for i := range resp.MissingAssets {
+		asset := &resp.MissingAssets[i]
+		if item, ok := catalog.byKey[asset.AssetKey]; ok {
+			if strings.TrimSpace(asset.Name) == "" {
+				asset.Name = item.Name
+			}
+			if strings.TrimSpace(asset.Category) == "" {
+				asset.Category = item.Category
+			}
+		}
+		if strings.TrimSpace(asset.Prompt) == "" {
+			asset.Prompt = buildMissingAssetPrompt(*asset)
+		}
+		if strings.TrimSpace(asset.FallbackModelKey) == "" {
+			asset.FallbackModelKey = "placeholder.device"
+		}
+
+		reference := s.referenceResolver.Resolve(*asset)
+		generation := vo.MissingAssetGenerationVo{
+			Enabled:      true,
+			Status:       missingGenerationStatusWaiting,
+			ReviewStatus: "personal_draft",
+		}
+		if reference.Status == missingReferenceStatusResolved {
+			generation.Status = missingGenerationStatusWaiting
+		}
+		if job, ok := jobsByAsset[asset.AssetKey]; ok {
+			reference.Status = missingReferenceStatusUploaded
+			reference.Source = firstNonEmptySemanticAsset(job.ReferenceImageSource, "upload")
+			reference.URL = job.SourceImageURL
+			generation.TaskID = job.JobID
+			generation.Status = mapAssetJobStatus(job.Status)
+			generation.Progress = job.Progress
+			generation.ResultURL = job.ModelURL
+			generation.ThumbnailURL = job.ThumbURL
+			generation.ErrorMessage = job.ErrorMsg
+			generation.ReviewStatus = reviewStatusForAssetJob(job.Status)
+		}
+		asset.ReferenceImage = &reference
+		asset.Generation = &generation
+		for j := range resp.Models {
+			model := &resp.Models[j]
+			if model.Meta.Placeholder && model.Meta.MissingAssetKey == asset.AssetKey {
+				model.Meta.GenerationTaskID = generation.TaskID
+			}
+		}
+	}
+}
+
+func (s *SemanticService) latestAssetJobsByKey(ownerKey string) map[string]mapper.AssetJobRecord {
+	result := map[string]mapper.AssetJobRecord{}
+	if ownerKey == "" || s.assetMapper == nil {
+		return result
+	}
+	jobs, err := s.assetMapper.ListByOwner(ownerKey)
+	if err != nil {
+		return result
+	}
+	for _, job := range jobs {
+		assetKey := strings.TrimSpace(job.AssetKey)
+		if assetKey == "" {
+			continue
+		}
+		if _, ok := result[assetKey]; !ok {
+			result[assetKey] = job
+		}
+	}
+	return result
+}
+
+func mapAssetJobStatus(status string) string {
+	switch strings.TrimSpace(status) {
+	case "queued":
+		return missingGenerationStatusQueued
+	case "running":
+		return missingGenerationStatusRunning
+	case "completed", "approved":
+		return missingGenerationStatusDone
+	case "failed", "rejected":
+		return missingGenerationStatusFailed
+	default:
+		return missingGenerationStatusWaiting
+	}
+}
+
+func reviewStatusForAssetJob(status string) string {
+	switch strings.TrimSpace(status) {
+	case "approved":
+		return "approved"
+	case "rejected":
+		return "rejected"
+	case "completed":
+		return "personal_draft"
+	default:
+		return ""
+	}
+}
+
+func firstNonEmptySemanticAsset(items ...string) string {
+	for _, item := range items {
+		if strings.TrimSpace(item) != "" {
+			return strings.TrimSpace(item)
+		}
+	}
+	return ""
 }
 
 func contextWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
@@ -923,10 +1030,39 @@ func solveLayout(objects []vo.ScenePlanObject, ground vo.GroundPlan) ([]vo.Build
 
 	for idx, obj := range objects {
 		if strings.TrimSpace(obj.URL) == "" {
+			points := layoutPoints(obj, ground, idx)
+			placementRefs := make([]string, 0, len(points))
+			for i, point := range points {
+				point = avoidCollision(point, occupied, obj.Size)
+				occupied = append(occupied, point)
+				placeholderID := fmt.Sprintf("%s_placeholder_%02d", obj.AssetKey, i+1)
+				placementRefs = append(placementRefs, placeholderID)
+				models = append(models, vo.BuildModel{
+					URL: "/scene/models/dir.glb",
+					Options: vo.BuildModelOptions{
+						Offset: point,
+						Scale:  obj.Scale,
+						Angle:  angleFor(obj, i),
+					},
+					Meta: vo.BuildModelMeta{
+						ID:              placeholderID,
+						Label:           numberedLabel(obj.Label+"占位", obj.Count, i),
+						AssetKey:        "placeholder.device",
+						Category:        obj.Category,
+						Area:            obj.Area,
+						Layout:          obj.Layout,
+						Placeholder:     true,
+						MissingAssetKey: obj.AssetKey,
+					},
+				})
+			}
 			missing = append(missing, vo.MissingAssetVo{
-				AssetKey: obj.AssetKey,
-				Name:     obj.Label,
-				Reason:   "mock 语义表已识别该资产，但当前模型库没有可用 GLB。",
+				AssetKey:         obj.AssetKey,
+				Name:             obj.Label,
+				Category:         obj.Category,
+				Reason:           "mock 语义表已识别该资产，但当前模型库没有可用 GLB，已放置占位模型并等待补资产。",
+				FallbackModelKey: "placeholder.device",
+				PlacementRefs:    placementRefs,
 			})
 			continue
 		}
@@ -955,7 +1091,7 @@ func solveLayout(objects []vo.ScenePlanObject, ground vo.GroundPlan) ([]vo.Build
 	}
 
 	if len(missing) > 0 {
-		warnings = append(warnings, "部分语义资产没有可用模型，已跳过加载并在缺失资产中列出。")
+		warnings = append(warnings, "部分语义资产没有可用 GLB，已放置占位模型并进入补资产流程。")
 	}
 	return models, missing, warnings
 }
@@ -1112,10 +1248,10 @@ func angleFor(obj vo.ScenePlanObject, index int) float64 {
 
 func inferSceneName(message string) string {
 	switch {
-	case semanticHasAny(message, "标准温室", "温室"):
-		return "标准温室场景"
 	case semanticHasAny(message, "综合园区", "农业园区", "示范园区"):
 		return "智慧农业示范园区"
+	case semanticHasAny(message, "标准温室", "温室"):
+		return "标准温室场景"
 	case semanticHasAny(message, "补设备", "补齐"):
 		return "设备补齐草稿"
 	default:
