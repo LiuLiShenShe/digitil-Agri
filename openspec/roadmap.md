@@ -21,6 +21,13 @@
 
 推荐优先做 1 和 2。没有对象模型和绑定层，后续 Agent、日报、资产路由和业务子系统都会缺少统一锚点。
 
+## Phase 0 Decisions
+
+- 首个 MVP 场景固定为“番茄温室”，对象清单为 1 个温室、20 株番茄、1 个气象站、1 个水泵/灌溉设备、1 个摄像头、1 个传感器组。
+- Phase 0 只确认基线和护栏，不实现 5 个 active changes 的业务能力，不将未完成任务标为已实现。
+- 真实设备控制、每日 GLB 重建和完整 RBAC 继续作为后续非 Phase 0 范围。
+- 基线状态以 `openspec/development-phases/phase0-baseline-report.md` 和 `python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md` 为准。
+
 ## Success Metrics
 
 - 3D 对象业务绑定率：核心演示场景中可观测对象绑定率不低于 90%。
@@ -46,4 +53,3 @@
 4. 是否需要在下一阶段引入正式登录、RBAC 和操作审计，还是先用演示级用户标识？
 5. 日报优先做温室日报、园区日报，还是告警处置报告？
 6. 资产元数据来源和许可证是否需要满足正式交付审计，还是先满足内部演示和论文验证？
-

@@ -8,6 +8,7 @@
 - `roadmap.md`：里程碑、近期变更顺序、成功指标、验收演示和待确认问题。
 - `designs/agri-digital-twin-agent-platform-design.md`：总体设计文档，串联对象底座、场景绑定、记忆层、Agent trace 和资产治理。
 - `development-phases/agri-digital-twin-agent-platform-phased-plan.md`：分阶段开发文档，定义 Phase 0-6 的目标、任务、验收和退出标准。
+- `development-phases/phase0-baseline-report.md`：Phase 0 基线收敛与开发护栏报告，记录 OpenSpec、前端、后端、数据、资产和 MVP 边界。
 - `work-plans/`：本轮文档生成使用的 superpowers 持久化计划和资料笔记。
 - `reference/references/`：外部资料、设计备忘和项目参考依据。
 - `changes/`：按 OpenSpec `proposal -> specs -> design -> tasks` 工作流组织的近期候选变更。
@@ -27,6 +28,14 @@
 这些能力来自下一阶段 PRD，当前系统尚未全部实现。为避免把未实现能力误标为当前基线，本次将它们放入 `openspec/changes/` 作为待实施变更；每个变更都包含 delta spec、设计和任务。实施完成后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。
 
 ## Validation
+
+Phase 0 护栏命令：
+
+```bash
+python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md
+```
+
+该命令内部会运行前端构建，不要与另一个 `npm run build` 并行执行，以免 Vite 清理 `dist/` 时产生目录竞争。
 
 已使用严格模式校验：
 

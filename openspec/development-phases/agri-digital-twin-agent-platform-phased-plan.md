@@ -73,20 +73,33 @@
 - `openspec/README.md`
 - `openspec/project.md`
 - `openspec/roadmap.md`
+- `openspec/development-phases/phase0-baseline-report.md`
 
 **Tasks:**
 
-- [ ] 阅读 `openspec/project.md`、`openspec/roadmap.md` 和 5 个 active changes，确认开发顺序。
-- [ ] 运行 `openspec validate --all --strict`，确保规格仍然通过。
-- [ ] 在后端目录运行 `go test ./...` 或 `go build -o scene-server`，记录当前失败项或通过状态。
-- [ ] 在前端目录运行 `npm run build`，记录当前失败项或通过状态。
-- [ ] 固定番茄温室 MVP 的演示对象清单：温室、20 株番茄、气象站、水泵、摄像头、传感器。
-- [ ] 标注当前数据来源状态：模拟、真实、过期、缺失。
-- [ ] 明确本轮不做真实设备控制、不做每日 GLB 重建、不做完整 RBAC。
+- [x] 阅读 `openspec/project.md`、`openspec/roadmap.md` 和 5 个 active changes，确认开发顺序。
+- [x] 运行 `openspec validate --all --strict`，确保规格仍然通过。
+- [x] 在后端目录运行 `go test ./...`，记录当前失败项或通过状态。
+- [x] 在前端目录运行 `npm run build`，记录当前失败项或通过状态。
+- [x] 固定番茄温室 MVP 的演示对象清单：1 个温室、20 株番茄、1 个气象站、1 个水泵/灌溉设备、1 个摄像头、1 个传感器组。
+- [x] 标注当前数据来源状态：模拟、真实、过期、缺失。
+- [x] 明确本轮不做真实设备控制、不做每日 GLB 重建、不做完整 RBAC。
+
+**Baseline Guard:**
+
+```bash
+python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md
+```
+
+该命令内部会运行前端构建，不要与另一个 `npm run build` 并行执行，以免 Vite 清理 `dist/` 时产生目录竞争。
+
+**Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。5 个 active changes 均保持 0 个实现任务完成，Phase 0 不将其标为已实现能力。
 
 **Verification:**
 
 ```bash
+python3 -m unittest discover -s openspec/tools -p 'test_*.py'
+python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md
 openspec validate --all --strict
 cd digital-twingo/scene-server-go && go test ./...
 cd digital-twingo/scene-design-v2 && npm run build
@@ -97,6 +110,7 @@ cd digital-twingo/scene-design-v2 && npm run build
 - OpenSpec 校验通过。
 - 前后端基线状态已记录。
 - 番茄温室 MVP 范围已固定。
+- Phase 0 护栏脚本可重复运行并生成报告。
 
 ## Phase 1: 农业对象底座
 
@@ -409,4 +423,3 @@ cd digital-twingo/scene-design-v2 && npm run build
 - 不将模拟数据伪装为真实数据。
 - 不把未实现能力移动到 canonical `openspec/specs/`。
 - 每个阶段完成后更新对应 change 的 `tasks.md` 复选框，或在实施记录中说明未勾选原因。
-
