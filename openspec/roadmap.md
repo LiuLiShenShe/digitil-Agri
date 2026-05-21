@@ -28,6 +28,16 @@
 - 真实设备控制、每日 GLB 重建和完整 RBAC 继续作为后续非 Phase 0 范围。
 - 基线状态以 `openspec/development-phases/phase0-baseline-report.md` 和 `python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md` 为准。
 
+## Current Change Progress
+
+| Change | Progress | 当前判定 |
+| --- | ---: | --- |
+| `add-agricultural-object-model` | 0/10 | 待实现，Phase 1 前置 |
+| `bind-scene-objects-to-business-objects` | 0/9 | 待实现，Phase 2 前置 |
+| `add-farm-memory-layer` | 0/10 | 待实现，Phase 3 前置 |
+| `add-agent-operation-trace` | 0/10 | 待实现，Phase 4 前置 |
+| `add-asset-metadata-and-fidelity-routing` | 0/10 | 待实现，Phase 5 前置 |
+
 ## Success Metrics
 
 - 3D 对象业务绑定率：核心演示场景中可观测对象绑定率不低于 90%。

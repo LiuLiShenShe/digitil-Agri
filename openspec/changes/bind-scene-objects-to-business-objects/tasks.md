@@ -1,3 +1,9 @@
+## Development Progress
+
+- Phase 0 baseline guard completed on 2026-05-21; see `openspec/development-phases/phase0-baseline-report.md`.
+- This change remains unimplemented: 0/9 implementation tasks complete.
+- Do not mark tasks below complete until scene-business binding code, data/API behavior, UI flow, and validation are implemented.
+
 ## 1. 绑定模型
 
 - [ ] 1.1 为场景对象增加主业务对象绑定字段或独立绑定表。
@@ -15,4 +21,3 @@
 - [ ] 3.1 实现场景绑定校验，识别缺业务绑定的核心对象。
 - [ ] 3.2 扩展校验结果，识别缺数据绑定和缺资产元数据的对象。
 - [ ] 3.3 验证 Greenhouse、Parcel、Plant、Sensor、Device、Camera 六类对象绑定链路可用。
-

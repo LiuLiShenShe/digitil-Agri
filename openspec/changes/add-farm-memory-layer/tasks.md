@@ -1,3 +1,9 @@
+## Development Progress
+
+- Phase 0 baseline guard completed on 2026-05-21; see `openspec/development-phases/phase0-baseline-report.md`.
+- This change remains unimplemented: 0/10 implementation tasks complete.
+- Do not mark tasks below complete until object-scoped metrics, time-series/event queries, report data source, and verification are implemented.
+
 ## 1. 指标与同步策略
 
 - [ ] 1.1 定义同步频率枚举：realtime、hourly、daily、milestone、static。
@@ -16,4 +22,3 @@
 - [ ] 3.1 聚合同一温室的环境、设备、告警和事件数据。
 - [ ] 3.2 提供 ReportAgent 或日报生成流程所需的只读数据接口。
 - [ ] 3.3 验证温室日报能引用环境摘要、设备状态、告警、灌溉事件和建议所需数据。
-

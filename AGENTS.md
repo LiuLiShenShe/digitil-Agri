@@ -55,6 +55,15 @@ Key files:
 - `openspec/roadmap.md`: milestone plan and active change order.
 - `openspec/changes/<change-id>/`: change proposals with `proposal.md`, `design.md`, `tasks.md`, and `specs/**/spec.md`.
 - `openspec/reference/references/`: research and design source material.
+- `openspec/development-phases/phase0-baseline-report.md`: Phase 0 baseline report for OpenSpec/frontend/backend/data/assets/MVP boundaries.
+- `openspec/tools/phase0_baseline_guard.py`: repeatable Phase 0 guard. It runs OpenSpec validation, backend tests, frontend build, active change status collection, asset counts, and data-source status reporting.
+
+Phase 0 status:
+
+- Phase 0 baseline convergence and development guardrails are complete as of 2026-05-21.
+- The baseline guard report is `openspec/development-phases/phase0-baseline-report.md`.
+- The first MVP is fixed to the tomato greenhouse: 1 greenhouse, 20 tomato plants, 1 weather station, 1 pump/irrigation device, 1 camera, and 1 sensor group.
+- The five active changes below are still implementation changes, not completed baseline capabilities. Do not mark their `tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
 
 Before implementing PRD-level product changes:
 
@@ -75,11 +84,19 @@ Before implementing PRD-level product changes:
 
 Current active changes:
 
-- `add-agricultural-object-model`
-- `bind-scene-objects-to-business-objects`
-- `add-farm-memory-layer`
-- `add-agent-operation-trace`
-- `add-asset-metadata-and-fidelity-routing`
+- `add-agricultural-object-model`: 0/10 implementation tasks complete.
+- `bind-scene-objects-to-business-objects`: 0/9 implementation tasks complete.
+- `add-farm-memory-layer`: 0/10 implementation tasks complete.
+- `add-agent-operation-trace`: 0/10 implementation tasks complete.
+- `add-asset-metadata-and-fidelity-routing`: 0/10 implementation tasks complete.
+
+Phase 0 guard command:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md
+```
+
+Do not run the Phase 0 guard in parallel with another frontend `npm run build`; both commands clean/write `digital-twingo/scene-design-v2/dist/`.
 
 ## Frontend Notes
 
@@ -155,4 +172,3 @@ If verification is not run, state that clearly in the final response.
 - Prefer existing project patterns over new abstractions.
 - Do not commit unless the user explicitly asks.
 - Do not add secrets to docs, code, prompts, logs, or Context7 queries.
-

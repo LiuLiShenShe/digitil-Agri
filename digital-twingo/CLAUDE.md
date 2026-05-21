@@ -9,7 +9,12 @@ This is a **3D Digital Twin platform** (智慧农业数字孪生平台) by Beiji
 - **scene-design-v2** — Vue 3 + TypeScript + Vite frontend for building and viewing 3D scenes (GLTF/GLB models, data visualization)
 - **scene-server-go** — Go + Gin backend providing scene storage, model list, data APIs, and AI 3D asset generation
 
-Current implementation phase: **Phase 3 (数据可视化组件库) completed** — real-time line chart, gauge, radar, 3D bar chart, heatmap, pie chart, WebSocket mock data stream, 3D data overlays.
+Current implementation phase: **Phase 0 baseline convergence for the next OpenSpec-driven roadmap is complete** as of 2026-05-21.
+
+- Previous app baseline still includes Phase 3 data visualization capabilities: real-time line chart, gauge, radar, 3D bar chart, heatmap, pie chart, WebSocket mock data stream, and 3D data overlays.
+- Next OpenSpec implementation changes remain unimplemented: `add-agricultural-object-model` (0/10), `bind-scene-objects-to-business-objects` (0/9), `add-farm-memory-layer` (0/10), `add-agent-operation-trace` (0/10), and `add-asset-metadata-and-fidelity-routing` (0/10).
+- Phase 0 artifacts live under `openspec/development-phases/phase0-baseline-report.md` and `openspec/tools/phase0_baseline_guard.py`.
+- Do not treat the object model, scene-business binding, object-scoped memory layer, expanded Agent trace, or asset metadata/fidelity routing as completed until the matching OpenSpec change tasks are implemented and verified.
 
 ## Common Commands
 
@@ -49,6 +54,14 @@ pip install trimesh
 cd /data/fj/数字孪生
 python3 convert_obj_to_glb.py    # Convert OBJ+MTL → GLB, outputs to scene-server-go/scene-assets/import/
 ```
+
+### Phase 0 Baseline Guard
+```
+cd /data/fj/数字孪生
+PYTHONDONTWRITEBYTECODE=1 python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md
+```
+
+The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run build`, active change status collection, asset counts, and data-source status reporting. Do not run it in parallel with another `npm run build`, because both commands clean/write `scene-design-v2/dist/`.
 
 ## Architecture
 

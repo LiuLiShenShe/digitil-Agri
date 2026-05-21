@@ -1,3 +1,9 @@
+## Development Progress
+
+- Phase 0 baseline guard completed on 2026-05-21; see `openspec/development-phases/phase0-baseline-report.md`.
+- This change remains unimplemented: 0/10 implementation tasks complete.
+- Do not mark tasks below complete until asset metadata, quality checks, fidelity routing, placeholder/job handling, and verification are implemented.
+
 ## 1. 资产元数据
 
 - [ ] 1.1 定义资产元数据字段：assetKey、分类、来源、许可、保真度、缩略图、GLB 地址、适用对象、质量信息、版本信息。
@@ -16,4 +22,3 @@
 - [ ] 3.2 为关键植株定义阶段性几何版本：苗期、营养生长期、开花期、结果期、成熟期。
 - [ ] 3.3 支持缺失资产创建生成任务并关联到场景占位对象。
 - [ ] 3.4 验证 AssetFidelityAgent 能为典型温室场景输出资产选择理由。
-

@@ -1,3 +1,9 @@
+## Development Progress
+
+- Phase 0 baseline guard completed on 2026-05-21; see `openspec/development-phases/phase0-baseline-report.md`.
+- This change remains unimplemented: 0/10 implementation tasks complete.
+- Do not mark tasks below complete until Agent role boundaries, tool whitelist, trace schema, fallback behavior, and verification are implemented.
+
 ## 1. Agent 分工
 
 - [ ] 1.1 定义 FarmTwinOrchestrator 的任务入口、handoff 和汇总职责。
@@ -16,4 +22,3 @@
 - [ ] 3.2 为语义搭建、资产路由、对象绑定和校验各准备一个可展示 trace。
 - [ ] 3.3 实现 LLM 未配置或调用失败时的确定性回退路径。
 - [ ] 3.4 验证 trace 不包含敏感原始 payload。
-

@@ -1,3 +1,9 @@
+## Development Progress
+
+- Phase 0 baseline guard completed on 2026-05-21; see `openspec/development-phases/phase0-baseline-report.md`.
+- This change remains unimplemented: 0/10 implementation tasks complete.
+- Do not mark tasks below complete until the agricultural object model code, data, APIs, and verification are implemented.
+
 ## 1. 数据模型
 
 - [ ] 1.1 定义农业对象类型枚举：Farm、Greenhouse、Parcel、CropRow、Plant、CropBatch、Sensor、Device、Camera、Operation、Observation。
@@ -16,4 +22,3 @@
 - [ ] 3.1 验证温室、地块、作物行、植株、传感器、设备和摄像头对象可查询。
 - [ ] 3.2 验证从温室对象能查到关联地块、作物批次、传感器、设备、摄像头和关键植株。
 - [ ] 3.3 验证对象数据质量状态能区分模拟、真实、过期和缺失数据。
-
