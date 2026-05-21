@@ -4,13 +4,17 @@ package vo
 // Extends SceneModelVoKey by embedding.
 type SceneModelVo struct {
 	SceneModelVoKey
-	URL     string  `json:"url" db:"url"`
-	Scale   float64 `json:"scale" db:"scale"`
-	OffsetX float64 `json:"offsetx" db:"offsetX"`
-	OffsetY float64 `json:"offsety" db:"offsetY"`
-	OffsetZ float64 `json:"offsetz" db:"offsetZ"`
-	Angle   int     `json:"angle" db:"angle"`
-	DataId  string  `json:"dataid" db:"dataId"`
+	URL              string  `json:"url" db:"url"`
+	Scale            float64 `json:"scale" db:"scale"`
+	OffsetX          float64 `json:"offsetx" db:"offsetX"`
+	OffsetY          float64 `json:"offsety" db:"offsetY"`
+	OffsetZ          float64 `json:"offsetz" db:"offsetZ"`
+	Angle            int     `json:"angle" db:"angle"`
+	DataId           string  `json:"dataid" db:"dataId"`
+	SceneObjectId    string  `json:"sceneObjectId" db:"sceneObjectId"`
+	BusinessObjectId string  `json:"businessObjectId" db:"businessObjectId"`
+	AssetKey         string  `json:"assetKey" db:"assetKey"`
+	IsDefaultBinding bool    `json:"isDefaultBinding" db:"isDefaultBinding"`
 }
 
 // ConvertToLoadObj converts the scene model into a load-suitable map,
@@ -23,6 +27,10 @@ func (s *SceneModelVo) ConvertToLoadObj() map[string]interface{} {
 	options["scale"] = s.Scale
 	options["angle"] = s.Angle
 	options["dataId"] = s.DataId
+	options["sceneObjectId"] = s.SceneObjectId
+	options["businessObjectId"] = s.BusinessObjectId
+	options["assetKey"] = s.AssetKey
+	options["isDefaultBinding"] = s.IsDefaultBinding
 
 	offset := make(map[string]interface{})
 	offset["x"] = s.OffsetX

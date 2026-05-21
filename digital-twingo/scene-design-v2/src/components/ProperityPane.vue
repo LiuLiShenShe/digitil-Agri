@@ -25,8 +25,30 @@
             <el-descriptions-item label="分类">{{ activeModelInfo.category }}</el-descriptions-item>
             <el-descriptions-item label="区域/布局">{{ activeModelInfo.placement }}</el-descriptions-item>
             <el-descriptions-item label="数据ID">{{ activeModelInfo.dataId }}</el-descriptions-item>
+            <el-descriptions-item label="场景对象">{{ activeModelInfo.sceneObjectId }}</el-descriptions-item>
+            <el-descriptions-item label="业务绑定">{{ businessStatusText }}</el-descriptions-item>
             <el-descriptions-item label="模型URL">{{ activeModelInfo.url }}</el-descriptions-item>
           </el-descriptions>
+        </el-collapse-item>
+
+        <el-collapse-item title="业务对象详情" name="business">
+          <div v-if="businessLoading" class="business-empty">加载中</div>
+          <div v-else-if="boundObject" class="business-card">
+            <div class="business-title">
+              <span>{{ boundObject.name }}</span>
+              <el-tag size="small" effect="dark">{{ boundObject.type }}</el-tag>
+            </div>
+            <el-descriptions :column="1" border size="small" class="prop-desc">
+              <el-descriptions-item label="对象ID">{{ boundObject.id }}</el-descriptions-item>
+              <el-descriptions-item label="状态">{{ boundObject.status }}</el-descriptions-item>
+              <el-descriptions-item label="数据质量">{{ qualityLabel(boundObject.dataQuality) }}</el-descriptions-item>
+              <el-descriptions-item label="指标摘要">{{ metricSummary }}</el-descriptions-item>
+              <el-descriptions-item label="历史趋势入口">{{ trendEntryText }}</el-descriptions-item>
+              <el-descriptions-item label="告警入口">{{ alertEntryText }}</el-descriptions-item>
+              <el-descriptions-item label="关联事件入口">{{ eventEntryText }}</el-descriptions-item>
+            </el-descriptions>
+          </div>
+          <div v-else class="business-empty">未绑定业务对象</div>
         </el-collapse-item>
 
         <el-collapse-item title="模型调整" name="1" v-if="$envCfg.editMode">
@@ -81,14 +103,21 @@ import { useDialogStore } from '@/stores/dialog'
 import { useGlobals } from '@/composables/useGlobals'
 import { today, nextDay } from '@/lib/utils'
 import type { Model } from '@/lib/model'
+import type { AgriculturalObject, ObjectRelationsResponse, DataQualityStatus } from '@/services/agriculturalObjectService'
+import { fetchAgriculturalObjectRelations } from '@/services/agriculturalObjectService'
+import { fetchSceneObjectBinding } from '@/services/sceneBusinessBindingService'
+import { Scene } from '@/lib/scene'
 
 const { $envCfg } = useGlobals()
 const modelStore = useModelStore()
 const dialogStore = useDialogStore()
 
-const activeNames = ref(['0', '2'])
+const activeNames = ref(['0', 'business', '2'])
 const scale = ref(1)
 const formDataId = ref('')
+const businessLoading = ref(false)
+const boundObject = ref<AgriculturalObject | null>(null)
+const boundRelations = ref<ObjectRelationsResponse | null>(null)
 const formData = reactive({
   offset: { x: 0, y: 0, z: 0 },
   angle: 0
@@ -96,6 +125,8 @@ const formData = reactive({
 
 const chart = ref<HTMLElement>()
 let myChart: any = null
+
+type BusinessBindableModel = Pick<Model, 'getSceneObjectId' | 'setBusinessBinding'>
 
 const activeObject = computed(() => modelStore.activeModel)
 const activeName = computed(() => activeObject.value?.name || '未选择')
@@ -111,8 +142,30 @@ const activeModelInfo = computed(() => {
     category: categoryLabel(meta.category),
     placement: [areaLabel(meta.area), layoutLabel(meta.layout)].filter(item => item !== '--').join(' / ') || '--',
     dataId: activeOptions.value?.dataId || '未绑定',
+    sceneObjectId: activeObject.value?.getSceneObjectId || '--',
     url: saved?.url || '--'
   }
+})
+const businessStatusText = computed(() => {
+  if (businessLoading.value) return '查询中'
+  return boundObject.value ? `${boundObject.value.name} (${boundObject.value.id})` : '未绑定业务对象'
+})
+const metricSummary = computed(() => {
+  const metrics = boundRelations.value?.relations?.metrics || []
+  if (metrics.length > 0) {
+    return metrics.map(item => item.targetLabel || item.targetId).filter(Boolean).join('、') || '已关联指标'
+  }
+  const metadataMetrics = boundObject.value?.metadata?.metrics
+  if (Array.isArray(metadataMetrics)) {
+    return metadataMetrics.join('、')
+  }
+  return boundObject.value?.dataQuality === 'missing' ? '缺数据绑定' : '暂无指标'
+})
+const trendEntryText = computed(() => metricSummary.value === '暂无指标' || metricSummary.value === '缺数据绑定' ? '暂无趋势入口' : '可查看历史趋势')
+const alertEntryText = computed(() => (boundRelations.value?.relations?.events || []).length > 0 ? '可查看关联告警/事件' : '暂无告警')
+const eventEntryText = computed(() => {
+  const events = boundRelations.value?.relations?.events || []
+  return events.length > 0 ? `${events.length} 条关联事件` : '暂无事件'
 })
 
 watch(() => modelStore.offset, (val) => {
@@ -122,6 +175,8 @@ watch(() => modelStore.offset, (val) => {
 }, { deep: true })
 
 watch(activeObject, (val) => {
+  boundObject.value = null
+  boundRelations.value = null
   if (!val) return
   const options = val.getOptions
   formDataId.value = options.dataId || ''
@@ -136,7 +191,8 @@ watch(activeObject, (val) => {
       buildChart()
     }
   })
-})
+  loadBusinessBinding(val as BusinessBindableModel)
+}, { immediate: true })
 
 function closePropPane() {
   dialogStore.showPropPane(false)
@@ -146,6 +202,31 @@ function bandDataId() {
   const model = activeObject.value
   if (model) {
     (modelStore.setActiveDataId as any)({ model, dataId: formDataId.value })
+  }
+}
+
+async function loadBusinessBinding(model: BusinessBindableModel) {
+  const sceneName = Scene.getInstance().getSceneName()
+  businessLoading.value = true
+  try {
+    const binding = await fetchSceneObjectBinding(sceneName, model.getSceneObjectId)
+    const object = binding?.object || null
+    boundObject.value = object
+    if (binding?.binding) {
+      model.setBusinessBinding({
+        businessObjectId: binding.binding.businessObjectId,
+        assetKey: binding.binding.assetKey,
+        isDefaultBinding: binding.binding.isDefaultBinding
+      })
+    }
+    if (object?.id) {
+      boundRelations.value = await fetchAgriculturalObjectRelations(object.id)
+    }
+  } catch {
+    boundObject.value = null
+    boundRelations.value = null
+  } finally {
+    businessLoading.value = false
   }
 }
 
@@ -161,6 +242,16 @@ function modelPropChange() {
 
 function formatSliderValue(val: number) {
   return val / 100
+}
+
+function qualityLabel(status: DataQualityStatus): string {
+  const labels: Record<DataQualityStatus, string> = {
+    real: '真实',
+    simulated: '模拟',
+    stale: '过期',
+    missing: '缺失'
+  }
+  return labels[status] || status
 }
 
 function guessAssetKey(url = '') {
@@ -346,5 +437,26 @@ function buildChart() {
 
 .data-rows {
   margin-bottom: 6px;
+}
+
+.business-card,
+.business-empty {
+  padding: 8px 0;
+}
+
+.business-empty {
+  color: #8fa1b2;
+  font-size: 13px;
+}
+
+.business-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #e8ecf1;
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>

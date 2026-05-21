@@ -3,6 +3,8 @@
 ### Requirement: Scene object primary business binding
 Each 3D scene object SHALL be able to bind zero or one primary agricultural business object.
 
+Each persisted scene object SHALL expose a stable `sceneObjectId` and MAY expose `businessObjectId`, `assetKey`, and `isDefaultBinding` metadata.
+
 #### Scenario: Bind greenhouse mesh to business object
 - **WHEN** an operator binds a greenhouse scene object to a Greenhouse business object
 - **THEN** the scene object SHALL persist the Greenhouse object ID as its primary business binding
@@ -13,6 +15,8 @@ Each 3D scene object SHALL be able to bind zero or one primary agricultural busi
 
 ### Requirement: Business object multi-scene binding
 Each agricultural business object SHALL be able to bind zero or more 3D scene objects for multi-view, multi-LOD, internal, external, or component-level representation.
+
+When multiple scene objects bind to one business object, the system SHALL return all bindings and SHOULD sort the default binding first when `isDefaultBinding` is available.
 
 #### Scenario: Locate all visual representations
 - **WHEN** a user requests scene representations for a business object
@@ -47,6 +51,8 @@ The system SHALL allow users to locate a business object in the 3D scene when on
 ### Requirement: Binding validation
 The system SHALL validate scene objects for missing business bindings, missing data bindings, and missing asset metadata.
 
+The validation result SHALL include total scene objects, bound scene objects, binding rate, verified core object types, missing core object types, and issue entries categorized as `missing_business_binding`, `missing_data_binding`, or `missing_asset_metadata`.
+
 #### Scenario: Validate core observable objects
 - **WHEN** the system validates a complete greenhouse scene
 - **THEN** it SHALL report missing business bindings for Greenhouse, Parcel, Plant, Sensor, Device, and Camera scene objects
@@ -54,4 +60,3 @@ The system SHALL validate scene objects for missing business bindings, missing d
 #### Scenario: Validator finds data or asset gaps
 - **WHEN** a bound scene object lacks related metrics or required asset metadata
 - **THEN** the validation result SHALL identify the object and the missing data or metadata category
-

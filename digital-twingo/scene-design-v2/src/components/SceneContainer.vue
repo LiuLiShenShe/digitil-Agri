@@ -21,7 +21,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Scene } from '@/lib/scene'
 import type { TerrainBrush } from '@/lib/terrainBrush'
 import { useModelStore } from '@/stores/model'
@@ -33,6 +35,8 @@ const { $envCfg, $bus } = useGlobals()
 const modelStore = useModelStore()
 const dialogStore = useDialogStore()
 const sceneStore = useSceneStore()
+const route = useRoute()
+const router = useRouter()
 
 const sceneContainerRef = ref<HTMLElement>()
 const contextMenuRef = ref<any>()
@@ -140,6 +144,8 @@ onMounted(() => {
   $bus.on('templateApply', (opts: { id: string }) => {
     scene.applyTemplate(opts.id)
   })
+
+  focusFromRouteQuery()
 })
 
 onUnmounted(() => {
@@ -158,6 +164,31 @@ function onClick(event: any) {
   const selectModel = scene.selectModel(event.clientX, event.clientY)
   modelStore.updateActiveModel(selectModel)
   dialogStore.showPropPane(selectModel != null)
+}
+
+async function focusFromRouteQuery() {
+  const sceneObjectId = typeof route.query.sceneObjectId === 'string' ? route.query.sceneObjectId : ''
+  if (!sceneObjectId) return
+  const sceneName = typeof route.query.scene === 'string' ? route.query.scene : ''
+  const scene = Scene.getInstance()
+  try {
+    if (sceneName && sceneName !== scene.getSceneName()) {
+      await scene.laodScene(sceneName)
+    }
+    await nextTick()
+    const model = scene.focusSceneObject(sceneObjectId)
+    if (model) {
+      modelStore.updateActiveModel(model)
+      dialogStore.showPropPane(true)
+      ElMessage.success('已定位到场景对象')
+    } else {
+      ElMessage.warning('当前场景无可定位模型')
+    }
+  } catch {
+    ElMessage.error('场景定位失败')
+  } finally {
+    router.replace({ path: '/', query: {} })
+  }
 }
 
 function onMouseDown(event: any) {

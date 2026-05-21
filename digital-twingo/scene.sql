@@ -122,23 +122,36 @@ CREATE TABLE `scenemodel`  (
   `offsetZ` double NULL DEFAULT NULL,
   `angle` int(0) NULL DEFAULT NULL,
   `dataId` varchar(16) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`sceneName`, `modelId`) USING BTREE
+  `sceneObjectId` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '',
+  `businessObjectId` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '',
+  `assetKey` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '',
+  `isDefaultBinding` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`sceneName`, `modelId`) USING BTREE,
+  KEY `idx_scene_object` (`sceneName`, `sceneObjectId`) USING BTREE,
+  KEY `idx_business_object` (`sceneName`, `businessObjectId`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of scenemodel
 -- ----------------------------
-INSERT INTO `scenemodel` VALUES ('煜邦科技园', 0, './models/factory.glb', 13.914, -147.52921560840915, -5.27, -249.96855821471252, 0, 'p001');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园', 1, './models/building01.glb', 270.42, 230.86249972542015, -0.15010354636238654, -174.33427919824817, 0, 'c001');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园', 2, './models/ypfac.glb', 25.1542, 156.1890044104609, -1.06, 153.23526690639673, 90, 'p002');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园', 3, './models/capitol.glb', 203.47, -47.961000813089896, -0.3827076969435579, -15.429421129378992, 0, 'p005');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 0, './models/factory.glb', 13.914, -147.52921560840915, -5.27, -249.96855821471252, 0, 'p001');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 1, './models/building01.glb', 270.42, 230.86249972542015, -0.15010354636238654, -174.33427919824817, 0, 'c001');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 2, './models/ypfac.glb', 10, 489.45804763939316, -1.06, 148.51908246653733, 90, 'p002');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 3, './models/capitol.glb', 203.47, -47.961000813089896, -0.3827076969435579, -15.429421129378992, 0, 'p005');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 4, './models/ypfac.glb', 0.83, 0, 0, 0, 0, '');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 5, './models/ypfac.glb', 0.83, 0, 0, 0, 0, '');
-INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 6, './models/ypfac.glb', 0.83, 0, 0, 0, 0, '');
+INSERT INTO `scenemodel` VALUES ('煜邦科技园', 0, './models/factory.glb', 13.914, -147.52921560840915, -5.27, -249.96855821471252, 0, 'p001', 'legacy-yupont-0', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园', 1, './models/building01.glb', 270.42, 230.86249972542015, -0.15010354636238654, -174.33427919824817, 0, 'c001', 'legacy-yupont-1', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园', 2, './models/ypfac.glb', 25.1542, 156.1890044104609, -1.06, 153.23526690639673, 90, 'p002', 'legacy-yupont-2', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园', 3, './models/capitol.glb', 203.47, -47.961000813089896, -0.3827076969435579, -15.429421129378992, 0, 'p005', 'legacy-yupont-3', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 0, './models/factory.glb', 13.914, -147.52921560840915, -5.27, -249.96855821471252, 0, 'p001', 'legacy-yupont55-0', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 1, './models/building01.glb', 270.42, 230.86249972542015, -0.15010354636238654, -174.33427919824817, 0, 'c001', 'legacy-yupont55-1', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 2, './models/ypfac.glb', 10, 489.45804763939316, -1.06, 148.51908246653733, 90, 'p002', 'legacy-yupont55-2', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 3, './models/capitol.glb', 203.47, -47.961000813089896, -0.3827076969435579, -15.429421129378992, 0, 'p005', 'legacy-yupont55-3', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 4, './models/ypfac.glb', 0.83, 0, 0, 0, 0, '', 'legacy-yupont55-4', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 5, './models/ypfac.glb', 0.83, 0, 0, 0, 0, '', 'legacy-yupont55-5', '', '', 0);
+INSERT INTO `scenemodel` VALUES ('煜邦科技园55', 6, './models/ypfac.glb', 0.83, 0, 0, 0, 0, '', 'legacy-yupont55-6', '', '', 0);
+INSERT INTO `sceneinfo` VALUES ('番茄温室 MVP', '{\"texturePath\":\"/textures/\",\"imgs\":[\"posx.jpg\",\"negx.jpg\",\"posy.jpg\",\"negy.jpg\",\"posz.jpg\",\"negz.jpg\"]}', '{\"color\":\"#ffffff\",\"intensity\":0.72}', '{\"color\":\"#ffffff\",\"intensity\":0.9,\"pos\":{\"x\":120,\"y\":360,\"z\":180}}', '{}', '{\"size\":400,\"division\":20,\"color1\":\"#4da3ff\",\"color2\":\"#314155\"}', '{\"color\":\"#385a3c\",\"turnOff\":false,\"texture\":\"/textures/grass.jpg\"}');
+INSERT INTO `scenemodel` VALUES ('番茄温室 MVP', 0, '/scene-assets/models/Silo_House.glb', 0.9, 0, 0, 0, 0, '', 'scene-gh-tomato-001', 'gh-tomato-001', 'greenhouse', 1);
+INSERT INTO `scenemodel` VALUES ('番茄温室 MVP', 1, '/scene-assets/models/Grass.glb', 1.0, -6, 0, 0, 0, '', 'scene-parcel-tomato-a', 'parcel-tomato-a', 'parcel', 1);
+INSERT INTO `scenemodel` VALUES ('番茄温室 MVP', 2, '/scene-assets/models/Tomato_Crop.glb', 0.8, -10.5, 0, -2, 0, '', 'scene-plant-tomato-001', 'plant-tomato-001', 'tomato', 1);
+INSERT INTO `scenemodel` VALUES ('番茄温室 MVP', 3, '/scene-assets/models/TowerWindmill.glb', 0.7, 0, 0, 8, 0, '', 'scene-sensor-greenhouse-001', 'sensor-greenhouse-001', 'sensor', 1);
+INSERT INTO `scenemodel` VALUES ('番茄温室 MVP', 4, '/scene-assets/models/Well.glb', 0.8, 8, 0, 3, 0, '', 'scene-device-irrigation-001', 'device-irrigation-001', 'irrigation', 1);
+INSERT INTO `scenemodel` VALUES ('番茄温室 MVP', 5, '/scene-assets/models/Windmill.glb', 0.5, 0, 0, -8, 0, '', 'scene-camera-greenhouse-001', 'camera-greenhouse-001', 'camera', 1);
 
 -- ----------------------------
 -- Table structure for skybox

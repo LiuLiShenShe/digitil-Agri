@@ -25,9 +25,15 @@ PRD 将“每个可观测对象都必须可查询”列为核心原则。现有�
 - 点选详情面板以业务对象为中心聚合状态、指标、事件、告警和资产信息。
 - 未绑定对象不阻断场景加载，但必须进入校验结果。
 
+## Implementation Notes
+
+- Phase 2 implementation stores binding fields directly on `scenemodel`: `sceneObjectId`, `businessObjectId`, `assetKey`, and `isDefaultBinding`.
+- The backend exposes scene binding lookup, update, delete, and validation endpoints under `/sceneApi/scene/bindings`.
+- Legacy rows without `sceneObjectId` are given a deterministic fallback ID from `sceneName + modelId` during load/query, and the next scene save persists a stable ID.
+- The seeded `番茄温室 MVP` scene binds Greenhouse, Parcel, Plant, Sensor, Device, and Camera objects for end-to-end validation.
+
 ## Risks / Trade-offs
 
 - 过早要求所有对象绑定会影响场景搭建效率，因此允许 0 绑定，但核心可观测对象必须纳入验收。
 - 同一个业务对象多场景表达会带来定位歧义，需要在定位结果中标注主视图或默认场景对象。
 - 场景对象历史数据可能缺少业务对象 ID，需要迁移或兼容显示为未绑定。
-

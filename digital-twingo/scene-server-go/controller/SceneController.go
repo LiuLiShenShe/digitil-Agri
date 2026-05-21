@@ -3,12 +3,14 @@ package controller
 import (
 	"net/http"
 	"scene-server-go/service"
+	"scene-server-go/vo"
 
 	"github.com/gin-gonic/gin"
 )
 
 var sceneService = service.NewSceneService()
 var sysConfigureService = service.NewSysConfigureService()
+var sceneBusinessBindingService = service.NewDefaultSceneBusinessBindingService()
 
 // RegisterSceneRoutes registers scene-related routes.
 func RegisterSceneRoutes(api *gin.RouterGroup) {
@@ -18,6 +20,11 @@ func RegisterSceneRoutes(api *gin.RouterGroup) {
 		scene.GET("/sceneList", sceneList)
 		scene.GET("/loadScene", loadScene)
 		scene.GET("/defaultScene", defaultScene)
+		scene.GET("/bindings/by-scene-object", getSceneBindingBySceneObject)
+		scene.GET("/bindings/by-business-object", getSceneBindingByBusinessObject)
+		scene.PUT("/bindings", updateSceneBinding)
+		scene.DELETE("/bindings", deleteSceneBinding)
+		scene.GET("/bindings/validate", validateSceneBindings)
 	}
 }
 
@@ -84,4 +91,46 @@ func defaultScene(c *gin.Context) {
 		sysConfigureService.SetConfig("defaultScene", sname)
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 200, "data": sname})
+}
+
+func getSceneBindingBySceneObject(c *gin.Context) {
+	result := sceneBusinessBindingService.LookupBySceneObject(c.Query("scene"), c.Query("sceneObjectId"))
+	writeSceneBindingResult(c, result)
+}
+
+func getSceneBindingByBusinessObject(c *gin.Context) {
+	result := sceneBusinessBindingService.LookupByBusinessObject(c.Query("scene"), c.Query("businessObjectId"))
+	writeSceneBindingResult(c, result)
+}
+
+func updateSceneBinding(c *gin.Context) {
+	var req vo.SceneBindingUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, vo.ResultVo{Code: 400, Data: err.Error()})
+		return
+	}
+	result := sceneBusinessBindingService.UpdateBinding(req)
+	writeSceneBindingResult(c, result)
+}
+
+func deleteSceneBinding(c *gin.Context) {
+	result := sceneBusinessBindingService.ClearBinding(c.Query("scene"), c.Query("sceneObjectId"))
+	writeSceneBindingResult(c, result)
+}
+
+func validateSceneBindings(c *gin.Context) {
+	result := sceneBusinessBindingService.ValidateScene(c.Query("scene"))
+	if result.Code != 200 {
+		c.JSON(http.StatusOK, vo.ResultVo{Code: result.Code, Data: result.Error})
+		return
+	}
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: result.Summary})
+}
+
+func writeSceneBindingResult(c *gin.Context, result vo.SceneBindingLookupResponse) {
+	if result.Code != 200 {
+		c.JSON(http.StatusOK, vo.ResultVo{Code: result.Code, Data: result.Error})
+		return
+	}
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: result})
 }

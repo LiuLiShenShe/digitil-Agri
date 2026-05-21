@@ -35,6 +35,8 @@
 - `scene-business-binding`：定义 3D 场景对象和业务对象的双向绑定、点选详情、业务对象定位和绑定校验。
 - `farm-memory-layer`：定义指标字典、同步频率、时序查询、事件查询、日级归档和 Agent 分析记录。
 
+当前实现状态：`agricultural-object-model` 和 `scene-business-binding` 已于 2026-05-21 完成；`farm-memory-layer`、`agent-operation-trace` 和 `asset-fidelity-routing` 仍处于 active change 待实现状态。
+
 ### P1: 智能体平台
 
 - `agent-operation-trace`：定义 FarmTwinOrchestrator、专用 Agent 分工、工具白名单、trace 结构、受控写入和确定性回退。
@@ -78,4 +80,3 @@ PRD 到 OpenSpec 的映射关系：
 - PRD 5.3 -> `farm-memory-layer`
 - PRD 5.4 -> `agent-operation-trace`
 - PRD 5.5 -> `asset-fidelity-routing`
-

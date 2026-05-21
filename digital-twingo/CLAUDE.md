@@ -9,13 +9,14 @@ This is a **3D Digital Twin platform** (智慧农业数字孪生平台) by Beiji
 - **scene-design-v2** — Vue 3 + TypeScript + Vite frontend for building and viewing 3D scenes (GLTF/GLB models, data visualization)
 - **scene-server-go** — Go + Gin backend providing scene storage, model list, data APIs, and AI 3D asset generation
 
-Current implementation phase: **Phase 1 agricultural object foundation is implemented** as of 2026-05-21.
+Current implementation phase: **Phase 2 scene-business binding is implemented** as of 2026-05-21. The next planned implementation phase is **Phase 3 farm memory layer**.
 
 - Previous app baseline still includes Phase 3 data visualization capabilities: real-time line chart, gauge, radar, 3D bar chart, heatmap, pie chart, WebSocket mock data stream, and 3D data overlays.
-- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10). Remaining changes are `bind-scene-objects-to-business-objects` (0/9), `add-farm-memory-layer` (0/10), `add-agent-operation-trace` (0/10), and `add-asset-metadata-and-fidelity-routing` (0/10).
+- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10) and `bind-scene-objects-to-business-objects` is complete (9/9). Remaining changes are `add-farm-memory-layer` (0/10), `add-agent-operation-trace` (0/10), and `add-asset-metadata-and-fidelity-routing` (0/10).
 - Phase 1 object foundation includes backend object lookup/relation APIs, tomato greenhouse MVP seed data, stable `object.lookup` / `object.relations` output shapes, and the frontend `/objects` debug entry. Archive `add-agricultural-object-model` after review.
+- Phase 2 scene-business binding includes stable `sceneObjectId`, `businessObjectId`, `assetKey`, and `isDefaultBinding` fields on `scenemodel`; `/scene/bindings/*` lookup/update/delete/validation APIs; 3D point-select business detail in `ProperityPane`; `/objects` scene location; and the `番茄温室 MVP` bound scene seed.
 - Phase 0 artifacts live under `openspec/development-phases/phase0-baseline-report.md` and `openspec/tools/phase0_baseline_guard.py`.
-- Do not treat scene-business binding, object-scoped memory layer, expanded Agent trace, or asset metadata/fidelity routing as completed until the matching OpenSpec change tasks are implemented and verified.
+- Do not treat object-scoped memory layer, expanded Agent trace, or asset metadata/fidelity routing as completed until the matching OpenSpec change tasks are implemented and verified.
 
 ## Common Commands
 
@@ -47,6 +48,7 @@ Swagger UI available at `http://localhost:9010/swagger/index.html` when swagger 
 MySQL 8.0 runs in Docker container `gofast-mysql` on port 3306 (root:root). Database: `scene`.
 ```
 docker exec gofast-mysql mysql -u root -proot scene < scene.sql    # Initialize schema
+docker exec gofast-mysql mysql -u root -proot scene < phase2_scene_business_binding_migration.sql    # Upgrade existing DB for scene-business binding
 ```
 
 ### Model Asset Conversion
@@ -88,7 +90,7 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 | File | Version | Purpose |
 |------|---------|---------|
 | `scene.ts` | v2.1 | Singleton `Scene` class manages the entire Three.js env: WebGL renderer, PerspectiveCamera, OrbitControls, lighting, skybox, ground, grid, model registry, animation loop, terrain, layers, batch ops, snap, templates, brush. Also supports secondary instances for mini-viewports. |
-| `model.ts` | v2.0 | `Model` class: GLTF/GLB loading, auto-fit scale/bounds via Box3, selection highlighting, animation support. |
+| `model.ts` | v2.0 | `Model` class: GLTF/GLB loading, auto-fit scale/bounds via Box3, selection highlighting, animation support, and stable `sceneObjectId` / primary business binding metadata. |
 | `dragcontrol.ts` | v2.1 | Custom drag handler with Y-lock, grid snap (`_snapConfig`), model-to-model alignment snap, multi-model drag (`_models[]`), visual snap indicator. |
 | `terrain.ts` | NEW Phase 2 | `TerrainImporter`: heightmap image → PlaneGeometry displacement, GeoJSON elevation parsing, vertex color gradient. |
 | `layerManager.ts` | NEW Phase 2 | `LayerManager`: model group/layer CRUD, visibility/lock toggle, model-layer mapping, JSON serialization. |
@@ -106,6 +108,8 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 - `initTerrainBrush()` — Get or create TerrainBrush instance
 - `getGroundIntersection(event)` — Raycast ground for brush UV coordinates
 - `toggleBoxSelect()` — Toggle rubber-band selection mode
+- `getSceneName()` — Return current scene name for binding queries
+- `findModelBySceneObjectId(sceneObjectId)` / `focusSceneObject(sceneObjectId)` — Locate and focus a model by stable scene object ID
 
 **IMPORTANT**: Snap config changes must be propagated to DragControl explicitly. `setSnapConfig()` and `toggleSnap()` both call `this.dragControl.setSnapConfig(this.snapConfig)`.
 
@@ -125,7 +129,7 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 |-----------|---------|---------|
 | `SceneContainer.vue` | v2.1 | WebGL canvas host + **Phase 2 event bus hub**: terrain, layer, box-select, brush, snap, template events all handled here. |
 | `HeadMenu.vue` | v2.1 | Top nav with logo + scene menu (new/save/open) + settings button. |
-| `ProperityPane.vue` | v2.1 | Left panel: model position/scale/rotation sliders, data binding, carbon chart. |
+| `ProperityPane.vue` | v2.1 | Left panel: model position/scale/rotation sliders, data binding, carbon chart, and bound agricultural object detail/status/metrics/event entries. |
 | `SceneSetting.vue` | v2.1 | Right panel: view switch, lights, background, **snap config, batch operations, box-select button, layer/terrain tool buttons**. |
 | `LayerPanel.vue` | NEW Phase 2 | Right panel (below settings): layer list with visibility/lock toggles, batch op buttons (select all in layer, move to layer, box select). Uses `dialogStore.layerPanel` for visibility. |
 | `TerrainToolbar.vue` | NEW Phase 2 | **Center-screen** floating panel: terrain import (heightmap/GeoJSON/DEM), texture brush config, scene template selector. Uses `dialogStore.terrainToolbar` for visibility. |
@@ -145,6 +149,7 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 
 | File | Version | Purpose |
 |------|---------|---------|
+| `sceneBusinessBindingService.ts` | NEW Phase 2 | HTTP service for `/scene/bindings/*`: scene-object lookup, business-object reverse lookup, binding update, and validation summary. |
 | `dataService.ts` | NEW Phase 3 | HTTP data fetching + mock historical data generator: `generateHistoricalData(sourceId, duration, interval)` returns 24h of sensor points with realistic random-walk values, `applyDayNightCycle()` adds circadian rhythm, `fetchSceneData()`, `fetchModelData()`. |
 | `websocket.ts` | NEW Phase 3 | `RealtimeDataService` (singleton via `getRealtimeService()`): WebSocket client with exponential-backoff auto-reconnect, subscription API (`subscribe`/`unsubscribe`), **built-in Mock engine** — when WS is unavailable, generates data every 2s via random-walk algorithm around realistic baselines per source type. Mock auto-disables when real WS connects. |
 
@@ -209,13 +214,16 @@ Gin framework, MySQL via sqlx, Spring Boot-idiom package structure. Port 9010, c
 1. Frontend loads scenes via `Scene.laodScene(name)` → `GET /sceneApi/scene/loadScene?scene=name`
 2. Backend returns scene config + model list
 3. Frontend reconstructs environment, loads models, assigns to layers
-4. Scene save dumps config + models + **layers** + **terrain brush data** as JSON → `POST /sceneApi/scene/saveScene`
+4. Scene save dumps config + models + **layers** + **terrain brush data** + scene-business binding metadata as JSON → `POST /sceneApi/scene/saveScene`
+5. 3D point-select reads `sceneObjectId` → `GET /sceneApi/scene/bindings/by-scene-object` → `ProperityPane` renders the bound agricultural object detail.
+6. `/objects` reverse location reads `businessObjectId` → `GET /sceneApi/scene/bindings/by-business-object` → routes back to `/` with `sceneObjectId` and focuses the model.
 
 ### Key Conventions
 - **Vite binary**: Always `./node_modules/.bin/vite`, never `npx vite`
 - API base URL via `VITE_BASEURL` env; frontend path is `/scene/`
 - Scene singleton initialized in `SceneContainer.mounted()` — must exist before any 3D ops
 - Model selection: raycasting → traverse parent chain → find `userData.type === 'targetObj'`
+- Scene-business binding identity uses `sceneObjectId`, not runtime `modelId`; runtime `modelId` is regenerated by the frontend and must not be used for durable business links.
 - All 3D coordinates use right-hand Y-up system (Three.js standard)
 - Mock mode: `VITE_MOCK=true` → no `axios.defaults.baseURL`; Production: `VITE_MOCK=false` → baseURL from env
 - `laodScene` method name has a typo (kept for backward compatibility)

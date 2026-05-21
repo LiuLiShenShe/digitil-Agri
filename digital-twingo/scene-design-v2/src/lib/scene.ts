@@ -913,6 +913,9 @@ export class Scene {
     if (!this.sceneModels[modelId]) return
     const srcModel = this.sceneModels[modelId]
     const saveData = srcModel.saveModel()
+    delete saveData.options.sceneObjectId
+    saveData.options.businessObjectId = ''
+    saveData.options.isDefaultBinding = false
     saveData.options.offset = {
       x: srcModel.rootObject.position.x + 20,
       y: srcModel.rootObject.position.y,
@@ -929,6 +932,38 @@ export class Scene {
     const pos = viewPositions[view]
     this.camera.position.set(pos[0], pos[1], pos[2])
     this.controls.target.set(0, 0, 0)
+  }
+
+  public getSceneName(): string {
+    return this.sceneArgs.sceneName
+  }
+
+  public focusSceneObject(sceneObjectId: string): Model | null {
+    const model = this.findModelBySceneObjectId(sceneObjectId)
+    if (!model) return null
+    if (this.selectObject) {
+      this.selectObject.deselect()
+    }
+    this.clearSelection()
+    model.select()
+    this.selectObject = model
+    const position = model.rootObject.position
+    this.controls.target.set(position.x, position.y, position.z)
+    this.camera.position.set(position.x + 180, position.y + 120, position.z + 180)
+    this.controls.update()
+    const modelStore = useModelStore()
+    modelStore.updateActiveModel(model)
+    return model
+  }
+
+  public findModelBySceneObjectId(sceneObjectId: string): Model | null {
+    for (const modelId in this.sceneModels) {
+      const model = this.sceneModels[modelId] as Model
+      if (model.getSceneObjectId === sceneObjectId) {
+        return model
+      }
+    }
+    return null
   }
 
   public clear() {
@@ -1040,12 +1075,15 @@ export class Scene {
 
       const models = res.data.data.models
       if (models && models.length > 0) {
-        const loadPromises = models.map((model: any) => {
-          return this.loadModel(model.url, model.options).then((m) => {
+        const loadPromises = models.map(async (model: any) => {
+          try {
+            const m = await this.loadModel(model.url, model.options)
             if (model.layerId) {
               this.layerManager.addModelToLayer(m.getModelId, model.layerId)
             }
-          })
+          } catch (err) {
+            console.warn('Scene model load skipped:', model.url, err)
+          }
         })
         return Promise.all(loadPromises).then(() => {
           this.refreshLayerStore()

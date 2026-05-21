@@ -43,9 +43,32 @@
             <h2>{{ selectedObject.name }}</h2>
             <p>{{ selectedObject.id }}</p>
           </div>
-          <el-tag :type="qualityTagType(selectedObject.dataQuality)" effect="dark">
-            {{ qualityLabel(selectedObject.dataQuality) }}
-          </el-tag>
+          <div class="detail-actions">
+            <el-tag :type="qualityTagType(selectedObject.dataQuality)" effect="dark">
+              {{ qualityLabel(selectedObject.dataQuality) }}
+            </el-tag>
+            <el-button size="small" plain @click="locateSelectedObject">定位到场景</el-button>
+          </div>
+        </div>
+
+        <div class="scene-binding-panel">
+          <div class="group-title">
+            <span>3D 场景绑定</span>
+            <strong>{{ sceneBindings.length }}</strong>
+          </div>
+          <div v-if="bindingLoading" class="scene-binding-empty">查询中</div>
+          <div v-else-if="sceneBindings.length === 0" class="scene-binding-empty">无可定位场景对象</div>
+          <div v-else class="scene-binding-list">
+            <button
+              v-for="binding in sceneBindings"
+              :key="binding.sceneObjectId"
+              class="scene-binding-chip"
+              @click="locateBinding(binding.sceneObjectId)"
+            >
+              <span>{{ binding.sceneObjectId }}</span>
+              <small>{{ binding.assetKey || '未设置资产类型' }}{{ binding.isDefaultBinding ? ' / 默认' : '' }}</small>
+            </button>
+          </div>
         </div>
 
         <div class="field-grid">
@@ -123,13 +146,17 @@ import {
   type ObjectRelationsResponse,
   type RelatedObject
 } from '@/services/agriculturalObjectService'
+import { fetchBusinessObjectSceneBindings, type SceneBusinessBinding } from '@/services/sceneBusinessBindingService'
 
 const router = useRouter()
 const loading = ref(false)
+const bindingLoading = ref(false)
 const objects = ref<AgriculturalObject[]>([])
 const selectedType = ref<AgriculturalObjectType | ''>('')
 const selectedObject = ref<AgriculturalObject | null>(null)
 const relations = ref<ObjectRelationsResponse | null>(null)
+const sceneBindings = ref<SceneBusinessBinding[]>([])
+const defaultSceneName = '番茄温室 MVP'
 
 const objectTypes: AgriculturalObjectType[] = [
   'Farm',
@@ -180,11 +207,43 @@ async function selectObject(id: string) {
     ])
     selectedObject.value = object
     relations.value = objectRelations
+    await loadSceneBindings(id)
   } catch {
     ElMessage.error('农业对象详情加载失败')
   } finally {
     loading.value = false
   }
+}
+
+async function loadSceneBindings(objectId: string) {
+  bindingLoading.value = true
+  try {
+    const bindings = await fetchBusinessObjectSceneBindings(defaultSceneName, objectId)
+    sceneBindings.value = bindings.sort((a, b) => Number(b.isDefaultBinding) - Number(a.isDefaultBinding))
+  } catch {
+    sceneBindings.value = []
+  } finally {
+    bindingLoading.value = false
+  }
+}
+
+function locateSelectedObject() {
+  const target = sceneBindings.value[0]
+  if (!target) {
+    ElMessage.warning('当前对象没有可定位的场景对象')
+    return
+  }
+  locateBinding(target.sceneObjectId)
+}
+
+function locateBinding(sceneObjectId: string) {
+  router.push({
+    path: '/',
+    query: {
+      scene: defaultSceneName,
+      sceneObjectId
+    }
+  })
 }
 
 function qualityLabel(status: DataQualityStatus): string {
@@ -247,6 +306,7 @@ onMounted(loadObjects)
 .object-header,
 .brand-block,
 .header-actions,
+.detail-actions,
 .detail-head,
 .group-title {
   display: flex;
@@ -372,6 +432,10 @@ onMounted(loadObjects)
   margin-bottom: 14px;
 }
 
+.detail-actions {
+  gap: 8px;
+}
+
 .detail-head h2 {
   font-size: 20px;
 }
@@ -385,6 +449,7 @@ onMounted(loadObjects)
 
 .field-item,
 .relation-group,
+.scene-binding-panel,
 .json-block {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
@@ -421,6 +486,7 @@ onMounted(loadObjects)
 }
 
 .relation-group,
+.scene-binding-panel,
 .json-block {
   padding: 12px;
 }
@@ -438,6 +504,43 @@ onMounted(loadObjects)
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.scene-binding-panel {
+  margin-bottom: 14px;
+}
+
+.scene-binding-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scene-binding-chip {
+  min-width: 190px;
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 1px solid rgba(77, 163, 255, 0.28);
+  border-radius: 6px;
+  color: #d7e1ea;
+  background: rgba(77, 163, 255, 0.1);
+  cursor: pointer;
+  text-align: left;
+}
+
+.scene-binding-chip span,
+.scene-binding-chip small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-binding-chip small,
+.scene-binding-empty {
+  margin-top: 3px;
+  color: #8fa1b2;
+  font-size: 12px;
 }
 
 .relation-chip {

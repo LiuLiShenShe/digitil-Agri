@@ -95,7 +95,7 @@ python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/developm
 
 **Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。Phase 0 当时保持 5 个 active changes 均为 0 个实现任务完成，不将其标为已实现能力。
 
-**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10，待 review 后归档到 canonical specs。
+**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9。二者待 review 后归档到 canonical specs。
 
 **Verification:**
 
@@ -182,26 +182,28 @@ cd digital-twingo/scene-server-go && go test ./...
 
 **Backend Tasks:**
 
-- [ ] 为场景对象增加主业务对象绑定字段或独立绑定表。
-- [ ] 支持一个业务对象关联多个场景对象。
-- [ ] 定义绑定关系导入、保存、加载和删除规则。
-- [ ] 暴露 `sceneObjectId -> businessObjectId` 查询。
-- [ ] 暴露 `businessObjectId -> sceneObjectIds` 查询。
-- [ ] 增加场景绑定校验接口，识别缺业务绑定、缺数据绑定、缺资产元数据。
+- [x] 为场景对象增加主业务对象绑定字段或独立绑定表。
+- [x] 支持一个业务对象关联多个场景对象。
+- [x] 定义绑定关系导入、保存、加载和删除规则。
+- [x] 暴露 `sceneObjectId -> businessObjectId` 查询。
+- [x] 暴露 `businessObjectId -> sceneObjectIds` 查询。
+- [x] 增加场景绑定校验接口，识别缺业务绑定、缺数据绑定、缺资产元数据。
 
 **Frontend Tasks:**
 
-- [ ] 在 3D 点选流程中读取 sceneObjectId，并查询业务对象绑定。
-- [ ] 在对象详情面板中展示业务对象、状态、指标摘要、历史趋势入口、告警和关联事件入口。
-- [ ] 在业务对象列表中增加“定位到场景对象”动作。
-- [ ] 对多个场景对象绑定同一业务对象的情况，提供默认聚焦或候选选择。
-- [ ] 对未绑定对象显示“未绑定业务对象”，不阻断场景操作。
+- [x] 在 3D 点选流程中读取 sceneObjectId，并查询业务对象绑定。
+- [x] 在对象详情面板中展示业务对象、状态、指标摘要、历史趋势入口、告警和关联事件入口。
+- [x] 在业务对象列表中增加“定位到场景对象”动作。
+- [x] 对多个场景对象绑定同一业务对象的情况，提供默认聚焦或候选选择。
+- [x] 对未绑定对象显示“未绑定业务对象”，不阻断场景操作。
 
 **Validation Tasks:**
 
-- [ ] 校验 Greenhouse、Parcel、Plant、Sensor、Device、Camera 六类对象绑定链路。
-- [ ] 输出核心演示场景 3D 对象业务绑定率。
-- [ ] 将未绑定、缺数据绑定、缺资产元数据的问题纳入校验结果。
+- [x] 校验 Greenhouse、Parcel、Plant、Sensor、Device、Camera 六类对象绑定链路。
+- [x] 输出核心演示场景 3D 对象业务绑定率。
+- [x] 将未绑定、缺数据绑定、缺资产元数据的问题纳入校验结果。
+
+**Implementation Result:** 2026-05-21 已实现。`scenemodel` 扩展 `sceneObjectId`、`businessObjectId`、`assetKey`、`isDefaultBinding`；后端新增 `/scene/bindings/*` 查询、更新、删除、校验接口；前端点选属性面板展示业务对象详情，`/objects` 支持定位到 3D 场景对象；新增 `番茄温室 MVP` 种子场景和 Phase 2 迁移脚本。
 
 **Verification:**
 
@@ -404,7 +406,7 @@ cd digital-twingo/scene-design-v2 && npm run build
 **Exit Criteria:**
 
 - 番茄温室 MVP 端到端演示通过。
-- 5 个 active changes 的任务状态已更新；其中 `add-agricultural-object-model` 已完成，剩余 4 个仍待实现。
+- 5 个 active changes 的任务状态已更新；其中 `add-agricultural-object-model` 和 `bind-scene-objects-to-business-objects` 已完成，剩余 3 个仍待实现。
 - 具备归档到 canonical specs 的条件。
 
 ## Cross-Phase Acceptance Matrix

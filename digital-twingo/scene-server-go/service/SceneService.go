@@ -1,9 +1,11 @@
 package service
 
 import (
+	"database/sql"
 	"encoding/json"
 	"scene-server-go/mapper"
 	"scene-server-go/vo"
+	"strings"
 )
 
 // SceneService handles scene-related business logic.
@@ -39,7 +41,8 @@ func (s *SceneService) insertOrUpdate(sceneinfoVo *vo.SceneinfoVo) vo.ResultVo {
 }
 
 func (s *SceneService) LoadScene(sceneName string) vo.ResultVo {
-	sceneVo, err := s.sceneinfoMapper.SelectByPrimaryKey(sceneName)
+	sceneName = strings.TrimSpace(sceneName)
+	sceneVo, resolvedSceneName, err := s.selectSceneInfoByCompatibleName(sceneName)
 	if err != nil {
 		return vo.ResultVo{Code: 999, Data: err.Error()}
 	}
@@ -47,18 +50,33 @@ func (s *SceneService) LoadScene(sceneName string) vo.ResultVo {
 	rtData := make(map[string]interface{})
 	rtData["scene"] = sceneVo.ConvertToLoadObj()
 
-	models, err := s.sceneModelMapper.SelectBySceneName(sceneName)
+	models, err := s.sceneModelMapper.SelectBySceneName(resolvedSceneName)
 	if err != nil {
 		return vo.ResultVo{Code: 999, Data: err.Error()}
 	}
 
 	loadModels := make([]map[string]interface{}, 0)
 	for _, model := range models {
+		EnsureSceneObjectID(&model)
 		loadModels = append(loadModels, model.ConvertToLoadObj())
 	}
 	rtData["models"] = loadModels
 
 	return vo.ResultVo{Code: 200, Data: rtData}
+}
+
+func (s *SceneService) selectSceneInfoByCompatibleName(sceneName string) (*vo.SceneinfoVo, string, error) {
+	var firstErr error
+	for _, candidate := range compatibleSceneNames(sceneName) {
+		sceneVo, err := s.sceneinfoMapper.SelectByPrimaryKey(candidate)
+		if err == nil {
+			return sceneVo, candidate, nil
+		}
+		if firstErr == nil || err != sql.ErrNoRows {
+			firstErr = err
+		}
+	}
+	return nil, "", firstErr
 }
 
 // SaveScene saves a complete scene with its models.
@@ -115,6 +133,21 @@ func (s *SceneService) SaveScene(sceneData map[string]interface{}) vo.ResultVo {
 
 		if dataId, ok := options["dataId"].(string); ok {
 			vm.DataId = dataId
+		}
+		if sceneObjectId, ok := options["sceneObjectId"].(string); ok {
+			vm.SceneObjectId = sceneObjectId
+		}
+		if vm.SceneObjectId == "" {
+			vm.SceneObjectId = FallbackSceneObjectID(sceneName, idx)
+		}
+		if businessObjectId, ok := options["businessObjectId"].(string); ok {
+			vm.BusinessObjectId = businessObjectId
+		}
+		if assetKey, ok := options["assetKey"].(string); ok {
+			vm.AssetKey = assetKey
+		}
+		if isDefaultBinding, ok := options["isDefaultBinding"].(bool); ok {
+			vm.IsDefaultBinding = isDefaultBinding
 		}
 
 		if offset, ok := options["offset"].(map[string]interface{}); ok {

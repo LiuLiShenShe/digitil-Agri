@@ -28,14 +28,14 @@
 - Phase 0 基线收敛与开发护栏已于 2026-05-21 完成，报告见 `development-phases/phase0-baseline-report.md`。
 - 当前 active changes 进度：
   - `add-agricultural-object-model`: 10/10，已实现，待归档到 canonical specs
-  - `bind-scene-objects-to-business-objects`: 0/9
+  - `bind-scene-objects-to-business-objects`: 9/9，已实现，待归档到 canonical specs
   - `add-farm-memory-layer`: 0/10
   - `add-agent-operation-trace`: 0/10
   - `add-asset-metadata-and-fidelity-routing`: 0/10
 
 ## Why Changes Instead Of Canonical Specs
 
-这些能力来自下一阶段 PRD，当前系统尚未全部实现。为避免把未实现能力误标为当前基线，本次将它们放入 `openspec/changes/` 作为待实施变更；每个变更都包含 delta spec、设计和任务。`add-agricultural-object-model` 已经实现，完成 review 后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。
+这些能力来自下一阶段 PRD，当前系统尚未全部实现。为避免把未实现能力误标为当前基线，本次将它们放入 `openspec/changes/` 作为待实施变更；每个变更都包含 delta spec、设计和任务。`add-agricultural-object-model` 和 `bind-scene-objects-to-business-objects` 已经实现，完成 review 后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。
 
 ## Validation
 

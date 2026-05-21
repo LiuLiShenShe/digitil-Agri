@@ -47,6 +47,9 @@ export class Model {
   public loadModel(url: string, options: any, onProgress?: (pct: number) => void): Promise<Model> {
     this.url = url
     this.options = _.cloneDeep(options)
+    if (!this.options.sceneObjectId) {
+      this.options.sceneObjectId = uuid()
+    }
     if (url.endsWith('.gltf') || url.endsWith('.glb')) {
       return new Promise((resolve, reject) => {
         this.loadGltfModel(url, onProgress).then((modelObj: any) => {
@@ -87,6 +90,38 @@ export class Model {
 
   public get getModelId(): string {
     return this.modelId
+  }
+
+  public get getSceneObjectId(): string {
+    if (!this.options.sceneObjectId) {
+      this.options.sceneObjectId = uuid()
+    }
+    return this.options.sceneObjectId
+  }
+
+  public get getBusinessObjectId(): string {
+    return this.options.businessObjectId || ''
+  }
+
+  public get getAssetKey(): string {
+    return this.options.assetKey || this.options.meta?.assetKey || guessAssetKeyFromUrl(this.url)
+  }
+
+  public setBusinessBinding(binding: { businessObjectId?: string; assetKey?: string; isDefaultBinding?: boolean }) {
+    const nextBusinessObjectId = binding.businessObjectId || ''
+    const nextAssetKey = binding.assetKey || this.getAssetKey
+    const nextIsDefaultBinding = Boolean(binding.isDefaultBinding)
+    if (
+      this.options.businessObjectId === nextBusinessObjectId &&
+      this.options.assetKey === nextAssetKey &&
+      Boolean(this.options.isDefaultBinding) === nextIsDefaultBinding
+    ) {
+      return
+    }
+    this.options.businessObjectId = nextBusinessObjectId
+    this.options.assetKey = nextAssetKey
+    this.options.isDefaultBinding = nextIsDefaultBinding
+    useModelStore().updateActiveModel(this)
   }
 
   public select() {
@@ -171,6 +206,7 @@ export class Model {
     this.rootObject.add(modelObj.obj)
     this.rootObject.userData.type = 'targetObj'
     this.rootObject.userData.modelId = this.modelId
+    this.rootObject.userData.sceneObjectId = this.getSceneObjectId
     this.setObjctCastShadow(this.rootObject)
 
     const obj = this.rootObject
@@ -258,6 +294,16 @@ export class Model {
       })
     })
   }
+}
+
+function guessAssetKeyFromUrl(url = '') {
+  if (url.includes('Silo_House') || url.includes('greenhouse')) return 'greenhouse'
+  if (url.includes('Tomato')) return 'tomato'
+  if (url.includes('sensor')) return 'sensor'
+  if (url.includes('Well') || url.includes('irrigation')) return 'irrigation'
+  if (url.includes('camera')) return 'camera'
+  if (url.includes('TowerWindmill')) return 'weather_station'
+  return ''
 }
 
 function getModelUrlCandidates(url: string) {
