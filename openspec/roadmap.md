@@ -19,12 +19,13 @@
 4. `add-agent-operation-trace`
 5. `add-asset-metadata-and-fidelity-routing`
 
-推荐优先做 1 和 2。没有对象模型和绑定层，后续 Agent、日报、资产路由和业务子系统都会缺少统一锚点。
+`add-agricultural-object-model` 已完成。下一步优先推进 `bind-scene-objects-to-business-objects`；没有绑定层，后续 Agent、日报、资产路由和业务子系统仍会缺少 3D 场景到业务对象的统一锚点。
 
 ## Phase 0 Decisions
 
 - 首个 MVP 场景固定为“番茄温室”，对象清单为 1 个温室、20 株番茄、1 个气象站、1 个水泵/灌溉设备、1 个摄像头、1 个传感器组。
-- Phase 0 只确认基线和护栏，不实现 5 个 active changes 的业务能力，不将未完成任务标为已实现。
+- Phase 0 只确认基线和护栏，当时不实现 5 个 active changes 的业务能力，不将未完成任务标为已实现。
+- Phase 1 已在 2026-05-21 实现 `add-agricultural-object-model`，当前仍保留在 changes 区等待归档。
 - 真实设备控制、每日 GLB 重建和完整 RBAC 继续作为后续非 Phase 0 范围。
 - 基线状态以 `openspec/development-phases/phase0-baseline-report.md` 和 `python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md` 为准。
 
@@ -32,7 +33,7 @@
 
 | Change | Progress | 当前判定 |
 | --- | ---: | --- |
-| `add-agricultural-object-model` | 0/10 | 待实现，Phase 1 前置 |
+| `add-agricultural-object-model` | 10/10 | 已实现，待归档 |
 | `bind-scene-objects-to-business-objects` | 0/9 | 待实现，Phase 2 前置 |
 | `add-farm-memory-layer` | 0/10 | 待实现，Phase 3 前置 |
 | `add-agent-operation-trace` | 0/10 | 待实现，Phase 4 前置 |

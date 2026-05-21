@@ -93,7 +93,9 @@ python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/developm
 
 该命令内部会运行前端构建，不要与另一个 `npm run build` 并行执行，以免 Vite 清理 `dist/` 时产生目录竞争。
 
-**Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。5 个 active changes 均保持 0 个实现任务完成，Phase 0 不将其标为已实现能力。
+**Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。Phase 0 当时保持 5 个 active changes 均为 0 个实现任务完成，不将其标为已实现能力。
+
+**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10，待 review 后归档到 canonical specs。
 
 **Verification:**
 
@@ -127,26 +129,28 @@ cd digital-twingo/scene-design-v2 && npm run build
 - `openspec/changes/add-agricultural-object-model/tasks.md`
 - `openspec/changes/add-agricultural-object-model/specs/agricultural-object-model/spec.md`
 
+**Implementation Result:** 2026-05-21 已实现。后端新增农业对象注册表、关系表、番茄温室 MVP 种子数据、对象详情与关系查询 API，并固化 `object.lookup` / `object.relations` 输出结构；前端新增对象调试入口 `/objects`。
+
 **Backend Tasks:**
 
-- [ ] 定义农业对象类型枚举，覆盖 Farm、Greenhouse、Parcel、CropRow、Plant、CropBatch、Sensor、Device、Camera、Operation、Observation。
-- [ ] 设计对象基础表或等价持久结构，包含全局 ID、类型、名称、父级关系、空间位置或所在区域、当前状态、更新时间、数据质量状态、扩展属性。
-- [ ] 设计对象关系表或等价结构，覆盖层级、设备、传感器、摄像头、作物批次、关键植株和事件关联。
-- [ ] 新增对象详情查询接口，支持按对象 ID 和类型过滤。
-- [ ] 新增对象关系查询接口，支持父级、子级、关联设备、关联指标、关联事件和关联资产。
-- [ ] 为 Agent 工具预留 `object.lookup` 和 `object.relations` 的稳定输入输出结构。
+- [x] 定义农业对象类型枚举，覆盖 Farm、Greenhouse、Parcel、CropRow、Plant、CropBatch、Sensor、Device、Camera、Operation、Observation。
+- [x] 设计对象基础表或等价持久结构，包含全局 ID、类型、名称、父级关系、空间位置或所在区域、当前状态、更新时间、数据质量状态、扩展属性。
+- [x] 设计对象关系表或等价结构，覆盖层级、设备、传感器、摄像头、作物批次、关键植株和事件关联。
+- [x] 新增对象详情查询接口，支持按对象 ID 和类型过滤。
+- [x] 新增对象关系查询接口，支持父级、子级、关联设备、关联指标、关联事件和关联资产。
+- [x] 为 Agent 工具预留 `object.lookup` 和 `object.relations` 的稳定输入输出结构。
 
 **Frontend Tasks:**
 
-- [ ] 增加农业对象列表或对象调试入口。
-- [ ] 增加对象详情基础展示，至少展示 ID、类型、名称、状态、更新时间、数据质量状态。
-- [ ] 为后续 3D 点选详情复用对象详情展示组件或服务方法。
+- [x] 增加农业对象列表或对象调试入口。
+- [x] 增加对象详情基础展示，至少展示 ID、类型、名称、状态、更新时间、数据质量状态。
+- [x] 为后续 3D 点选详情复用对象详情展示组件或服务方法。
 
 **Data Tasks:**
 
-- [ ] 准备番茄温室 MVP 种子对象数据。
-- [ ] 确保从 Greenhouse 能查询到 Parcel、CropBatch、Sensor、Device、Camera 和关键 Plant。
-- [ ] 用数据质量状态区分模拟、真实、过期和缺失。
+- [x] 准备番茄温室 MVP 种子对象数据。
+- [x] 确保从 Greenhouse 能查询到 Parcel、CropBatch、Sensor、Device、Camera 和关键 Plant。
+- [x] 用数据质量状态区分模拟、真实、过期和缺失。
 
 **Verification:**
 
@@ -400,7 +404,7 @@ cd digital-twingo/scene-design-v2 && npm run build
 **Exit Criteria:**
 
 - 番茄温室 MVP 端到端演示通过。
-- 5 个 active changes 的任务状态已更新。
+- 5 个 active changes 的任务状态已更新；其中 `add-agricultural-object-model` 已完成，剩余 4 个仍待实现。
 - 具备归档到 canonical specs 的条件。
 
 ## Cross-Phase Acceptance Matrix

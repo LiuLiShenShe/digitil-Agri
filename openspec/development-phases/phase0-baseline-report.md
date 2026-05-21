@@ -10,6 +10,11 @@
 - 后续扩展锚点保留 Parcel、CropRow、CropBatch，不在 Phase 0 落库实现。
 - 本阶段非目标：不做真实设备控制、不做每日 GLB 重建、不做完整 RBAC。
 
+## 后续进展
+
+- 2026-05-21：Phase 1 `add-agricultural-object-model` 已实现，OpenSpec 任务进度为 10/10，待 review 后归档到 canonical specs。
+- 本报告中的 Active Changes 表保留 Phase 0 护栏生成时的历史基线，不代表后续开发的当前进度。
+
 ## 命令基线
 
 | 命令 | 退出码 | 状态 |

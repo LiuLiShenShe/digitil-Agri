@@ -63,7 +63,8 @@ Phase 0 status:
 - Phase 0 baseline convergence and development guardrails are complete as of 2026-05-21.
 - The baseline guard report is `openspec/development-phases/phase0-baseline-report.md`.
 - The first MVP is fixed to the tomato greenhouse: 1 greenhouse, 20 tomato plants, 1 weather station, 1 pump/irrigation device, 1 camera, and 1 sensor group.
-- The five active changes below are still implementation changes, not completed baseline capabilities. Do not mark their `tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
+- Phase 1 agricultural object foundation is implemented as of 2026-05-21. `add-agricultural-object-model` is complete (10/10) and ready for OpenSpec archive after review.
+- The remaining four active changes are still implementation changes, not completed baseline capabilities. Do not mark their `tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
 
 Before implementing PRD-level product changes:
 
@@ -84,7 +85,7 @@ Before implementing PRD-level product changes:
 
 Current active changes:
 
-- `add-agricultural-object-model`: 0/10 implementation tasks complete.
+- `add-agricultural-object-model`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `bind-scene-objects-to-business-objects`: 0/9 implementation tasks complete.
 - `add-farm-memory-layer`: 0/10 implementation tasks complete.
 - `add-agent-operation-trace`: 0/10 implementation tasks complete.

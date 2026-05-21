@@ -103,11 +103,15 @@
         <span class="nav-item">业务</span>
       </el-menu-item>
 
-      <el-menu-item index="9" @click="openAssistant">
+      <el-menu-item index="9" @click="openObjectRegistry">
+        <span class="nav-item">对象</span>
+      </el-menu-item>
+
+      <el-menu-item index="10" @click="openAssistant">
         <span class="nav-item">AI助手</span>
       </el-menu-item>
 
-      <el-menu-item index="10" @click="toggleSemanticBuilder" v-if="editMode">
+      <el-menu-item index="11" @click="toggleSemanticBuilder" v-if="editMode">
         <span class="nav-item">AI搭建</span>
       </el-menu-item>
     </el-menu>
@@ -230,6 +234,10 @@ function openMonitorCenter() {
 
 function openBusinessCenter() {
   router.push('/business')
+}
+
+function openObjectRegistry() {
+  router.push('/objects')
 }
 
 function openAssistant() {
