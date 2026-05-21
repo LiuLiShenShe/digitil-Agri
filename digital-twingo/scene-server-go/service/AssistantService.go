@@ -32,6 +32,7 @@ type AssistantService struct {
 	alertMapper  *iot.AlertMapper
 	monitorSvc   *MonitorService
 	businessSvc  *BusinessService
+	memorySvc    *FarmMemoryService
 	httpClient   *http.Client
 }
 
@@ -45,6 +46,7 @@ func NewAssistantService() *AssistantService {
 		alertMapper:  iot.NewAlertMapper(),
 		monitorSvc:   NewMonitorService(),
 		businessSvc:  NewBusinessService(),
+		memorySvc:    NewFarmMemoryService(),
 		httpClient:   &http.Client{},
 	}
 }
@@ -60,6 +62,8 @@ func (s *AssistantService) Tools() []vo.AssistantToolVo {
 		{Name: "iot.alerts", Label: "告警数据", Description: "读取告警摘要、严重级别和未确认统计", ReadOnly: true},
 		{Name: "monitor.dashboard", Label: "监控大屏", Description: "读取监控中心聚合数据", ReadOnly: true},
 		{Name: "business.overview", Label: "业务总览", Description: "读取 6 个业务子系统完成度和缺口", ReadOnly: true},
+		{Name: "timeseries.query", Label: "对象时序查询", Description: "按农业对象、指标和 24h/7d 范围读取最新趋势与聚合", ReadOnly: true},
+		{Name: "event.query", Label: "对象事件查询", Description: "按农业对象、事件类型和 24h/7d 范围读取事件记忆", ReadOnly: true},
 		{Name: "asset.jobs", Label: "AI 资产任务", Description: "读取 AI 资产生成任务状态", ReadOnly: true},
 	}
 }
@@ -163,6 +167,12 @@ func (s *AssistantService) pickTools(message string, context map[string]interfac
 	if hasAny(text, "iot", "设备", "传感器", "在线", "mqtt", "指标") {
 		add("iot.devices", "iot.latest")
 	}
+	if hasAny(text, "趋势", "时序", "曲线", "24h", "24小时", "7d", "7天", "日报", "指标") {
+		add("timeseries.query")
+	}
+	if hasAny(text, "事件", "灌溉", "施肥", "巡检", "维护", "分析记录", "日报") {
+		add("event.query")
+	}
 	if hasAny(text, "告警", "报警", "预警", "未确认", "严重") {
 		add("iot.alerts")
 	}
@@ -178,6 +188,9 @@ func (s *AssistantService) pickTools(message string, context map[string]interfac
 	if _, ok := context["deviceId"]; ok {
 		add("iot.latest", "iot.alerts")
 	}
+	if _, ok := context["objectId"]; ok {
+		add("timeseries.query", "event.query")
+	}
 	if len(selected) == 0 {
 		add("business.overview", "model.stats", "iot.devices", "iot.alerts", "monitor.dashboard")
 	}
@@ -192,6 +205,8 @@ func (s *AssistantService) pickTools(message string, context map[string]interfac
 		"iot.latest",
 		"iot.alerts",
 		"monitor.dashboard",
+		"timeseries.query",
+		"event.query",
 		"asset.jobs",
 	}
 	result := make([]string, 0, len(selected))
@@ -234,6 +249,10 @@ func (s *AssistantService) runTool(name string, context map[string]interface{}) 
 		data = s.monitorSvc.GetDashboard().Data
 	case "business.overview":
 		data = s.businessSvc.GetOverview().Data
+	case "timeseries.query":
+		data, err = s.timeSeriesQuery(context)
+	case "event.query":
+		data, err = s.eventQuery(context)
 	case "asset.jobs":
 		data, err = s.assetJobs()
 	default:
@@ -509,6 +528,30 @@ func (s *AssistantService) iotAlerts(context map[string]interface{}) (map[string
 	}, nil
 }
 
+func (s *AssistantService) timeSeriesQuery(context map[string]interface{}) (interface{}, error) {
+	objectID := contextString(context, "objectId", "gh-tomato-001")
+	rangeValue := contextString(context, "range", "24h")
+	metrics := contextStringList(context, "metrics")
+	return s.memorySvc.TimeSeriesTool(vo.TimeSeriesToolInput{
+		ObjectID: objectID,
+		Range:    rangeValue,
+		Metrics:  metrics,
+		Limit:    500,
+	})
+}
+
+func (s *AssistantService) eventQuery(context map[string]interface{}) (interface{}, error) {
+	objectID := contextString(context, "objectId", "gh-tomato-001")
+	rangeValue := contextString(context, "range", "24h")
+	eventTypes := contextStringList(context, "eventTypes")
+	return s.memorySvc.EventTool(vo.EventToolInput{
+		ObjectID:   objectID,
+		Range:      rangeValue,
+		EventTypes: eventTypes,
+		Limit:      50,
+	})
+}
+
 func (s *AssistantService) assetJobs() (map[string]interface{}, error) {
 	jobs, err := s.assetMapper.ListByOwner("anonymous")
 	if err != nil {
@@ -698,6 +741,14 @@ func summarizeTool(name string, data interface{}) string {
 			return fmt.Sprintf("监控大屏设备 %d 个，在线率 %.1f%%，未确认告警 %d，环境评分 %.1f。",
 				d.Overview.DeviceTotal, d.Overview.OnlineRate, d.Overview.UnackedAlerts, d.Overview.EnvironmentScore)
 		}
+	case "timeseries.query":
+		if d, ok := data.(vo.TimeSeriesToolOutput); ok {
+			return fmt.Sprintf("对象 %s 的 %s 时序返回 %d 类指标。", d.Query.ObjectID, d.Query.Range, len(d.Result.Series))
+		}
+	case "event.query":
+		if d, ok := data.(vo.EventToolOutput); ok {
+			return fmt.Sprintf("对象 %s 的 %s 事件查询返回 %d 条事件。", d.Query.ObjectID, d.Query.Range, len(d.Result.Events))
+		}
 	case "business.overview":
 		if d, ok := data.(vo.BusinessOverviewVo); ok {
 			return fmt.Sprintf("业务子系统 %d 个，可演示 %d 个，部分完成 %d 个，完成度 %.1f%%。",
@@ -754,4 +805,50 @@ func minInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func contextString(context map[string]interface{}, key, fallback string) string {
+	if context == nil {
+		return fallback
+	}
+	if value, ok := context[key].(string); ok && strings.TrimSpace(value) != "" {
+		return strings.TrimSpace(value)
+	}
+	return fallback
+}
+
+func contextStringList(context map[string]interface{}, key string) []string {
+	if context == nil {
+		return nil
+	}
+	raw, ok := context[key]
+	if !ok || raw == nil {
+		return nil
+	}
+	switch value := raw.(type) {
+	case []string:
+		return value
+	case []interface{}:
+		result := make([]string, 0, len(value))
+		for _, item := range value {
+			if s, ok := item.(string); ok && strings.TrimSpace(s) != "" {
+				result = append(result, strings.TrimSpace(s))
+			}
+		}
+		return result
+	case string:
+		if strings.TrimSpace(value) == "" {
+			return nil
+		}
+		parts := strings.Split(value, ",")
+		result := make([]string, 0, len(parts))
+		for _, part := range parts {
+			if part = strings.TrimSpace(part); part != "" {
+				result = append(result, part)
+			}
+		}
+		return result
+	default:
+		return nil
+	}
 }

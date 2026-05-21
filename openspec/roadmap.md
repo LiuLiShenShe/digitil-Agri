@@ -19,7 +19,7 @@
 4. `add-agent-operation-trace`
 5. `add-asset-metadata-and-fidelity-routing`
 
-`add-agricultural-object-model` 和 `bind-scene-objects-to-business-objects` 已完成。下一步优先推进 `add-farm-memory-layer`，把 IoT、事件、告警和日报数据源按业务对象组织起来。
+`add-agricultural-object-model`、`bind-scene-objects-to-business-objects` 和 `add-farm-memory-layer` 已完成。下一步优先推进 `add-agent-operation-trace`，把 Agent 职责、工具白名单、trace、回退和人工确认流程收口。
 
 ## Phase 0 Decisions
 
@@ -27,6 +27,7 @@
 - Phase 0 只确认基线和护栏，当时不实现 5 个 active changes 的业务能力，不将未完成任务标为已实现。
 - Phase 1 已在 2026-05-21 实现 `add-agricultural-object-model`，当前仍保留在 changes 区等待归档。
 - Phase 2 已在 2026-05-21 实现 `bind-scene-objects-to-business-objects`，当前仍保留在 changes 区等待归档。
+- Phase 3 已在 2026-05-21 实现 `add-farm-memory-layer`，当前仍保留在 changes 区等待归档；`phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行。
 - 真实设备控制、每日 GLB 重建和完整 RBAC 继续作为后续非 Phase 0 范围。
 - 基线状态以 `openspec/development-phases/phase0-baseline-report.md` 和 `python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md` 为准。
 
@@ -36,7 +37,7 @@
 | --- | ---: | --- |
 | `add-agricultural-object-model` | 10/10 | 已实现，待归档 |
 | `bind-scene-objects-to-business-objects` | 9/9 | 已实现，待归档 |
-| `add-farm-memory-layer` | 0/10 | 待实现，Phase 3 前置 |
+| `add-farm-memory-layer` | 10/10 | 已实现，待归档 |
 | `add-agent-operation-trace` | 0/10 | 待实现，Phase 4 前置 |
 | `add-asset-metadata-and-fidelity-routing` | 0/10 | 待实现，Phase 5 前置 |
 

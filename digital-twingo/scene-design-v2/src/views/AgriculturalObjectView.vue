@@ -94,6 +94,94 @@
           </div>
         </div>
 
+        <div class="memory-section">
+          <div class="memory-panel">
+            <div class="group-title">
+              <span>同步策略</span>
+              <strong>{{ syncPolicy?.syncFrequency || '--' }}</strong>
+            </div>
+            <div v-if="memoryLoading" class="scene-binding-empty">状态与记忆加载中</div>
+            <div v-else class="memory-copy">
+              <p>几何：{{ syncPolicy?.geometryFrequency || '按模型阶段' }}</p>
+              <p>来源：{{ syncPolicy?.sourceDeviceIds?.join('、') || '未绑定设备' }}</p>
+              <p>指标：{{ syncPolicy?.metricKeys?.join('、') || '暂无指标' }}</p>
+            </div>
+          </div>
+
+          <div class="memory-panel">
+            <div class="group-title">
+              <span>最新值</span>
+              <strong>{{ latestMetricCards.length }}</strong>
+            </div>
+            <div v-if="latestMetricCards.length === 0" class="scene-binding-empty">暂无最新指标</div>
+            <div v-else class="metric-grid">
+              <div v-for="metric in latestMetricCards" :key="metric.metricKey" class="metric-card">
+                <span>{{ metric.label }}</span>
+                <strong>{{ metric.value }}{{ metric.unit }}</strong>
+                <small>{{ qualityLabel(metric.dataQuality) }} / {{ formatTime(metric.timestamp) }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="memory-panel">
+            <div class="group-title">
+              <span>趋势摘要</span>
+              <strong>24h / 7d</strong>
+            </div>
+            <div class="trend-grid">
+              <div class="trend-card">
+                <span>24 小时</span>
+                <strong>{{ trendSummary(timeSeries24h) }}</strong>
+              </div>
+              <div class="trend-card">
+                <span>7 天</span>
+                <strong>{{ trendSummary(timeSeries7d) }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="memory-panel">
+            <div class="group-title">
+              <span>事件记忆</span>
+              <strong>{{ objectEvents?.events.length || 0 }}</strong>
+            </div>
+            <div v-if="!objectEvents || objectEvents.events.length === 0" class="scene-binding-empty">暂无事件</div>
+            <div v-else class="event-list">
+              <div v-for="event in objectEvents.events.slice(0, 5)" :key="event.eventId" class="event-row">
+                <span>{{ eventTypeLabel(event.eventType) }}</span>
+                <strong>{{ event.summary }}</strong>
+                <small>{{ event.severity }} / {{ formatTime(event.timestamp) }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="memory-panel wide">
+            <div class="group-title">
+              <span>温室日报数据源</span>
+              <strong>{{ greenhouseReport?.dataQuality ? qualityLabel(greenhouseReport.dataQuality) : '--' }}</strong>
+            </div>
+            <div v-if="!greenhouseReport" class="scene-binding-empty">当前对象暂无日报数据源</div>
+            <div v-else class="report-grid">
+              <div>
+                <span>环境摘要</span>
+                <strong>{{ greenhouseReport.environment.summary }}</strong>
+              </div>
+              <div>
+                <span>设备状态</span>
+                <strong>{{ greenhouseReport.deviceStatus.summary }}</strong>
+              </div>
+              <div>
+                <span>告警 / 灌溉</span>
+                <strong>{{ greenhouseReport.alerts.length }} / {{ greenhouseReport.irrigationEvents.length }}</strong>
+              </div>
+              <div>
+                <span>建议</span>
+                <strong>{{ greenhouseReport.recommendations[0] || '暂无建议' }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="relation-section" v-if="relationGroups.length > 0">
           <div v-for="group in relationGroups" :key="group.key" class="relation-group">
             <div class="group-title">
@@ -147,16 +235,38 @@ import {
   type RelatedObject
 } from '@/services/agriculturalObjectService'
 import { fetchBusinessObjectSceneBindings, type SceneBusinessBinding } from '@/services/sceneBusinessBindingService'
+import {
+  fetchGreenhouseReportSource,
+  fetchObjectEvents,
+  fetchObjectLatestValues,
+  fetchObjectSyncPolicy,
+  fetchObjectTimeSeries,
+  type EventQueryResponse,
+  type FarmMetricLatestValue,
+  type FarmSyncPolicy,
+  type GreenhouseReportSource,
+  type TimeSeriesResponse
+} from '@/services/farmMemoryService'
 
 const router = useRouter()
 const loading = ref(false)
 const bindingLoading = ref(false)
+const memoryLoading = ref(false)
 const objects = ref<AgriculturalObject[]>([])
 const selectedType = ref<AgriculturalObjectType | ''>('')
 const selectedObject = ref<AgriculturalObject | null>(null)
 const relations = ref<ObjectRelationsResponse | null>(null)
 const sceneBindings = ref<SceneBusinessBinding[]>([])
+const syncPolicy = ref<FarmSyncPolicy | null>(null)
+const latestValues = ref<Record<string, FarmMetricLatestValue>>({})
+const timeSeries24h = ref<TimeSeriesResponse | null>(null)
+const timeSeries7d = ref<TimeSeriesResponse | null>(null)
+const objectEvents = ref<EventQueryResponse | null>(null)
+const greenhouseReport = ref<GreenhouseReportSource | null>(null)
 const defaultSceneName = '番茄温室 MVP'
+const defaultObjectId = 'gh-tomato-001'
+let selectionRequestId = 0
+let memoryRequestId = 0
 
 const objectTypes: AgriculturalObjectType[] = [
   'Farm',
@@ -179,17 +289,21 @@ const relationGroups = computed(() => {
     .map(([key, items]) => ({ key, items }))
 })
 
+const latestMetricCards = computed(() => Object.values(latestValues.value).slice(0, 8))
+
 async function loadObjects() {
   loading.value = true
   try {
     objects.value = await fetchAgriculturalObjects(selectedType.value || undefined)
     if (objects.value.length > 0) {
+      const preferredObject = objects.value.find(item => item.id === defaultObjectId)
       await selectObject(selectedObject.value?.id && objects.value.some(item => item.id === selectedObject.value?.id)
         ? selectedObject.value.id
-        : objects.value[0].id)
+        : preferredObject?.id || objects.value[0].id)
     } else {
       selectedObject.value = null
       relations.value = null
+      resetMemory()
     }
   } catch {
     ElMessage.error('农业对象加载失败，请检查后端服务')
@@ -199,20 +313,74 @@ async function loadObjects() {
 }
 
 async function selectObject(id: string) {
+  const requestId = ++selectionRequestId
   loading.value = true
+  resetMemory()
   try {
     const [object, objectRelations] = await Promise.all([
       fetchAgriculturalObject(id),
       fetchAgriculturalObjectRelations(id)
     ])
+    if (requestId !== selectionRequestId) return
     selectedObject.value = object
     relations.value = objectRelations
-    await loadSceneBindings(id)
+    await Promise.all([
+      loadSceneBindings(id),
+      loadMemory(id, object?.type || '')
+    ])
   } catch {
     ElMessage.error('农业对象详情加载失败')
   } finally {
     loading.value = false
   }
+}
+
+async function loadMemory(objectId: string, objectType: string) {
+  const requestId = ++memoryRequestId
+  memoryLoading.value = true
+  resetMemory()
+  try {
+    const [policy, latest, series24h, events] = await Promise.all([
+      fetchObjectSyncPolicy(objectId),
+      fetchObjectLatestValues(objectId),
+      fetchObjectTimeSeries(objectId, '24h', [], 720),
+      fetchObjectEvents(objectId, '24h')
+    ])
+    if (requestId !== memoryRequestId || selectedObject.value?.id !== objectId) return
+    syncPolicy.value = policy
+    latestValues.value = latest?.values || {}
+    timeSeries24h.value = series24h
+    objectEvents.value = events
+  } catch {
+    resetMemory()
+  } finally {
+    if (requestId === memoryRequestId) {
+      memoryLoading.value = false
+    }
+  }
+  try {
+    const [series7d, report] = await Promise.all([
+      fetchObjectTimeSeries(objectId, '7d', [], 1000),
+      objectType === 'Greenhouse' ? fetchGreenhouseReportSource(objectId) : Promise.resolve(null)
+    ])
+    if (requestId !== memoryRequestId || selectedObject.value?.id !== objectId) return
+    timeSeries7d.value = series7d
+    greenhouseReport.value = report
+  } catch {
+    if (requestId === memoryRequestId && selectedObject.value?.id === objectId) {
+      timeSeries7d.value = null
+      greenhouseReport.value = null
+    }
+  }
+}
+
+function resetMemory() {
+  syncPolicy.value = null
+  latestValues.value = {}
+  timeSeries24h.value = null
+  timeSeries7d.value = null
+  objectEvents.value = null
+  greenhouseReport.value = null
 }
 
 async function loadSceneBindings(objectId: string) {
@@ -281,6 +449,25 @@ function groupLabel(key: string): string {
     children: '子对象'
   }
   return labels[key] || key
+}
+
+function eventTypeLabel(value: string): string {
+  const labels: Record<string, string> = {
+    irrigation: '灌溉',
+    fertilization: '施肥',
+    alert: '告警',
+    inspection: '巡检',
+    maintenance: '维护',
+    agent_analysis: 'Agent分析'
+  }
+  return labels[value] || value
+}
+
+function trendSummary(series: TimeSeriesResponse | null): string {
+  if (!series) return '暂无'
+  const first = Object.values(series.series)[0]
+  if (!first || first.aggregate.count === 0) return '暂无'
+  return `${first.label} 均值 ${first.aggregate.avg}${first.unit}`
 }
 
 function formatTime(value: string): string {
@@ -450,6 +637,7 @@ onMounted(loadObjects)
 .field-item,
 .relation-group,
 .scene-binding-panel,
+.memory-panel,
 .json-block {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
@@ -487,6 +675,7 @@ onMounted(loadObjects)
 
 .relation-group,
 .scene-binding-panel,
+.memory-panel,
 .json-block {
   padding: 12px;
 }
@@ -503,6 +692,83 @@ onMounted(loadObjects)
 .relation-list {
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memory-section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.memory-panel.wide {
+  grid-column: span 2;
+}
+
+.memory-copy p {
+  margin: 5px 0;
+  color: #b9cad8;
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.metric-card,
+.trend-card,
+.event-row,
+.report-grid > div {
+  min-height: 62px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.14);
+}
+
+.metric-card span,
+.trend-card span,
+.event-row span,
+.report-grid span {
+  display: block;
+  color: #8fa1b2;
+  font-size: 12px;
+}
+
+.metric-card strong,
+.trend-card strong,
+.event-row strong,
+.report-grid strong {
+  display: block;
+  margin-top: 6px;
+  color: #f1f6fa;
+  font-size: 14px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.metric-card small,
+.event-row small {
+  display: block;
+  margin-top: 4px;
+  color: #7d8d9b;
+  font-size: 11px;
+}
+
+.trend-grid,
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.event-list {
+  display: grid;
   gap: 8px;
 }
 
@@ -617,11 +883,16 @@ onMounted(loadObjects)
   }
 
   .field-grid,
-  .relation-section {
+  .relation-section,
+  .memory-section,
+  .trend-grid,
+  .report-grid,
+  .metric-grid {
     grid-template-columns: 1fr;
   }
 
-  .field-item.wide {
+  .field-item.wide,
+  .memory-panel.wide {
     grid-column: span 1;
   }
 }

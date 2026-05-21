@@ -106,6 +106,7 @@ func main() {
 		controller.RegisterMonitorRoutes(api)
 		controller.RegisterBusinessRoutes(api)
 		controller.RegisterAgriculturalObjectRoutes(api)
+		controller.RegisterFarmMemoryRoutes(api)
 		controller.RegisterAssistantRoutes(api)
 		controller.RegisterSemanticRoutes(api)
 

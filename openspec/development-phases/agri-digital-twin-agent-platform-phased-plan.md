@@ -227,6 +227,8 @@ cd digital-twingo/scene-design-v2 && npm run build
 
 **Depends On:** Phase 1、Phase 2。
 
+**Implementation Status:** Completed on 2026-05-21. `add-farm-memory-layer` is 10/10 complete and remains in `openspec/changes/` for review/archive. `digital-twingo/phase3_farm_memory_layer_migration.sql` has been executed in the current development database, creating `farm_event_memory` and `farm_daily_archive`.
+
 **OpenSpec References:**
 
 - `openspec/changes/add-farm-memory-layer/proposal.md`
@@ -236,27 +238,27 @@ cd digital-twingo/scene-design-v2 && npm run build
 
 **Backend Tasks:**
 
-- [ ] 定义同步频率枚举：realtime、hourly、daily、milestone、static。
-- [ ] 建立指标字典，覆盖温度、湿度、土壤水分、CO2、光照、pH、EC、水压、流量和设备开关状态。
-- [ ] 为 Greenhouse、Parcel、Plant、Sensor、Device、Camera 定义默认同步频率和指标绑定策略。
-- [ ] 实现按对象查询最新值、历史曲线和聚合统计。
-- [ ] 支持 24 小时和 7 天两个时间范围。
-- [ ] 实现事件查询，覆盖灌溉、施肥、告警、巡检、维护和 Agent 分析记录。
-- [ ] 建立日级归档数据结构或归档任务。
-- [ ] 提供温室日报数据源，聚合环境、设备、告警、灌溉事件和建议上下文。
+- [x] 定义同步频率枚举：realtime、hourly、daily、milestone、static。
+- [x] 建立指标字典，覆盖温度、湿度、土壤水分、CO2、光照、pH、EC、水压、流量和设备开关状态。
+- [x] 为 Greenhouse、Parcel、Plant、Sensor、Device、Camera 定义默认同步频率和指标绑定策略。
+- [x] 实现按对象查询最新值、历史曲线和聚合统计。
+- [x] 支持 24 小时和 7 天两个时间范围。
+- [x] 实现事件查询，覆盖灌溉、施肥、告警、巡检、维护和 Agent 分析记录。
+- [x] 建立日级归档数据结构或归档任务。
+- [x] 提供温室日报数据源，聚合环境、设备、告警、灌溉事件和建议上下文。
 
 **Frontend Tasks:**
 
-- [ ] 在对象详情中展示最新值和数据质量状态。
-- [ ] 增加 24 小时和 7 天趋势入口。
-- [ ] 展示对象关联事件列表。
-- [ ] 为温室日报预留入口或调试面板。
+- [x] 在对象详情中展示最新值和数据质量状态。
+- [x] 增加 24 小时和 7 天趋势入口。
+- [x] 展示对象关联事件列表。
+- [x] 为温室日报预留入口或调试面板。
 
 **Agent Readiness Tasks:**
 
-- [ ] 定义 `timeseries.query` 输入输出结构。
-- [ ] 定义 `event.query` 输入输出结构。
-- [ ] 确保 Agent 查询只能按对象和时间范围读取，不暴露任意 SQL。
+- [x] 定义 `timeseries.query` 输入输出结构。
+- [x] 定义 `event.query` 输入输出结构。
+- [x] 确保 Agent 查询只能按对象和时间范围读取，不暴露任意 SQL。
 
 **Verification:**
 

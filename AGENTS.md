@@ -65,7 +65,8 @@ Phase 0 status:
 - The first MVP is fixed to the tomato greenhouse: 1 greenhouse, 20 tomato plants, 1 weather station, 1 pump/irrigation device, 1 camera, and 1 sensor group.
 - Phase 1 agricultural object foundation is implemented as of 2026-05-21. `add-agricultural-object-model` is complete (10/10) and ready for OpenSpec archive after review.
 - Phase 2 scene-business binding is implemented as of 2026-05-21. `bind-scene-objects-to-business-objects` is complete (9/9), with `scenemodel` binding fields, `/scene/bindings/*` APIs, 3D point-select business detail, `/objects` scene location, validation, and the `番茄温室 MVP` bound scene seed.
-- The remaining three active implementation changes are not completed baseline capabilities. Do not mark their `tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
+- Phase 3 farm memory layer is implemented as of 2026-05-21. `add-farm-memory-layer` is complete (10/10), with metric dictionary, object memory APIs, event memory, daily archives/report source, frontend object detail entries, and read-only Agent tools `timeseries.query` / `event.query`. The Phase 3 migration has been executed in the current development database.
+- The remaining two active implementation changes are not completed baseline capabilities. Do not mark their `tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
 
 Before implementing PRD-level product changes:
 
@@ -88,7 +89,7 @@ Current OpenSpec changes:
 
 - `add-agricultural-object-model`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `bind-scene-objects-to-business-objects`: 9/9 implementation tasks complete; implemented, pending archive to canonical specs.
-- `add-farm-memory-layer`: 0/10 implementation tasks complete.
+- `add-farm-memory-layer`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `add-agent-operation-trace`: 0/10 implementation tasks complete.
 - `add-asset-metadata-and-fidelity-routing`: 0/10 implementation tasks complete.
 
@@ -148,9 +149,11 @@ Database:
 ```bash
 docker exec gofast-mysql mysql -u root -proot scene < scene.sql
 docker exec gofast-mysql mysql -u root -proot scene < phase2_scene_business_binding_migration.sql
+docker exec gofast-mysql mysql -u root -proot scene < phase3_farm_memory_layer_migration.sql
 ```
 
 Phase 2 binding schema adds `scenemodel.sceneObjectId`, `businessObjectId`, `assetKey`, and `isDefaultBinding`. Existing databases must run the Phase 2 migration before using `/sceneApi/scene/bindings/*`.
+Phase 3 memory schema adds `farm_event_memory` and `farm_daily_archive`. Existing databases must run the Phase 3 migration before using `/sceneApi/objects/:id/memory/*` and report-source APIs; the current development database has already run it.
 
 ## TRELLIS.2 / Asset Generation Notes
 

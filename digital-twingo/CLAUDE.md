@@ -9,14 +9,16 @@ This is a **3D Digital Twin platform** (智慧农业数字孪生平台) by Beiji
 - **scene-design-v2** — Vue 3 + TypeScript + Vite frontend for building and viewing 3D scenes (GLTF/GLB models, data visualization)
 - **scene-server-go** — Go + Gin backend providing scene storage, model list, data APIs, and AI 3D asset generation
 
-Current implementation phase: **Phase 2 scene-business binding is implemented** as of 2026-05-21. The next planned implementation phase is **Phase 3 farm memory layer**.
+Current implementation phase: **Phase 3 farm memory layer is implemented** as of 2026-05-21. The next planned implementation phase is **Phase 4 agent operation trace**.
 
 - Previous app baseline still includes Phase 3 data visualization capabilities: real-time line chart, gauge, radar, 3D bar chart, heatmap, pie chart, WebSocket mock data stream, and 3D data overlays.
-- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10) and `bind-scene-objects-to-business-objects` is complete (9/9). Remaining changes are `add-farm-memory-layer` (0/10), `add-agent-operation-trace` (0/10), and `add-asset-metadata-and-fidelity-routing` (0/10).
+- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10), `bind-scene-objects-to-business-objects` is complete (9/9), and `add-farm-memory-layer` is complete (10/10). Remaining changes are `add-agent-operation-trace` (0/10) and `add-asset-metadata-and-fidelity-routing` (0/10).
 - Phase 1 object foundation includes backend object lookup/relation APIs, tomato greenhouse MVP seed data, stable `object.lookup` / `object.relations` output shapes, and the frontend `/objects` debug entry. Archive `add-agricultural-object-model` after review.
 - Phase 2 scene-business binding includes stable `sceneObjectId`, `businessObjectId`, `assetKey`, and `isDefaultBinding` fields on `scenemodel`; `/scene/bindings/*` lookup/update/delete/validation APIs; 3D point-select business detail in `ProperityPane`; `/objects` scene location; and the `番茄温室 MVP` bound scene seed.
+- Phase 3 farm memory layer includes metric dictionary and aliases, default sync policies, object-level latest/timeseries/events/daily-archive/report-source APIs, `farm_event_memory` and `farm_daily_archive` schema, frontend object memory panels, 3D point-select memory summaries, and read-only Assistant tools `timeseries.query` / `event.query`.
+- Phase 3 migration `digital-twingo/phase3_farm_memory_layer_migration.sql` has been executed in the current development database.
 - Phase 0 artifacts live under `openspec/development-phases/phase0-baseline-report.md` and `openspec/tools/phase0_baseline_guard.py`.
-- Do not treat object-scoped memory layer, expanded Agent trace, or asset metadata/fidelity routing as completed until the matching OpenSpec change tasks are implemented and verified.
+- Do not treat expanded Agent trace or asset metadata/fidelity routing as completed until the matching OpenSpec change tasks are implemented and verified.
 
 ## Common Commands
 
@@ -49,6 +51,7 @@ MySQL 8.0 runs in Docker container `gofast-mysql` on port 3306 (root:root). Data
 ```
 docker exec gofast-mysql mysql -u root -proot scene < scene.sql    # Initialize schema
 docker exec gofast-mysql mysql -u root -proot scene < phase2_scene_business_binding_migration.sql    # Upgrade existing DB for scene-business binding
+docker exec gofast-mysql mysql -u root -proot scene < phase3_farm_memory_layer_migration.sql    # Upgrade existing DB for farm memory layer
 ```
 
 ### Model Asset Conversion
@@ -129,7 +132,7 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 |-----------|---------|---------|
 | `SceneContainer.vue` | v2.1 | WebGL canvas host + **Phase 2 event bus hub**: terrain, layer, box-select, brush, snap, template events all handled here. |
 | `HeadMenu.vue` | v2.1 | Top nav with logo + scene menu (new/save/open) + settings button. |
-| `ProperityPane.vue` | v2.1 | Left panel: model position/scale/rotation sliders, data binding, carbon chart, and bound agricultural object detail/status/metrics/event entries. |
+| `ProperityPane.vue` | v2.1 | Left panel: model position/scale/rotation sliders, data binding, carbon chart, and bound agricultural object detail/status/metrics/event entries, including Phase 3 latest metric and event count summaries. |
 | `SceneSetting.vue` | v2.1 | Right panel: view switch, lights, background, **snap config, batch operations, box-select button, layer/terrain tool buttons**. |
 | `LayerPanel.vue` | NEW Phase 2 | Right panel (below settings): layer list with visibility/lock toggles, batch op buttons (select all in layer, move to layer, box select). Uses `dialogStore.layerPanel` for visibility. |
 | `TerrainToolbar.vue` | NEW Phase 2 | **Center-screen** floating panel: terrain import (heightmap/GeoJSON/DEM), texture brush config, scene template selector. Uses `dialogStore.terrainToolbar` for visibility. |
@@ -150,6 +153,7 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 | File | Version | Purpose |
 |------|---------|---------|
 | `sceneBusinessBindingService.ts` | NEW Phase 2 | HTTP service for `/scene/bindings/*`: scene-object lookup, business-object reverse lookup, binding update, and validation summary. |
+| `farmMemoryService.ts` | NEW Phase 3 | HTTP service for `/memory/*` and `/objects/:id/memory/*`: metric dictionary, sync policy, latest values, timeseries, events, daily archives, and report-source data. |
 | `dataService.ts` | NEW Phase 3 | HTTP data fetching + mock historical data generator: `generateHistoricalData(sourceId, duration, interval)` returns 24h of sensor points with realistic random-walk values, `applyDayNightCycle()` adds circadian rhythm, `fetchSceneData()`, `fetchModelData()`. |
 | `websocket.ts` | NEW Phase 3 | `RealtimeDataService` (singleton via `getRealtimeService()`): WebSocket client with exponential-backoff auto-reconnect, subscription API (`subscribe`/`unsubscribe`), **built-in Mock engine** — when WS is unavailable, generates data every 2s via random-walk algorithm around realistic baselines per source type. Mock auto-disables when real WS connects. |
 
@@ -210,13 +214,22 @@ Key env vars: `VITE_MOCK`, `VITE_EDITMODE`, `VITE_SHOWTEST`, `VITE_BASEURL` (def
 
 Gin framework, MySQL via sqlx, Spring Boot-idiom package structure. Port 9010, context path `/sceneApi`.
 
+### Phase 3 Farm Memory Layer
+
+- Backend files: `vo/FarmMemoryVo.go`, `service/FarmMemoryService.go`, `service/FarmMemoryDictionary.go`, `service/FarmMemoryStore.go`, `mapper/FarmMemoryMapper.go`, and `controller/FarmMemoryController.go`.
+- Read-only APIs: `/memory/metrics`, `/memory/sync-policies`, `/objects/:id/memory/sync-policy`, `/objects/:id/memory/latest`, `/objects/:id/memory/timeseries`, `/objects/:id/memory/events`, `/objects/:id/memory/daily-archives`, and `/objects/:id/memory/report-source`.
+- Metric dictionary covers `temperature`, `humidity`, `soilMoisture`, `co2`, `lightIntensity`, `ph`, `ec`, `waterPressure`, `flow`, and `switchState`; compatibility aliases map `waterFlow -> flow` and `status -> switchState`.
+- `farm_event_memory` and `farm_daily_archive` are created by `phase3_farm_memory_layer_migration.sql`. The current development database has already run this migration.
+- Assistant exposes only read-only `timeseries.query` and `event.query` tool shapes. These must stay constrained to object ID, dictionary metric key, range, event type, and limit; do not add arbitrary SQL, shell, filesystem, HTTP, or device-control capabilities.
+
 ### Data Flow
 1. Frontend loads scenes via `Scene.laodScene(name)` → `GET /sceneApi/scene/loadScene?scene=name`
 2. Backend returns scene config + model list
 3. Frontend reconstructs environment, loads models, assigns to layers
 4. Scene save dumps config + models + **layers** + **terrain brush data** + scene-business binding metadata as JSON → `POST /sceneApi/scene/saveScene`
 5. 3D point-select reads `sceneObjectId` → `GET /sceneApi/scene/bindings/by-scene-object` → `ProperityPane` renders the bound agricultural object detail.
-6. `/objects` reverse location reads `businessObjectId` → `GET /sceneApi/scene/bindings/by-business-object` → routes back to `/` with `sceneObjectId` and focuses the model.
+6. Object detail and 3D point-select memory panels read `businessObjectId` → `/sceneApi/objects/:id/memory/*` for latest values, trends, events, archives, and report-source context.
+7. `/objects` reverse location reads `businessObjectId` → `GET /sceneApi/scene/bindings/by-business-object` → routes back to `/` with `sceneObjectId` and focuses the model.
 
 ### Key Conventions
 - **Vite binary**: Always `./node_modules/.bin/vite`, never `npx vite`

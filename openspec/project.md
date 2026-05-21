@@ -35,7 +35,7 @@
 - `scene-business-binding`：定义 3D 场景对象和业务对象的双向绑定、点选详情、业务对象定位和绑定校验。
 - `farm-memory-layer`：定义指标字典、同步频率、时序查询、事件查询、日级归档和 Agent 分析记录。
 
-当前实现状态：`agricultural-object-model` 和 `scene-business-binding` 已于 2026-05-21 完成；`farm-memory-layer`、`agent-operation-trace` 和 `asset-fidelity-routing` 仍处于 active change 待实现状态。
+当前实现状态：`agricultural-object-model`、`scene-business-binding` 和 `farm-memory-layer` 已于 2026-05-21 完成；`add-farm-memory-layer` 仍保留在 active changes 区等待 review/archive，且 `phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行。`agent-operation-trace` 和 `asset-fidelity-routing` 仍处于 active change 待实现状态。
 
 ### P1: 智能体平台
 

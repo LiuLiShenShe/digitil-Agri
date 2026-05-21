@@ -46,6 +46,10 @@
               <el-descriptions-item label="历史趋势入口">{{ trendEntryText }}</el-descriptions-item>
               <el-descriptions-item label="告警入口">{{ alertEntryText }}</el-descriptions-item>
               <el-descriptions-item label="关联事件入口">{{ eventEntryText }}</el-descriptions-item>
+              <el-descriptions-item label="同步频率">{{ memorySummary.syncFrequency }}</el-descriptions-item>
+              <el-descriptions-item label="最新状态">{{ memorySummary.latest }}</el-descriptions-item>
+              <el-descriptions-item label="24h趋势">{{ memorySummary.trend }}</el-descriptions-item>
+              <el-descriptions-item label="事件记忆">{{ memorySummary.events }}</el-descriptions-item>
             </el-descriptions>
           </div>
           <div v-else class="business-empty">未绑定业务对象</div>
@@ -106,6 +110,16 @@ import type { Model } from '@/lib/model'
 import type { AgriculturalObject, ObjectRelationsResponse, DataQualityStatus } from '@/services/agriculturalObjectService'
 import { fetchAgriculturalObjectRelations } from '@/services/agriculturalObjectService'
 import { fetchSceneObjectBinding } from '@/services/sceneBusinessBindingService'
+import {
+  fetchObjectEvents,
+  fetchObjectLatestValues,
+  fetchObjectSyncPolicy,
+  fetchObjectTimeSeries,
+  type EventQueryResponse,
+  type FarmLatestResponse,
+  type FarmSyncPolicy,
+  type TimeSeriesResponse
+} from '@/services/farmMemoryService'
 import { Scene } from '@/lib/scene'
 
 const { $envCfg } = useGlobals()
@@ -118,10 +132,15 @@ const formDataId = ref('')
 const businessLoading = ref(false)
 const boundObject = ref<AgriculturalObject | null>(null)
 const boundRelations = ref<ObjectRelationsResponse | null>(null)
+const memoryPolicy = ref<FarmSyncPolicy | null>(null)
+const memoryLatest = ref<FarmLatestResponse | null>(null)
+const memorySeries = ref<TimeSeriesResponse | null>(null)
+const memoryEvents = ref<EventQueryResponse | null>(null)
 const formData = reactive({
   offset: { x: 0, y: 0, z: 0 },
   angle: 0
 })
+let businessRequestId = 0
 
 const chart = ref<HTMLElement>()
 let myChart: any = null
@@ -167,6 +186,16 @@ const eventEntryText = computed(() => {
   const events = boundRelations.value?.relations?.events || []
   return events.length > 0 ? `${events.length} 条关联事件` : '暂无事件'
 })
+const memorySummary = computed(() => {
+  const latest = memoryLatest.value ? Object.values(memoryLatest.value.values) : []
+  const firstSeries = memorySeries.value ? Object.values(memorySeries.value.series)[0] : null
+  return {
+    syncFrequency: memoryPolicy.value?.syncFrequency || '未配置',
+    latest: latest.length > 0 ? latest.slice(0, 3).map(item => `${item.label}${item.value}${item.unit}`).join('、') : '暂无最新值',
+    trend: firstSeries && firstSeries.aggregate.count > 0 ? `${firstSeries.label}均值${firstSeries.aggregate.avg}${firstSeries.unit}` : '暂无24h趋势',
+    events: memoryEvents.value?.events.length ? `${memoryEvents.value.events.length} 条事件` : '暂无事件'
+  }
+})
 
 watch(() => modelStore.offset, (val) => {
   formData.offset.x = val.x
@@ -177,6 +206,7 @@ watch(() => modelStore.offset, (val) => {
 watch(activeObject, (val) => {
   boundObject.value = null
   boundRelations.value = null
+  resetMemory()
   if (!val) return
   const options = val.getOptions
   formDataId.value = options.dataId || ''
@@ -206,10 +236,13 @@ function bandDataId() {
 }
 
 async function loadBusinessBinding(model: BusinessBindableModel) {
+  const requestId = ++businessRequestId
   const sceneName = Scene.getInstance().getSceneName()
   businessLoading.value = true
+  resetMemory()
   try {
     const binding = await fetchSceneObjectBinding(sceneName, model.getSceneObjectId)
+    if (requestId !== businessRequestId || activeObject.value?.getSceneObjectId !== model.getSceneObjectId) return
     const object = binding?.object || null
     boundObject.value = object
     if (binding?.binding) {
@@ -220,14 +253,36 @@ async function loadBusinessBinding(model: BusinessBindableModel) {
       })
     }
     if (object?.id) {
-      boundRelations.value = await fetchAgriculturalObjectRelations(object.id)
+      const [relations, policy, latest, series, events] = await Promise.all([
+        fetchAgriculturalObjectRelations(object.id),
+        fetchObjectSyncPolicy(object.id),
+        fetchObjectLatestValues(object.id),
+        fetchObjectTimeSeries(object.id, '24h', [], 720),
+        fetchObjectEvents(object.id, '24h')
+      ])
+      if (requestId !== businessRequestId || boundObject.value?.id !== object.id) return
+      boundRelations.value = relations
+      memoryPolicy.value = policy
+      memoryLatest.value = latest
+      memorySeries.value = series
+      memoryEvents.value = events
     }
   } catch {
     boundObject.value = null
     boundRelations.value = null
+    resetMemory()
   } finally {
-    businessLoading.value = false
+    if (requestId === businessRequestId) {
+      businessLoading.value = false
+    }
   }
+}
+
+function resetMemory() {
+  memoryPolicy.value = null
+  memoryLatest.value = null
+  memorySeries.value = null
+  memoryEvents.value = null
 }
 
 function modelPropChange() {

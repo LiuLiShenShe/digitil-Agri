@@ -13,6 +13,8 @@
 ## 后续进展
 
 - 2026-05-21：Phase 1 `add-agricultural-object-model` 已实现，OpenSpec 任务进度为 10/10，待 review 后归档到 canonical specs。
+- 2026-05-21：Phase 2 `bind-scene-objects-to-business-objects` 已实现，OpenSpec 任务进度为 9/9，待 review 后归档到 canonical specs。
+- 2026-05-21：Phase 3 `add-farm-memory-layer` 已实现，OpenSpec 任务进度为 10/10，`phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行，待 review 后归档到 canonical specs。
 - 本报告中的 Active Changes 表保留 Phase 0 护栏生成时的历史基线，不代表后续开发的当前进度。
 
 ## 命令基线
