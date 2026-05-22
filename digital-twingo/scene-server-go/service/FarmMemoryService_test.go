@@ -129,6 +129,56 @@ func TestFarmMemoryEventQueryCoversRequiredEventTypes(t *testing.T) {
 	}
 }
 
+func TestFarmMemoryDefaultDeviceEventsIncludeAlertContext(t *testing.T) {
+	now := time.Date(2026, 5, 21, 10, 0, 0, 0, time.UTC)
+	objectStore := NewMemoryAgriculturalObjectStore()
+	svc := NewFarmMemoryServiceWithClock(objectStore, NewMemoryFarmMemoryStore(), func() time.Time { return now })
+	if err := NewAgriculturalObjectServiceWithStore(objectStore).SeedTomatoGreenhouseMVP(); err != nil {
+		t.Fatalf("seed failed: %v", err)
+	}
+
+	result, err := svc.Events(vo.EventQuery{ObjectID: "device-irrigation-001", Range: "24h", EventTypes: []string{"alert", "maintenance"}, Limit: 20})
+	if err != nil {
+		t.Fatalf("event query failed: %v", err)
+	}
+
+	seen := map[string]vo.FarmEventVo{}
+	for _, event := range result.Events {
+		seen[event.EventType] = event
+	}
+	alert, ok := seen["alert"]
+	if !ok {
+		t.Fatalf("default device events should include alert: %#v", result.Events)
+	}
+	if alert.ObjectID != "device-irrigation-001" || alert.RelatedObjectID != "gh-tomato-001" {
+		t.Fatalf("alert should preserve device and related greenhouse context: %#v", alert)
+	}
+	if _, ok := seen["maintenance"]; !ok {
+		t.Fatalf("default device events should include maintenance: %#v", result.Events)
+	}
+}
+
+func TestFarmMemoryDefaultGreenhouseReportIncludesAlertContext(t *testing.T) {
+	now := time.Date(2026, 5, 21, 10, 0, 0, 0, time.UTC)
+	objectStore := NewMemoryAgriculturalObjectStore()
+	svc := NewFarmMemoryServiceWithClock(objectStore, NewMemoryFarmMemoryStore(), func() time.Time { return now })
+	if err := NewAgriculturalObjectServiceWithStore(objectStore).SeedTomatoGreenhouseMVP(); err != nil {
+		t.Fatalf("seed failed: %v", err)
+	}
+
+	report, err := svc.GreenhouseReportSource("gh-tomato-001", "2026-05-21")
+	if err != nil {
+		t.Fatalf("report source failed: %v", err)
+	}
+
+	if len(report.Alerts) == 0 {
+		t.Fatalf("default greenhouse report should include alert context: %#v", report)
+	}
+	if containsString(report.MissingCategories, "alerts") {
+		t.Fatalf("alerts should not be marked missing when default alert context exists: %#v", report.MissingCategories)
+	}
+}
+
 func TestFarmMemoryDailyArchiveAndGreenhouseReportSource(t *testing.T) {
 	now := time.Date(2026, 5, 21, 10, 0, 0, 0, time.UTC)
 	objectStore := NewMemoryAgriculturalObjectStore()

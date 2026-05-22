@@ -115,6 +115,10 @@
       <el-menu-item index="11" @click="toggleSemanticBuilder" v-if="editMode">
         <span class="nav-item">AI搭建</span>
       </el-menu-item>
+
+      <el-menu-item index="12" @click="openAcceptance">
+        <span class="nav-item">验收</span>
+      </el-menu-item>
     </el-menu>
   </el-header>
 </template>
@@ -243,6 +247,10 @@ function openObjectRegistry() {
 
 function openAssistant() {
   router.push('/assistant')
+}
+
+function openAcceptance() {
+  router.push('/acceptance')
 }
 
 function toggleSemanticBuilder() {

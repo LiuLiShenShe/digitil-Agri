@@ -18,8 +18,9 @@
 3. `add-farm-memory-layer`
 4. `add-agent-operation-trace`
 5. `add-asset-metadata-and-fidelity-routing`
+6. `harden-tomato-greenhouse-acceptance-demo`
 
-`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已完成。下一步进入 Phase 6 综合验收与演示固化。
+`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已完成。Phase 6 通过 `harden-tomato-greenhouse-acceptance-demo` 固化综合验收与演示控制台。
 
 ## Phase 0 Decisions
 
@@ -30,6 +31,7 @@
 - Phase 3 已在 2026-05-21 实现 `add-farm-memory-layer`，当前仍保留在 changes 区等待归档；`phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行。
 - Phase 4 已在 2026-05-22 实现 `add-agent-operation-trace`，当前仍保留在 changes 区等待归档。
 - Phase 5 已在 2026-05-22 实现 `add-asset-metadata-and-fidelity-routing`，当前仍保留在 changes 区等待归档。
+- Phase 6 已在 2026-05-22 实现 `harden-tomato-greenhouse-acceptance-demo`，综合验收接口为 `/sceneApi/acceptance/tomato-greenhouse`，前端演示入口为 `/scene/acceptance`。
 - 真实设备控制、每日 GLB 重建和完整 RBAC 继续作为后续非 Phase 0 范围。
 - 基线状态以 `openspec/development-phases/phase0-baseline-report.md` 和 `python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md` 为准。
 
@@ -42,6 +44,7 @@
 | `add-farm-memory-layer` | 10/10 | 已实现，待归档 |
 | `add-agent-operation-trace` | 10/10 | 已实现，待归档 |
 | `add-asset-metadata-and-fidelity-routing` | 10/10 | 已实现，待归档 |
+| `harden-tomato-greenhouse-acceptance-demo` | 17/17 | 已实现，待归档 |
 
 ## Success Metrics
 
@@ -59,6 +62,7 @@
 - 点选异常设备能看到最近指标、告警原因和建议动作。
 - 对一个完整场景运行校验，能列出缺绑定、缺数据、缺缩略图和缺元数据的问题。
 - 生成一份温室日报，内容包含环境摘要、设备状态、告警、灌溉事件和建议。
+- 打开 `/scene/acceptance` 可查看 Phase 6 综合验收控制台；接口 `/sceneApi/acceptance/tomato-greenhouse` 返回计数、trace、路由、校验、对象上下文、日报和归档准备状态。
 
 ## Open Questions
 

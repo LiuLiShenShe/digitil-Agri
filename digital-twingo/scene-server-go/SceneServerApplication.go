@@ -109,6 +109,7 @@ func main() {
 		controller.RegisterFarmMemoryRoutes(api)
 		controller.RegisterAssistantRoutes(api)
 		controller.RegisterSemanticRoutes(api)
+		controller.RegisterAcceptanceRoutes(api)
 
 		// Phase 4: IoT routes
 		iot.RegisterIotRoutes(api)

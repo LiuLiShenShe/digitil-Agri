@@ -1062,8 +1062,33 @@ func parseSemanticIntent(message string) semanticIntent {
 	if _, ok := intent.objects["road"]; !ok && semanticHasAny(text, "沿路", "道路", "主路", "路边", "贯穿") {
 		mergeDefault(intent.objects, "road", 1, "center", "along_path")
 	}
+	applyTomatoGreenhouseMVPPromptOverrides(text, intent.objects)
 
 	return intent
+}
+
+func applyTomatoGreenhouseMVPPromptOverrides(text string, objects map[string]objectIntent) {
+	if !semanticHasAny(text, "番茄温室") {
+		return
+	}
+	if semanticHasAny(text, "20株番茄", "20个番茄", "20棵番茄", "二十株番茄", "二十个番茄", "二十棵番茄") {
+		mergeDefault(objects, "tomato", 20, "west", "grid")
+	}
+	if semanticHasAny(text, "气象站", "水泵", "摄像头", "传感器") {
+		setObjectIntent(objects, "greenhouse", 1, "center", "single")
+	}
+	if semanticHasAny(text, "气象站") {
+		setObjectIntent(objects, "weather_station", 1, "center", "single")
+	}
+	if semanticHasAny(text, "水泵", "灌溉设备") {
+		setObjectIntent(objects, "irrigation", 1, "center", "single")
+	}
+	if semanticHasAny(text, "摄像头", "摄像机", "监控") {
+		setObjectIntent(objects, "camera", 1, "south", "single")
+	}
+	if semanticHasAny(text, "传感器") {
+		setObjectIntent(objects, "sensor", 1, "center", "single")
+	}
 }
 
 func (s *SemanticService) expandPlanObjects(intent semanticIntent) []vo.ScenePlanObject {
@@ -1395,6 +1420,10 @@ func mergeDefault(objects map[string]objectIntent, assetKey string, count int, a
 	objects[assetKey] = objectIntent{assetKey: assetKey, count: count, area: area, layout: layout}
 }
 
+func setObjectIntent(objects map[string]objectIntent, assetKey string, count int, area string, layout string) {
+	objects[assetKey] = objectIntent{assetKey: assetKey, count: count, area: area, layout: layout}
+}
+
 func matchesAsset(text string, item vo.AssetSemantic) bool {
 	for _, alias := range append([]string{item.Name, item.AssetKey}, item.Aliases...) {
 		if alias != "" && strings.Contains(text, normalizeText(alias)) {
@@ -1412,8 +1441,8 @@ func extractCountNear(text string, terms []string) int {
 			continue
 		}
 		patterns := []string{
-			`([一二两三四五六七八九十0-9]+)\s*(个|座|块|条|台|套)?\s*` + regexp.QuoteMeta(term),
-			regexp.QuoteMeta(term) + `\s*([一二两三四五六七八九十0-9]+)\s*(个|座|块|条|台|套)?`,
+			`([一二两三四五六七八九十0-9]+)\s*(个|座|块|条|台|套|株|棵)?\s*` + regexp.QuoteMeta(term),
+			regexp.QuoteMeta(term) + `\s*([一二两三四五六七八九十0-9]+)\s*(个|座|块|条|台|套|株|棵)?`,
 		}
 		for _, pattern := range patterns {
 			re := regexp.MustCompile(pattern)

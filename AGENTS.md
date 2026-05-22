@@ -68,6 +68,7 @@ Phase 0 status:
 - Phase 3 farm memory layer is implemented as of 2026-05-21. `add-farm-memory-layer` is complete (10/10), with metric dictionary, object memory APIs, event memory, daily archives/report source, frontend object detail entries, and read-only Agent tools `timeseries.query` / `event.query`. The Phase 3 migration has been executed in the current development database.
 - Phase 4 Agent operation trace is implemented as of 2026-05-22. `add-agent-operation-trace` is complete (10/10), with FarmTwinOrchestrator trace mapping, specialized Agent role boundaries, read-only/controlled/prohibited tool policy, expanded `agentTrace.steps`, deterministic fallback recording, trace sanitization, and frontend trace step display.
 - Phase 5 asset metadata and fidelity routing is implemented as of 2026-05-22. `add-asset-metadata-and-fidelity-routing` is complete (10/10), with asset metadata registry, quality audit, fidelity routing, plant geometry versions, missing-asset task linkage, Validator issue exposure, semantic Agent routing reasons, and frontend routing/quality display.
+- Phase 6 integrated acceptance and demo hardening is implemented as of 2026-05-22. `harden-tomato-greenhouse-acceptance-demo` is complete (17/17), with the `/sceneApi/acceptance/tomato-greenhouse` backend endpoint, `/scene/acceptance` frontend console, fixed tomato greenhouse MVP semantic counts, cross-phase acceptance evidence, and archive readiness reporting.
 
 Before implementing PRD-level product changes:
 
@@ -93,6 +94,7 @@ Current OpenSpec changes:
 - `add-farm-memory-layer`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `add-agent-operation-trace`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `add-asset-metadata-and-fidelity-routing`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
+- `harden-tomato-greenhouse-acceptance-demo`: 17/17 implementation tasks complete; implemented, pending archive to canonical specs.
 
 Phase 0 guard command:
 
@@ -122,6 +124,7 @@ Important conventions:
 - Base path is `/scene/`.
 - Main stack: Vue 3, TypeScript, Vite, Three.js, Pinia, Element Plus, ECharts, ECharts GL.
 - Preserve the dark glassmorphism UI style and existing panel patterns.
+- Phase 6 acceptance console is served at `/scene/acceptance` by the frontend route `/acceptance`; keep it as a dense internal dashboard, not a marketing page or 3D canvas overlay.
 - Panel visibility is usually managed through Pinia dialog state.
 - Scene operations go through the existing `Scene` singleton and event bus patterns.
 - Keep existing typos that are API-compatible, such as `laodScene` and `winowResize`, unless a change explicitly migrates them.
@@ -147,6 +150,8 @@ Backend conventions:
 - Phase 4 Agent trace implementation lives in `service/SceneBuilderAgent.go`, `service/AgentOperationPolicy.go`, `service/AgentOperationTrace_test.go`, and `vo/SemanticVo.go`. Keep `SceneBuilderAgent` as the compatible semantic-build entry while exposing `FarmTwinOrchestrator` and specialized Agent steps through `agentTrace.steps`.
 - Agent tools must stay governed by read-only, controlled-write, and prohibited categories. Prohibited shell/filesystem/HTTP/direct database/device-control operations must be blocked and recorded as policy violations in trace summaries.
 - Phase 5 asset fidelity implementation lives in `service/AssetRegistryService.go`, `service/AssetQualityAuditService.go`, `service/AssetFidelityRoutingService.go`, `controller/AssetController.go`, and `vo/AssetMetadataVo.go`. Keep asset selection additive and traceable through metadata, audit issues, routing reasons, placeholders, and generation-task contracts rather than blocking semantic scene construction.
+- Phase 6 acceptance implementation lives in `service/AcceptanceService.go`, `controller/AcceptanceController.go`, and `vo/AcceptanceVo.go`. Keep it as an aggregator over Phase 1-5 services and demo stores; do not bypass service contracts with direct database writes or real device control.
+- The fixed Phase 6 prompt is `搭建番茄温室，包含 20 株番茄、气象站、水泵、摄像头和传感器`; deterministic fallback must preserve 20 tomato plants, 1 greenhouse, 1 weather station, 1 irrigation/pump device, 1 camera placeholder task, and 1 sensor placeholder task.
 
 Database:
 

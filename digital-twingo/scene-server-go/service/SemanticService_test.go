@@ -68,6 +68,47 @@ func TestSceneBuilderAgentReturnsTraceAndWhitelistTools(t *testing.T) {
 	}
 }
 
+func TestSemanticTomatoPromptHonorsExplicitMVPCounts(t *testing.T) {
+	svc := NewSemanticService()
+	result := svc.BuildPlan(vo.SemanticBuildRequest{
+		Message:  TomatoGreenhouseAcceptancePrompt,
+		Mode:     "preview",
+		OwnerKey: "phase6-semantic-counts",
+	})
+	if result.Code != 200 {
+		t.Fatalf("unexpected code: %d", result.Code)
+	}
+
+	data, ok := result.Data.(vo.SemanticBuildResponse)
+	if !ok {
+		t.Fatalf("unexpected data type: %T", result.Data)
+	}
+
+	counts := semanticModelCounts(data.Models)
+	want := map[string]int{
+		"tomato":          20,
+		"greenhouse":      1,
+		"weather_station": 1,
+		"irrigation":      1,
+		"camera":          1,
+		"sensor":          1,
+	}
+	for assetKey, expected := range want {
+		if counts[assetKey] != expected {
+			t.Fatalf("%s count = %d, want %d; all counts=%#v plan=%#v", assetKey, counts[assetKey], expected, counts, data.ScenePlan.Objects)
+		}
+	}
+	for _, missingKey := range []string{"camera", "sensor"} {
+		missing := findMissingAsset(data.MissingAssets, missingKey)
+		if missing == nil {
+			t.Fatalf("missing asset %s not found: %#v", missingKey, data.MissingAssets)
+		}
+		if missing.Generation == nil || missing.Generation.TaskID == "" {
+			t.Fatalf("missing asset %s should expose generation task: %#v", missingKey, missing)
+		}
+	}
+}
+
 func TestMissingAssetsBecomePlaceholdersAndGenerationWorkflow(t *testing.T) {
 	svc := NewSemanticService()
 	result := svc.BuildPlan(vo.SemanticBuildRequest{
@@ -234,4 +275,25 @@ func TestLLMResponseResolvesModelFileNameToCatalogAsset(t *testing.T) {
 	if obj.URL != "/scene-assets/models/Corn_Crop.glb" {
 		t.Fatalf("url = %s, want catalog URL", obj.URL)
 	}
+}
+
+func semanticModelCounts(models []vo.BuildModel) map[string]int {
+	counts := map[string]int{}
+	for _, model := range models {
+		key := model.Meta.AssetKey
+		if model.Meta.Placeholder && model.Meta.MissingAssetKey != "" {
+			key = model.Meta.MissingAssetKey
+		}
+		counts[key]++
+	}
+	return counts
+}
+
+func findMissingAsset(items []vo.MissingAssetVo, assetKey string) *vo.MissingAssetVo {
+	for i := range items {
+		if items[i].AssetKey == assetKey {
+			return &items[i]
+		}
+	}
+	return nil
 }

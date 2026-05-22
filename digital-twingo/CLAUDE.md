@@ -9,15 +9,16 @@ This is a **3D Digital Twin platform** (智慧农业数字孪生平台) by Beiji
 - **scene-design-v2** — Vue 3 + TypeScript + Vite frontend for building and viewing 3D scenes (GLTF/GLB models, data visualization)
 - **scene-server-go** — Go + Gin backend providing scene storage, model list, data APIs, and AI 3D asset generation
 
-Current implementation phase: **Phase 5 asset metadata and fidelity routing is implemented** as of 2026-05-22. The next planned phase is **Phase 6 integrated acceptance and demo hardening**.
+Current implementation phase: **Phase 6 integrated acceptance and demo hardening is implemented** as of 2026-05-22. The project is ready for review and OpenSpec archive preparation for the six completed active changes.
 
 - Previous app baseline still includes Phase 3 data visualization capabilities: real-time line chart, gauge, radar, 3D bar chart, heatmap, pie chart, WebSocket mock data stream, and 3D data overlays.
-- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10), `bind-scene-objects-to-business-objects` is complete (9/9), `add-farm-memory-layer` is complete (10/10), `add-agent-operation-trace` is complete (10/10), and `add-asset-metadata-and-fidelity-routing` is complete (10/10). These changes remain in `openspec/changes/` pending review/archive to canonical specs.
+- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10), `bind-scene-objects-to-business-objects` is complete (9/9), `add-farm-memory-layer` is complete (10/10), `add-agent-operation-trace` is complete (10/10), `add-asset-metadata-and-fidelity-routing` is complete (10/10), and `harden-tomato-greenhouse-acceptance-demo` is complete (17/17). These changes remain in `openspec/changes/` pending review/archive to canonical specs.
 - Phase 1 object foundation includes backend object lookup/relation APIs, tomato greenhouse MVP seed data, stable `object.lookup` / `object.relations` output shapes, and the frontend `/objects` debug entry. Archive `add-agricultural-object-model` after review.
 - Phase 2 scene-business binding includes stable `sceneObjectId`, `businessObjectId`, `assetKey`, and `isDefaultBinding` fields on `scenemodel`; `/scene/bindings/*` lookup/update/delete/validation APIs; 3D point-select business detail in `ProperityPane`; `/objects` scene location; and the `番茄温室 MVP` bound scene seed.
 - Phase 3 farm memory layer includes metric dictionary and aliases, default sync policies, object-level latest/timeseries/events/daily-archive/report-source APIs, `farm_event_memory` and `farm_daily_archive` schema, frontend object memory panels, 3D point-select memory summaries, and read-only Assistant tools `timeseries.query` / `event.query`.
 - Phase 4 Agent operation trace includes `FarmTwinOrchestrator` trace mapping over the compatible `SceneBuilderAgent` entry, specialized Agent role boundaries, read-only/controlled/prohibited tool policy, expanded `agentTrace.steps`, deterministic fallback recording, sensitive trace-summary sanitization, and frontend Agent trace step display.
 - Phase 5 asset metadata/fidelity routing includes backend asset registry, quality audit, routing decisions, plant geometry versions, missing-asset task linkage, Validator asset-quality issues, semantic Agent routing reasons, and frontend routing/quality/task display.
+- Phase 6 acceptance/demo hardening includes `GET /sceneApi/acceptance/tomato-greenhouse`, frontend `/scene/acceptance`, deterministic tomato greenhouse MVP counts, cross-phase evidence aggregation, and archive readiness reporting. The fixed MVP prompt is `搭建番茄温室，包含 20 株番茄、气象站、水泵、摄像头和传感器`.
 - Phase 3 migration `digital-twingo/phase3_farm_memory_layer_migration.sql` has been executed in the current development database.
 - Phase 0 artifacts live under `openspec/development-phases/phase0-baseline-report.md` and `openspec/tools/phase0_baseline_guard.py`.
 
@@ -155,6 +156,7 @@ The guard runs OpenSpec validation, backend `go test ./...`, frontend `npm run b
 |------|---------|---------|
 | `sceneBusinessBindingService.ts` | NEW Phase 2 | HTTP service for `/scene/bindings/*`: scene-object lookup, business-object reverse lookup, binding update, and validation summary. |
 | `farmMemoryService.ts` | NEW Phase 3 | HTTP service for `/memory/*` and `/objects/:id/memory/*`: metric dictionary, sync policy, latest values, timeseries, events, daily archives, and report-source data. |
+| `acceptanceService.ts` | NEW Phase 6 | HTTP service for `/acceptance/tomato-greenhouse`: integrated tomato greenhouse acceptance counts, steps, metrics, trace, routing, validation, object context, report source, and archive readiness. |
 | `dataService.ts` | NEW Phase 3 | HTTP data fetching + mock historical data generator: `generateHistoricalData(sourceId, duration, interval)` returns 24h of sensor points with realistic random-walk values, `applyDayNightCycle()` adds circadian rhythm, `fetchSceneData()`, `fetchModelData()`. |
 | `websocket.ts` | NEW Phase 3 | `RealtimeDataService` (singleton via `getRealtimeService()`): WebSocket client with exponential-backoff auto-reconnect, subscription API (`subscribe`/`unsubscribe`), **built-in Mock engine** — when WS is unavailable, generates data every 2s via random-walk algorithm around realistic baselines per source type. Mock auto-disables when real WS connects. |
 
@@ -177,7 +179,7 @@ Key env vars: `VITE_MOCK`, `VITE_EDITMODE`, `VITE_SHOWTEST`, `VITE_BASEURL` (def
 - `$envCfg` — `{ editMode, showTest }`
 - `$bus` — mitt event bus
 
-**Router**: 2 routes — `/` → MainView, `/about` → AboutView (lazy).
+**Router**: main routes include `/` → MainView, `/about` → AboutView (lazy), `/objects` → object debug/list view, and `/acceptance` → Phase 6 acceptance console. Because the Vite base path is `/scene/`, the acceptance console is opened as `/scene/acceptance`.
 
 ### Phase 3 Data Visualization Architecture
 
@@ -240,6 +242,16 @@ Gin framework, MySQL via sqlx, Spring Boot-idiom package structure. Port 9010, c
 - Fidelity strategies include existing managed assets, F2DMAS/high-fidelity reconstruction for key plants, TRELLIS.2 generation for ordinary missing equipment, procedural geometry for rule-based objects, and placeholders with generation-task contracts when assets are unavailable.
 - Semantic scene construction should preserve continuity when an asset is missing: keep the placeholder scene object, expose the routing reason and generation task status, and let Validator output missing thumbnail/source/license/quality issues.
 
+### Phase 6 Acceptance And Demo Hardening
+
+- Backend files: `service/AcceptanceService.go`, `controller/AcceptanceController.go`, and `vo/AcceptanceVo.go`.
+- Frontend files: `src/services/acceptanceService.ts`, `src/views/AcceptanceDemoView.vue`, `src/router/index.ts`, and `src/components/HeadMenu.vue`.
+- API: `GET /sceneApi/acceptance/tomato-greenhouse` returns the integrated Phase 6 acceptance response.
+- Frontend entry: `/scene/acceptance` via the HeadMenu "验收" item.
+- The acceptance service aggregates Phase 1-5 behavior instead of bypassing it: semantic build, Agent trace, asset routing, scene-business validation, agricultural object context, farm memory/report source, success metrics, issues, and archive readiness.
+- Deterministic semantic fallback must keep the fixed MVP prompt counts stable: 20 tomato plants, 1 greenhouse, 1 weather station, 1 irrigation/pump device, 1 camera placeholder generation task, and 1 sensor placeholder generation task.
+- Phase 6 does not archive the prior changes automatically; it only reports readiness for the normal OpenSpec review/archive flow.
+
 ### Data Flow
 1. Frontend loads scenes via `Scene.laodScene(name)` → `GET /sceneApi/scene/loadScene?scene=name`
 2. Backend returns scene config + model list
@@ -248,6 +260,7 @@ Gin framework, MySQL via sqlx, Spring Boot-idiom package structure. Port 9010, c
 5. 3D point-select reads `sceneObjectId` → `GET /sceneApi/scene/bindings/by-scene-object` → `ProperityPane` renders the bound agricultural object detail.
 6. Object detail and 3D point-select memory panels read `businessObjectId` → `/sceneApi/objects/:id/memory/*` for latest values, trends, events, archives, and report-source context.
 7. `/objects` reverse location reads `businessObjectId` → `GET /sceneApi/scene/bindings/by-business-object` → routes back to `/` with `sceneObjectId` and focuses the model.
+8. `/scene/acceptance` reads `GET /sceneApi/acceptance/tomato-greenhouse` → renders Phase 6 counts, trace, routing, validation, object context, report summary, success metrics, and archive readiness.
 
 ### Key Conventions
 - **Vite binary**: Always `./node_modules/.bin/vite`, never `npx vite`

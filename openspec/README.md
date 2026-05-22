@@ -22,6 +22,7 @@
 | `add-farm-memory-layer` | `farm-memory-layer` | 已实现指标字典、同步频率、对象级时序查询、事件记忆和日报数据源，待归档 |
 | `add-agent-operation-trace` | `agent-operation-trace` | 已实现多 Agent 职责、工具白名单、trace 结构、确定性回退和前端 trace 展示，待归档 |
 | `add-asset-metadata-and-fidelity-routing` | `asset-fidelity-routing` | 已实现资产元数据、质量验收、保真度路由、缺失资产任务和植株几何版本，待归档 |
+| `harden-tomato-greenhouse-acceptance-demo` | `tomato-greenhouse-acceptance-demo` | Phase 6 综合验收与演示固化，提供 `/sceneApi/acceptance/tomato-greenhouse` 和 `/scene/acceptance` |
 
 ## Development Progress
 
@@ -32,10 +33,11 @@
   - `add-farm-memory-layer`: 10/10，已实现，待归档到 canonical specs
   - `add-agent-operation-trace`: 10/10，已实现，待归档到 canonical specs
   - `add-asset-metadata-and-fidelity-routing`: 10/10，已实现，待归档到 canonical specs
+  - `harden-tomato-greenhouse-acceptance-demo`: 17/17，已实现，待归档到 canonical specs
 
 ## Why Changes Instead Of Canonical Specs
 
-这些能力来自下一阶段 PRD，当前仍通过 `openspec/changes/` 保留 review 和 archive 流程，避免把未归档变更直接混入 canonical specs。`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已经实现，完成 review 后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。
+这些能力来自下一阶段 PRD，当前仍通过 `openspec/changes/` 保留 review 和 archive 流程，避免把未归档变更直接混入 canonical specs。`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已经实现，完成 review 后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。Phase 6 的 `harden-tomato-greenhouse-acceptance-demo` 只记录综合验收证据和归档准备状态，不自动移动这些 changes。
 
 ## Validation
 
@@ -53,4 +55,4 @@ python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/developm
 openspec validate --all --strict --json
 ```
 
-结果：5 个 change 全部通过。
+结果：6 个 change 全部通过。

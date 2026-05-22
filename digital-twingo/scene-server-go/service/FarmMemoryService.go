@@ -397,6 +397,18 @@ func (s *FarmMemoryService) defaultEvents(objectID string, eventTypes []string, 
 		{EventID: "seed-inspection-001", ObjectID: objectID, EventType: "inspection", Severity: "info", Summary: "巡检记录：温室环境正常", Timestamp: now.Add(-6 * time.Hour), DataQuality: string(DataQualitySimulated)},
 		{EventID: "seed-agent-001", ObjectID: objectID, EventType: "agent_analysis", Severity: "info", Summary: "Agent 建议关注午后通风和水压波动", Timestamp: now.Add(-2 * time.Hour), DataQuality: string(DataQualitySimulated)},
 	}
+	switch objectID {
+	case "gh-tomato-001":
+		candidates = append(candidates,
+			vo.FarmEventVo{EventID: "seed-alert-irrigation-pressure", ObjectID: "device-irrigation-001", RelatedObjectID: objectID, EventType: "alert", Severity: "warning", Summary: "水泵水压短时波动", Timestamp: now.Add(-90 * time.Minute), DataQuality: string(DataQualitySimulated)},
+			vo.FarmEventVo{EventID: "seed-maintenance-irrigation", ObjectID: "device-irrigation-001", RelatedObjectID: objectID, EventType: "maintenance", Severity: "info", Summary: "建议巡检过滤器与阀门", Timestamp: now.Add(-60 * time.Minute), DataQuality: string(DataQualitySimulated)},
+		)
+	case "device-irrigation-001":
+		candidates = append(candidates,
+			vo.FarmEventVo{EventID: "seed-alert-irrigation-pressure", ObjectID: objectID, RelatedObjectID: "gh-tomato-001", EventType: "alert", Severity: "warning", Summary: "水泵水压短时波动", Timestamp: now.Add(-90 * time.Minute), DataQuality: string(DataQualitySimulated)},
+			vo.FarmEventVo{EventID: "seed-maintenance-irrigation", ObjectID: objectID, RelatedObjectID: "gh-tomato-001", EventType: "maintenance", Severity: "info", Summary: "建议巡检过滤器与阀门", Timestamp: now.Add(-60 * time.Minute), DataQuality: string(DataQualitySimulated)},
+		)
+	}
 	eventSet := stringSet(eventTypes)
 	result := make([]vo.FarmEventVo, 0, len(candidates))
 	for _, event := range candidates {

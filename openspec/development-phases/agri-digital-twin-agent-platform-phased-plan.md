@@ -20,7 +20,7 @@
 | Phase 3 | 状态与记忆层 | `add-farm-memory-layer` | 对象维度 24h/7d 趋势、事件和日报数据源可用 |
 | Phase 4 | Agent 运维闭环 | `add-agent-operation-trace` | 语义搭建、资产路由、对象绑定、校验均有 trace |
 | Phase 5 | 资产治理与保真度路由 | `add-asset-metadata-and-fidelity-routing` | 资产元数据、质量审计、缺失资产任务和保真度选择可用 |
-| Phase 6 | 综合验收与演示固化 | 全部 changes | 番茄温室 MVP 端到端验收通过 |
+| Phase 6 | 综合验收与演示固化 | `harden-tomato-greenhouse-acceptance-demo` + 全部 Phase 1-5 changes | 番茄温室 MVP 端到端验收通过 |
 
 ## Shared File Map
 
@@ -95,7 +95,7 @@ python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/developm
 
 **Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。Phase 0 当时保持 5 个 active changes 均为 0 个实现任务完成，不将其标为已实现能力。
 
-**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9；2026-05-21 Phase 3 已完成 `add-farm-memory-layer`，当前状态为 10/10；2026-05-22 Phase 4 已完成 `add-agent-operation-trace`，当前状态为 10/10；2026-05-22 Phase 5 已完成 `add-asset-metadata-and-fidelity-routing`，当前状态为 10/10。以上 changes 待 review 后归档到 canonical specs。
+**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9；2026-05-21 Phase 3 已完成 `add-farm-memory-layer`，当前状态为 10/10；2026-05-22 Phase 4 已完成 `add-agent-operation-trace`，当前状态为 10/10；2026-05-22 Phase 5 已完成 `add-asset-metadata-and-fidelity-routing`，当前状态为 10/10；2026-05-22 Phase 6 已完成 `harden-tomato-greenhouse-acceptance-demo`，当前状态为 17/17。以上 changes 待 review 后归档到 canonical specs。
 
 **Verification:**
 
@@ -386,20 +386,31 @@ cd digital-twingo/scene-design-v2 && npm run build
 
 **Objective:** 将对象模型、场景绑定、记忆层、Agent trace 和资产路由串成番茄温室端到端演示闭环。
 
-**Primary Changes:** 全部 active changes。
+**Primary Changes:** `harden-tomato-greenhouse-acceptance-demo`，并聚合全部 Phase 1-5 active changes。
 
 **Depends On:** Phase 1、Phase 2、Phase 3、Phase 4、Phase 5。
 
+**Implementation Status:** 2026-05-22 已实现。新增后端 `/sceneApi/acceptance/tomato-greenhouse` 综合验收接口和前端 `/scene/acceptance` 演示控制台；固定提示词能稳定生成 20 株番茄、1 个温室、1 个气象站、1 个水泵/灌溉设备、1 个摄像头占位任务和 1 个传感器占位任务。
+
+**Progress Evidence:** `openspec status --change harden-tomato-greenhouse-acceptance-demo --json` 返回 `isComplete: true`；`openspec instructions apply --change harden-tomato-greenhouse-acceptance-demo --json` 返回 `17/17` complete、`state: all_done`。
+
+**OpenSpec References:**
+
+- `openspec/changes/harden-tomato-greenhouse-acceptance-demo/proposal.md`
+- `openspec/changes/harden-tomato-greenhouse-acceptance-demo/design.md`
+- `openspec/changes/harden-tomato-greenhouse-acceptance-demo/tasks.md`
+- `openspec/changes/harden-tomato-greenhouse-acceptance-demo/specs/tomato-greenhouse-acceptance-demo/spec.md`
+
 **End-to-End Tasks:**
 
-- [ ] 输入“搭建番茄温室，包含 20 株番茄、气象站、水泵、摄像头和传感器”，生成可加载场景。
-- [ ] 确认生成结果包含资产选择理由、布局结果和 trace。
-- [ ] 点选温室模型，确认能看到温室对象、传感器、设备、指标、告警和事件。
-- [ ] 点选异常设备，确认能看到最近指标、告警原因和建议动作。
-- [ ] 对完整场景运行校验，确认能列出缺绑定、缺数据、缺缩略图和缺元数据的问题。
-- [ ] 生成温室日报，确认包含环境摘要、设备状态、告警、灌溉事件和建议。
-- [ ] 对照 `openspec/roadmap.md` 成功指标记录验收结果。
-- [ ] 将通过验收的 changes 按 OpenSpec archive 流程准备归档到 `openspec/specs/`。
+- [x] 输入“搭建番茄温室，包含 20 株番茄、气象站、水泵、摄像头和传感器”，生成可加载场景。
+- [x] 确认生成结果包含资产选择理由、布局结果和 trace。
+- [x] 点选温室模型，确认能看到温室对象、传感器、设备、指标、告警和事件。
+- [x] 点选异常设备，确认能看到最近指标、告警原因和建议动作。
+- [x] 对完整场景运行校验，确认能列出缺绑定、缺数据、缺缩略图和缺元数据的问题。
+- [x] 生成温室日报，确认包含环境摘要、设备状态、告警、灌溉事件和建议。
+- [x] 对照 `openspec/roadmap.md` 成功指标记录验收结果。
+- [x] 将通过验收的 changes 按 OpenSpec archive 流程准备归档到 `openspec/specs/`。
 
 **Verification:**
 
@@ -413,7 +424,7 @@ cd digital-twingo/scene-design-v2 && npm run build
 
 - 番茄温室 MVP 端到端演示通过。
 - 5 个 active changes 的任务状态已更新；`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已完成，等待 review/archive。
-- 具备归档到 canonical specs 的条件。
+- 具备归档到 canonical specs 的条件；Phase 6 接口返回 archive readiness，不自动归档。
 
 ## Cross-Phase Acceptance Matrix
 

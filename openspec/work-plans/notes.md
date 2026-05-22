@@ -20,12 +20,13 @@
   3. `add-farm-memory-layer`
   4. `add-agent-operation-trace`
   5. `add-asset-metadata-and-fidelity-routing`
+  6. `harden-tomato-greenhouse-acceptance-demo`
 - 成功指标：绑定率、数据绑定完整率、trace 完整率、资产元数据完整率、缺失资产不中断率、日报生成成功率。
 
 ### Source 3: `openspec/changes/*`
 
 - 每个 change 已包含 proposal/design/tasks/specs。
-- 5 个 change 已通过 `openspec validate --all --strict`。
+- Phase 1-5 的 5 个 change 已完成并等待归档；Phase 6 新增 `harden-tomato-greenhouse-acceptance-demo`，当前 6 个 active change 已通过 `openspec validate --all --strict`。
 - 设计文档应引用这些 change，而不是复制所有细节。
 
 ### Source 4: PRD
@@ -57,4 +58,3 @@
 - 不让 Agent 直接控制真实设备。
 - 不将 TRELLIS.2 作为关键植株可信表型几何来源。
 - 不把未实现能力写成已完成基线。
-

@@ -14,7 +14,7 @@
 
 ## Key Questions
 
-1. 如何把已有 5 个 OpenSpec change 串成可执行总体架构？
+1. 如何把已有 Phase 1-5 OpenSpec change 串成可执行总体架构，并通过 Phase 6 验收 change 固化演示闭环？
 2. 如何按阶段划分开发，让每阶段都有独立目标、依赖、任务和验收？
 3. 如何保持文档和 `openspec/changes/*` 的 proposal/design/tasks/specs 可追溯？
 
@@ -23,7 +23,7 @@
 - 输出目录采用用户指定的 `openspec/`，不使用 superpowers 默认 `docs/superpowers/`。
 - 总体设计文档放到 `openspec/designs/agri-digital-twin-agent-platform-design.md`。
 - 分阶段开发文档放到 `openspec/development-phases/agri-digital-twin-agent-platform-phased-plan.md`。
-- 使用已有 active changes 作为阶段依赖，不新建额外 change。
+- 初始总体设计使用已有 active changes 作为阶段依赖；Phase 6 后续新增 `harden-tomato-greenhouse-acceptance-demo` 作为综合验收与演示固化 change。
 
 ## Errors Encountered
 
@@ -31,4 +31,4 @@
 
 ## Status
 
-**Completed** - 已输出总体设计文档和分阶段开发文档，并完成 OpenSpec 严格校验。
+**Completed** - 已输出总体设计文档和分阶段开发文档，并在 Phase 6 后同步综合验收 change 进度；当前 6 个 active change 已完成 OpenSpec 严格校验。
