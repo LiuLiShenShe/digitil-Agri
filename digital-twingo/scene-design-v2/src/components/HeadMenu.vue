@@ -42,6 +42,7 @@
       text-color="#bcc8d4"
       active-text-color="#00d4ff"
       menu-trigger="click"
+      :ellipsis="false"
       @open="onMenuOpen"
     >
       <el-sub-menu index="1" popper-class="head-sub-menu" v-if="editMode">
@@ -311,6 +312,8 @@ function loadScene(sceneName: string) {
 .head-nav-menu {
   background: transparent !important;
   border: none !important;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .head-nav-menu :deep(.el-menu-item),
@@ -318,6 +321,7 @@ function loadScene(sceneName: string) {
   border-bottom: 2px solid transparent !important;
   height: 60px;
   line-height: 60px;
+  padding: 0 14px;
   transition: all 0.25s;
 }
 

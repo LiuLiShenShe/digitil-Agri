@@ -155,26 +155,56 @@ type SemanticPlanSource struct {
 }
 
 type SceneAgentTraceVo struct {
-	InvocationID string                 `json:"invocationId"`
-	AgentName    string                 `json:"agentName"`
-	Framework    string                 `json:"framework"`
-	Mode         string                 `json:"mode"`
-	StartedAt    string                 `json:"startedAt"`
-	FinishedAt   string                 `json:"finishedAt"`
-	DurationMs   int64                  `json:"durationMs"`
-	UserInput    string                 `json:"userInput"`
-	Tools        []SceneAgentToolCallVo `json:"tools"`
-	FinalSummary string                 `json:"finalSummary"`
-	Error        string                 `json:"error,omitempty"`
+	InvocationID    string                 `json:"invocationId"`
+	TaskID          string                 `json:"taskId"`
+	AgentName       string                 `json:"agentName"`
+	LegacyAgentName string                 `json:"legacyAgentName,omitempty"`
+	Framework       string                 `json:"framework"`
+	Mode            string                 `json:"mode"`
+	StartedAt       string                 `json:"startedAt"`
+	FinishedAt      string                 `json:"finishedAt"`
+	DurationMs      int64                  `json:"durationMs"`
+	UserInput       string                 `json:"userInput,omitempty"`
+	UserGoal        string                 `json:"userGoal"`
+	Tools           []SceneAgentToolCallVo `json:"tools"`
+	Steps           []SceneAgentStepVo     `json:"steps"`
+	Fallback        *SceneAgentFallbackVo  `json:"fallback,omitempty"`
+	FinalSummary    string                 `json:"finalSummary"`
+	Error           string                 `json:"error,omitempty"`
 }
 
 type SceneAgentToolCallVo struct {
-	Name          string `json:"name"`
-	Status        string `json:"status"`
-	DurationMs    int64  `json:"durationMs"`
-	InputSummary  string `json:"inputSummary,omitempty"`
-	OutputSummary string `json:"outputSummary,omitempty"`
-	Error         string `json:"error,omitempty"`
+	Name          string                `json:"name"`
+	Agent         string                `json:"agent,omitempty"`
+	ToolCategory  string                `json:"toolCategory,omitempty"`
+	Status        string                `json:"status"`
+	DurationMs    int64                 `json:"durationMs"`
+	InputSummary  string                `json:"inputSummary,omitempty"`
+	OutputSummary string                `json:"outputSummary,omitempty"`
+	FailureReason string                `json:"failureReason,omitempty"`
+	Error         string                `json:"error,omitempty"`
+	Fallback      *SceneAgentFallbackVo `json:"fallback,omitempty"`
+	Flow          string                `json:"flow,omitempty"`
+}
+
+type SceneAgentStepVo struct {
+	StepID        string                `json:"stepId"`
+	Agent         string                `json:"agent"`
+	Tool          string                `json:"tool"`
+	ToolCategory  string                `json:"toolCategory"`
+	Status        string                `json:"status"`
+	DurationMs    int64                 `json:"durationMs"`
+	InputSummary  string                `json:"inputSummary,omitempty"`
+	OutputSummary string                `json:"outputSummary,omitempty"`
+	FailureReason string                `json:"failureReason,omitempty"`
+	Fallback      *SceneAgentFallbackVo `json:"fallback,omitempty"`
+	Flow          string                `json:"flow,omitempty"`
+}
+
+type SceneAgentFallbackVo struct {
+	Used   bool   `json:"used"`
+	Reason string `json:"reason,omitempty"`
+	Path   string `json:"path,omitempty"`
 }
 
 type SemanticBuildContext struct {

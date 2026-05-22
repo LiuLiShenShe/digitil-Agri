@@ -20,7 +20,7 @@
 | `add-agricultural-object-model` | `agricultural-object-model` | 已实现 Farm、Greenhouse、Parcel、CropRow、Plant、Sensor、Device、Camera 等农业业务对象和关系查询，待归档 |
 | `bind-scene-objects-to-business-objects` | `scene-business-binding` | 建立 3D 场景对象与业务对象绑定、点选详情、业务定位和绑定校验 |
 | `add-farm-memory-layer` | `farm-memory-layer` | 已实现指标字典、同步频率、对象级时序查询、事件记忆和日报数据源，待归档 |
-| `add-agent-operation-trace` | `agent-operation-trace` | 建立多 Agent 职责、工具白名单、trace 结构和确定性回退 |
+| `add-agent-operation-trace` | `agent-operation-trace` | 已实现多 Agent 职责、工具白名单、trace 结构、确定性回退和前端 trace 展示，待归档 |
 | `add-asset-metadata-and-fidelity-routing` | `asset-fidelity-routing` | 建立资产元数据、质量验收、保真度路由、缺失资产任务和植株几何版本 |
 
 ## Development Progress
@@ -30,12 +30,12 @@
   - `add-agricultural-object-model`: 10/10，已实现，待归档到 canonical specs
   - `bind-scene-objects-to-business-objects`: 9/9，已实现，待归档到 canonical specs
   - `add-farm-memory-layer`: 10/10，已实现，待归档到 canonical specs
-  - `add-agent-operation-trace`: 0/10
+  - `add-agent-operation-trace`: 10/10，已实现，待归档到 canonical specs
   - `add-asset-metadata-and-fidelity-routing`: 0/10
 
 ## Why Changes Instead Of Canonical Specs
 
-这些能力来自下一阶段 PRD，当前仍通过 `openspec/changes/` 保留 review 和 archive 流程，避免把未归档变更直接混入 canonical specs。`add-agricultural-object-model`、`bind-scene-objects-to-business-objects` 和 `add-farm-memory-layer` 已经实现，完成 review 后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 仍是待实现 active changes。
+这些能力来自下一阶段 PRD，当前仍通过 `openspec/changes/` 保留 review 和 archive 流程，避免把未归档变更直接混入 canonical specs。`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer` 和 `add-agent-operation-trace` 已经实现，完成 review 后可使用 OpenSpec archive 流程归档到 `openspec/specs/`。`add-asset-metadata-and-fidelity-routing` 仍是待实现 active change。
 
 ## Validation
 

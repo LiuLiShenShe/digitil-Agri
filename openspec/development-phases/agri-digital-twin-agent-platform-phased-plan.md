@@ -95,7 +95,7 @@ python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/developm
 
 **Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。Phase 0 当时保持 5 个 active changes 均为 0 个实现任务完成，不将其标为已实现能力。
 
-**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9。二者待 review 后归档到 canonical specs。
+**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9；2026-05-21 Phase 3 已完成 `add-farm-memory-layer`，当前状态为 10/10；2026-05-22 Phase 4 已完成 `add-agent-operation-trace`，当前状态为 10/10。以上 changes 待 review 后归档到 canonical specs。
 
 **Verification:**
 
@@ -289,28 +289,30 @@ cd digital-twingo/scene-design-v2 && npm run build
 - `openspec/changes/add-agent-operation-trace/tasks.md`
 - `openspec/changes/add-agent-operation-trace/specs/agent-operation-trace/spec.md`
 
+**Implementation Result:** 2026-05-22 已实现。现有 `SceneBuilderAgent` 保留兼容入口，并映射到 `FarmTwinOrchestrator` 总控 trace；后端新增 Agent role registry、工具策略 registry、禁止工具策略违规 trace、扩展 `agentTrace.steps`、确定性回退记录和敏感摘要脱敏；前端 `SemanticBuilderPanel` 展示步骤、Agent、工具类别、状态、耗时、输出摘要、失败原因、回退路径和 preview/apply 模式。
+
 **Backend Tasks:**
 
-- [ ] 定义 FarmTwinOrchestrator 的任务入口、handoff 和汇总职责。
-- [ ] 定义 ScenePlannerAgent、AssetFidelityAgent、LayoutAgent、DataBindingAgent、TimeSeriesAgent、GrowthAnalysisAgent、AlertDiagnosisAgent、ReportAgent、ValidatorAgent 的职责边界。
-- [ ] 将现有 SceneBuilderAgent 映射到新的 Agent 职责边界，保留兼容路径。
-- [ ] 定义只读工具：`scene.current`、`model.search`、`model.metadata`、`object.lookup`、`object.relations`、`timeseries.query`、`event.query`。
-- [ ] 定义受控写工具：`scene.plan`、`layout.solve`、`scene.applyPlan`、`asset.job.create`、`object.bind`、`alert.acknowledge`。
-- [ ] 阻断任意 shell、任意文件系统写入、任意 HTTP、直接数据库写入、未经状态机的设备控制。
-- [ ] 扩展 Agent trace 字段：taskId、userGoal、mode、steps、tool、status、duration、inputSummary、outputSummary、failureReason、fallback。
-- [ ] 实现 LLM 未配置或调用失败时的确定性回退路径。
+- [x] 定义 FarmTwinOrchestrator 的任务入口、handoff 和汇总职责。
+- [x] 定义 ScenePlannerAgent、AssetFidelityAgent、LayoutAgent、DataBindingAgent、TimeSeriesAgent、GrowthAnalysisAgent、AlertDiagnosisAgent、ReportAgent、ValidatorAgent 的职责边界。
+- [x] 将现有 SceneBuilderAgent 映射到新的 Agent 职责边界，保留兼容路径。
+- [x] 定义只读工具：`scene.current`、`model.search`、`model.metadata`、`object.lookup`、`object.relations`、`timeseries.query`、`event.query`。
+- [x] 定义受控写工具：`scene.plan`、`layout.solve`、`scene.applyPlan`、`asset.job.create`、`object.bind`、`alert.acknowledge`。
+- [x] 阻断任意 shell、任意文件系统写入、任意 HTTP、直接数据库写入、未经状态机的设备控制。
+- [x] 扩展 Agent trace 字段：taskId、userGoal、mode、steps、tool、status、duration、inputSummary、outputSummary、failureReason、fallback。
+- [x] 实现 LLM 未配置或调用失败时的确定性回退路径。
 
 **Frontend Tasks:**
 
-- [ ] 扩展 Agent trace 展示，支持步骤、工具、状态、耗时、输入摘要、输出摘要、失败原因和回退路径。
-- [ ] 为语义搭建、资产路由、对象绑定、校验各准备一个可展示 trace。
-- [ ] 将 preview/apply 模式在 UI 上明确区分。
+- [x] 扩展 Agent trace 展示，支持步骤、工具、状态、耗时、输入摘要、输出摘要、失败原因和回退路径。
+- [x] 为语义搭建、资产路由、对象绑定、校验各准备一个可展示 trace。
+- [x] 将 preview/apply 模式在 UI 上明确区分。
 
 **Safety Tasks:**
 
-- [ ] 确认 trace 不记录敏感原始 payload。
-- [ ] 确认所有受控写操作有明确参数和状态。
-- [ ] 确认告警确认不等同于真实设备控制。
+- [x] 确认 trace 不记录敏感原始 payload。
+- [x] 确认所有受控写操作有明确参数和状态。
+- [x] 确认告警确认不等同于真实设备控制。
 
 **Verification:**
 
@@ -408,7 +410,7 @@ cd digital-twingo/scene-design-v2 && npm run build
 **Exit Criteria:**
 
 - 番茄温室 MVP 端到端演示通过。
-- 5 个 active changes 的任务状态已更新；其中 `add-agricultural-object-model` 和 `bind-scene-objects-to-business-objects` 已完成，剩余 3 个仍待实现。
+- 5 个 active changes 的任务状态已更新；其中 `add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer` 和 `add-agent-operation-trace` 已完成，剩余 `add-asset-metadata-and-fidelity-routing` 仍待实现。
 - 具备归档到 canonical specs 的条件。
 
 ## Cross-Phase Acceptance Matrix

@@ -188,25 +188,55 @@ export interface SemanticBuildResponse {
 
 export interface SceneAgentTrace {
   invocationId: string
+  taskId?: string
   agentName: string
+  legacyAgentName?: string
   framework: string
   mode: string
   startedAt: string
   finishedAt: string
   durationMs: number
-  userInput: string
+  userInput?: string
+  userGoal?: string
   tools: SceneAgentToolCall[]
+  steps?: SceneAgentStep[]
+  fallback?: SceneAgentFallback
   finalSummary: string
   error?: string
 }
 
 export interface SceneAgentToolCall {
   name: string
+  agent?: string
+  toolCategory?: string
   status: string
   durationMs: number
   inputSummary?: string
   outputSummary?: string
+  failureReason?: string
   error?: string
+  fallback?: SceneAgentFallback
+  flow?: string
+}
+
+export interface SceneAgentStep {
+  stepId: string
+  agent: string
+  tool: string
+  toolCategory: 'read-only' | 'controlled-write' | 'prohibited' | string
+  status: string
+  durationMs: number
+  inputSummary?: string
+  outputSummary?: string
+  failureReason?: string
+  fallback?: SceneAgentFallback
+  flow?: string
+}
+
+export interface SceneAgentFallback {
+  used: boolean
+  reason?: string
+  path?: string
 }
 
 export async function buildSemanticPlan(request: SemanticBuildRequest): Promise<SemanticBuildResponse> {

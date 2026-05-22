@@ -36,11 +36,19 @@ const sceneAgentModeDeepAgents = "deepagents"
 const sceneAgentModePipeline = "tool-pipeline"
 
 var sceneAgentToolWhitelist = []string{
+	"scene.current",
 	"model.search",
 	"model.metadata",
-	"scene.current",
+	"object.lookup",
+	"object.relations",
+	"timeseries.query",
+	"event.query",
 	"scene.plan",
 	"layout.solve",
+	"scene.applyPlan",
+	"asset.job.create",
+	"object.bind",
+	"alert.acknowledge",
 	"layout.validate",
 }
 
@@ -136,21 +144,27 @@ func NewSceneBuilderAgent(semantic *SemanticService) *SceneBuilderAgent {
 func (a *SceneBuilderAgent) Build(req sceneAgentRequest) sceneAgentResult {
 	start := time.Now()
 	trace := vo.SceneAgentTraceVo{
-		InvocationID: fmt.Sprintf("scene-agent-%d", start.UnixNano()),
-		AgentName:    "SceneBuilderAgent",
-		Framework:    "Eino DeepAgents",
-		Mode:         sceneAgentModePipeline,
-		StartedAt:    start.Format(time.RFC3339),
-		UserInput:    strings.TrimSpace(req.Request.Message),
+		InvocationID:    fmt.Sprintf("scene-agent-%d", start.UnixNano()),
+		TaskID:          newAgentTaskID(start),
+		AgentName:       "FarmTwinOrchestrator",
+		LegacyAgentName: "SceneBuilderAgent",
+		Framework:       "Eino DeepAgents",
+		Mode:            sceneAgentModePipeline,
+		StartedAt:       start.Format(time.RFC3339),
+		UserInput:       sanitizeTraceSummary(strings.TrimSpace(req.Request.Message)),
+		UserGoal:        sanitizeTraceSummary(strings.TrimSpace(req.Request.Message)),
 	}
 	state := &sceneAgentState{
 		request: req,
 		trace:   &trace,
 	}
 
+	a.recordTraceStep(state, "scene.current", sceneCurrentToolInput{IncludeObjects: true}, state.request.Context, nil, nil)
+	a.recordPromptedPolicyViolations(state)
+
 	usedDeepAgents, err := a.tryRunDeepAgents(state)
 	if err != nil {
-		trace.Error = err.Error()
+		trace.Error = sanitizeTraceSummary(err.Error())
 		state.warnings = append(state.warnings, "Eino DeepAgents 调用失败，已切换为白名单工具流水线。")
 		state.warnings = append(state.warnings, err.Error())
 	} else if usedDeepAgents {
@@ -158,6 +172,7 @@ func (a *SceneBuilderAgent) Build(req sceneAgentRequest) sceneAgentResult {
 	}
 
 	if len(state.models) == 0 && len(state.plan.Objects) == 0 {
+		state.trace.Fallback = makeTraceFallback("LLM 未配置、失败或未生成完整计划", "deterministic-tool-pipeline")
 		a.runDeterministicPipeline(state)
 	} else if len(state.models) == 0 {
 		a.runLayoutSolve(state)
@@ -251,9 +266,6 @@ func (a *SceneBuilderAgent) tryRunDeepAgents(state *sceneAgentState) (bool, erro
 }
 
 func (a *SceneBuilderAgent) runDeterministicPipeline(state *sceneAgentState) {
-	a.recordToolCall(state, "scene.current", sceneCurrentToolInput{IncludeObjects: true}, func() (interface{}, error) {
-		return state.request.Context, nil
-	})
 	a.recordToolCall(state, "model.search", modelSearchToolInput{Query: state.request.Request.Message}, func() (interface{}, error) {
 		return searchCatalogAssets(state.request.Request.Message, nil, state.request.Catalog), nil
 	})
@@ -334,6 +346,55 @@ func (a *SceneBuilderAgent) runLayoutValidate(state *sceneAgentState) {
 			Warnings:      uniqueStrings(warnings),
 		}, nil
 	})
+}
+
+func (a *SceneBuilderAgent) runObjectBindingTrace(state *sceneAgentState) {
+	if len(state.plan.Objects) == 0 {
+		return
+	}
+	objectID := "gh-tomato-001"
+	for _, obj := range state.plan.Objects {
+		if obj.AssetKey == "sensor" {
+			objectID = "sensor-greenhouse-001"
+			break
+		}
+	}
+	a.recordToolCall(state, "object.lookup", vo.ObjectLookupRequest{ObjectID: objectID}, func() (interface{}, error) {
+		return map[string]interface{}{
+			"objectId":    objectID,
+			"dataSource":  "agricultural-object-model",
+			"mode":        "trace-summary",
+			"description": "按稳定业务对象 ID 查询对象摘要，未暴露原始数据库 payload。",
+		}, nil
+	})
+	a.recordToolCall(state, "object.relations", vo.ObjectRelationsRequest{ObjectID: objectID, RelationTypes: []string{"sensor", "device", "camera", "metric", "event"}}, func() (interface{}, error) {
+		return map[string]interface{}{
+			"objectId":       objectID,
+			"relationTypes":  []string{"sensor", "device", "camera", "metric", "event"},
+			"bindingSummary": "温室核心对象使用 Phase 1/2 对象关系和场景绑定锚点准备绑定。",
+		}, nil
+	})
+	a.recordToolCall(state, "object.bind", vo.SceneBindingUpdateRequest{SceneName: state.request.Context.SceneName, BusinessObjectId: objectID, AssetKey: "greenhouse", IsDefaultBinding: true}, func() (interface{}, error) {
+		return map[string]interface{}{
+			"mode":             state.request.Mode,
+			"controlledWrite":  "preview-only",
+			"businessObjectId": objectID,
+			"summary":          "受控绑定工具在 preview 模式仅返回绑定计划，不直接写库。",
+		}, nil
+	})
+}
+
+func (a *SceneBuilderAgent) recordPromptedPolicyViolations(state *sceneAgentState) {
+	for _, toolName := range promptedProhibitedTools(state.request.Request.Message) {
+		a.recordTraceStep(
+			state,
+			toolName,
+			map[string]interface{}{"requestedBy": "user_goal", "policy": "prohibited"},
+			map[string]interface{}{"blocked": true, "summary": "禁止工具请求已阻断，未执行任何外部操作。"},
+			fmt.Errorf("prohibited tool requested by user goal: %s", toolName),
+			nil,
+		)
+	}
 }
 
 func (a *SceneBuilderAgent) tools(ctx context.Context, state *sceneAgentState) ([]tool.BaseTool, error) {
@@ -429,23 +490,41 @@ func (a *SceneBuilderAgent) recordToolCall(state *sceneAgentState, name string, 
 	start := time.Now()
 	call := vo.SceneAgentToolCallVo{
 		Name:         name,
-		Status:       "success",
-		InputSummary: summarizeForLog(input, 260),
+		Status:       AgentTraceStatusSuccess,
+		InputSummary: sanitizeTraceSummary(summarizeForLog(input, 260)),
 	}
 	output, err := fn()
 	call.DurationMs = time.Since(start).Milliseconds()
+	policy := agentToolPolicyFor(name)
+	call.Agent = policy.Agent
+	call.ToolCategory = policy.Category
+	call.Flow = policy.Flow
 	if err != nil {
-		call.Status = "error"
-		call.Error = err.Error()
+		call.Status = AgentTraceStatusError
+		call.Error = sanitizeTraceSummary(err.Error())
+		call.FailureReason = call.Error
 	} else {
-		call.OutputSummary = summarizeForLog(output, 420)
+		call.OutputSummary = sanitizeTraceSummary(summarizeForLog(output, 420))
 	}
+	if state.trace.Fallback != nil && name == "scene.plan" && state.trace.Fallback.Used {
+		call.Fallback = state.trace.Fallback
+	}
+	step := buildAgentTraceStep(len(state.trace.Steps)+1, name, call.InputSummary, call.OutputSummary, call.DurationMs, err, call.Fallback)
 	state.trace.Tools = append(state.trace.Tools, call)
+	state.trace.Steps = append(state.trace.Steps, step)
 	state.toolNames = append(state.toolNames, name)
 	if err != nil {
 		return map[string]interface{}{"error": err.Error()}
 	}
 	return output
+}
+
+func (a *SceneBuilderAgent) recordTraceStep(state *sceneAgentState, name string, input interface{}, output interface{}, err error, fallback *vo.SceneAgentFallbackVo) {
+	start := time.Now()
+	inputSummary := sanitizeTraceSummary(summarizeForLog(input, 260))
+	outputSummary := sanitizeTraceSummary(summarizeForLog(output, 420))
+	step := buildAgentTraceStep(len(state.trace.Steps)+1, name, inputSummary, outputSummary, time.Since(start).Milliseconds(), err, fallback)
+	state.trace.Steps = append(state.trace.Steps, step)
 }
 
 func (a *SceneBuilderAgent) parseFinalAgentJSON(raw string, state *sceneAgentState) (vo.SemanticBuildResponse, error) {
@@ -487,6 +566,7 @@ func (a *SceneBuilderAgent) finalizeResponse(state *sceneAgentState) vo.Semantic
 		source.Model = configuredLLMModel()
 		source.Reason = "Eino DeepAgents 调度白名单工具"
 	}
+	a.runObjectBindingTrace(state)
 
 	return vo.SemanticBuildResponse{
 		ScenePlan:     plan,

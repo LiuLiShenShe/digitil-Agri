@@ -25,10 +25,11 @@
 - 写操作必须区分 preview 和 apply 模式，关键写操作需要用户确认或状态机约束。
 - trace 以 task 为根，step 为序列，记录 agent、tool、status、duration、inputSummary、outputSummary、failureReason 和 fallback。
 - LLM 失败时，语义搭建至少可退回到模板、规则解析或预置场景生成。
+- 本期实现采用契约化编排：保留现有 SceneBuilderAgent 入口，把执行步骤映射为 FarmTwinOrchestrator 和专用 Agent trace；trace 随响应返回并在前端展示，不新增持久化 trace 表或历史查询 API。
+- `alert.acknowledge`、`scene.applyPlan`、`object.bind`、`asset.job.create` 在本期作为受控工具契约和 trace 能力表达；preview 模式不直接控制真实设备，也不绕过已有服务做数据库写入。
 
 ## Risks / Trade-offs
 
 - Trace 过细会增加噪声，过粗无法审计；本设计要求摘要和关键字段，不保存敏感原始 payload。
 - 多 Agent 名称过多可能超过 MVP 范围，因此实现可先合并为少数服务，但规格保留职责边界。
 - 白名单会限制灵活性，但这是避免误操作和支撑验收的必要边界。
-

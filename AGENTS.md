@@ -66,7 +66,8 @@ Phase 0 status:
 - Phase 1 agricultural object foundation is implemented as of 2026-05-21. `add-agricultural-object-model` is complete (10/10) and ready for OpenSpec archive after review.
 - Phase 2 scene-business binding is implemented as of 2026-05-21. `bind-scene-objects-to-business-objects` is complete (9/9), with `scenemodel` binding fields, `/scene/bindings/*` APIs, 3D point-select business detail, `/objects` scene location, validation, and the `番茄温室 MVP` bound scene seed.
 - Phase 3 farm memory layer is implemented as of 2026-05-21. `add-farm-memory-layer` is complete (10/10), with metric dictionary, object memory APIs, event memory, daily archives/report source, frontend object detail entries, and read-only Agent tools `timeseries.query` / `event.query`. The Phase 3 migration has been executed in the current development database.
-- The remaining two active implementation changes are not completed baseline capabilities. Do not mark their `tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
+- Phase 4 Agent operation trace is implemented as of 2026-05-22. `add-agent-operation-trace` is complete (10/10), with FarmTwinOrchestrator trace mapping, specialized Agent role boundaries, read-only/controlled/prohibited tool policy, expanded `agentTrace.steps`, deterministic fallback recording, trace sanitization, and frontend trace step display.
+- The remaining active implementation change is not completed baseline capability. Do not mark `add-asset-metadata-and-fidelity-routing/tasks.md` items complete until the corresponding code/data/API/UI work has been implemented and verified.
 
 Before implementing PRD-level product changes:
 
@@ -90,7 +91,7 @@ Current OpenSpec changes:
 - `add-agricultural-object-model`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `bind-scene-objects-to-business-objects`: 9/9 implementation tasks complete; implemented, pending archive to canonical specs.
 - `add-farm-memory-layer`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
-- `add-agent-operation-trace`: 0/10 implementation tasks complete.
+- `add-agent-operation-trace`: 10/10 implementation tasks complete; implemented, pending archive to canonical specs.
 - `add-asset-metadata-and-fidelity-routing`: 0/10 implementation tasks complete.
 
 Phase 0 guard command:
@@ -143,6 +144,8 @@ Backend conventions:
 - Follow the existing controller/service/mapper/vo structure.
 - Prefer additive API changes that keep existing frontend flows working.
 - Do not bypass services with direct database writes from Agent tools.
+- Phase 4 Agent trace implementation lives in `service/SceneBuilderAgent.go`, `service/AgentOperationPolicy.go`, `service/AgentOperationTrace_test.go`, and `vo/SemanticVo.go`. Keep `SceneBuilderAgent` as the compatible semantic-build entry while exposing `FarmTwinOrchestrator` and specialized Agent steps through `agentTrace.steps`.
+- Agent tools must stay governed by read-only, controlled-write, and prohibited categories. Prohibited shell/filesystem/HTTP/direct database/device-control operations must be blocked and recorded as policy violations in trace summaries.
 
 Database:
 

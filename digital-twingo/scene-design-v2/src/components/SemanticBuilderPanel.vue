@@ -96,14 +96,49 @@
         <div v-if="result?.agentTrace" class="agent-box">
           <div class="section-title">Agent 调度</div>
           <div class="context-row">
+            <span>总控</span>
+            <strong>{{ result.agentTrace.agentName }}</strong>
+          </div>
+          <div class="context-row">
             <span>模式</span>
-            <strong>{{ agentModeLabel }}</strong>
+            <strong>{{ agentModeLabel }} / {{ agentBuildModeLabel }}</strong>
+          </div>
+          <div class="context-row">
+            <span>任务</span>
+            <strong>{{ result.agentTrace.taskId || result.agentTrace.invocationId }}</strong>
           </div>
           <div class="context-row">
             <span>耗时</span>
             <strong>{{ result.agentTrace.durationMs }} ms</strong>
           </div>
-          <div class="tool-flow">
+          <div v-if="result.agentTrace.fallback?.used" class="fallback-row">
+            <span>回退路径</span>
+            <strong>{{ result.agentTrace.fallback.path || result.agentTrace.fallback.reason }}</strong>
+          </div>
+          <div class="agent-steps">
+            <div
+              v-for="step in agentTraceSteps"
+              :key="step.stepId || `${step.tool}-${step.durationMs}-${step.status}`"
+              class="agent-step"
+              :class="stepStatusClass(step.status)"
+            >
+              <div class="agent-step-head">
+                <span>{{ step.agent }}</span>
+                <strong>{{ step.durationMs }} ms</strong>
+              </div>
+              <div class="agent-step-meta">
+                <span class="tool-chip" :class="toolCategoryClass(step.toolCategory)">{{ step.tool }}</span>
+                <span class="flow-chip">{{ flowLabel(step.flow) }}</span>
+                <span class="status-chip">{{ statusLabel(step.status) }}</span>
+              </div>
+              <div v-if="step.outputSummary" class="agent-step-summary">{{ step.outputSummary }}</div>
+              <div v-if="step.failureReason" class="agent-step-error">{{ step.failureReason }}</div>
+              <div v-if="step.fallback?.used" class="agent-step-fallback">
+                {{ step.fallback.path || step.fallback.reason }}
+              </div>
+            </div>
+          </div>
+          <div v-if="!agentTraceSteps.length" class="tool-flow">
             <span
               v-for="tool in result.agentTrace.tools"
               :key="`${tool.name}-${tool.durationMs}-${tool.status}`"
@@ -229,6 +264,7 @@ import {
   type BuildModel,
   type BuildSample,
   type MissingAsset,
+  type SceneAgentStep,
   type SemanticBuildContext,
   type SemanticBuildResponse,
   type SemanticObjectSummary
@@ -276,6 +312,31 @@ const agentModeLabel = computed(() => {
   if (mode === 'deepagents') return 'DeepAgents'
   if (mode === 'tool-pipeline') return '工具流水线'
   return mode || '未运行'
+})
+const agentBuildModeLabel = computed(() => {
+  const mode = result.value?.scenePlan?.mode || result.value?.agentTrace?.mode
+  if (mode === 'preview') return '预览'
+  if (mode === 'append') return '追加'
+  if (mode === 'apply') return '应用'
+  return mode || '预览'
+})
+const agentTraceSteps = computed<SceneAgentStep[]>(() => {
+  const trace = result.value?.agentTrace
+  if (!trace) return []
+  if (trace.steps?.length) return trace.steps
+  return (trace.tools || []).map((tool, index) => ({
+    stepId: `legacy-${index + 1}`,
+    agent: tool.agent || trace.agentName || 'Agent',
+    tool: tool.name,
+    toolCategory: tool.toolCategory || 'read-only',
+    status: tool.status,
+    durationMs: tool.durationMs,
+    inputSummary: tool.inputSummary,
+    outputSummary: tool.outputSummary,
+    failureReason: tool.failureReason || tool.error,
+    fallback: tool.fallback,
+    flow: tool.flow
+  }))
 })
 const formattedRawPlan = computed(() => {
   const raw = result.value?.rawLlmPlan
@@ -487,6 +548,40 @@ function layoutLabel(layout: string) {
 
 function formatOffset(offset: { x: number; y: number; z: number }) {
   return `x ${Math.round(offset.x)}, z ${Math.round(offset.z)}`
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    success: '成功',
+    error: '失败',
+    policy_violation: '已阻断'
+  }
+  return labels[status] || status || '未知'
+}
+
+function flowLabel(flow = '') {
+  const labels: Record<string, string> = {
+    semantic_construction: '语义搭建',
+    asset_routing: '资产路由',
+    object_binding: '对象绑定',
+    validation: '校验'
+  }
+  return labels[flow] || flow || '调度'
+}
+
+function stepStatusClass(status: string) {
+  return {
+    error: status === 'error',
+    blocked: status === 'policy_violation'
+  }
+}
+
+function toolCategoryClass(category = '') {
+  return {
+    readonly: category === 'read-only',
+    controlled: category === 'controlled-write',
+    prohibited: category === 'prohibited'
+  }
 }
 
 function getOwnerKey(): string {
@@ -928,6 +1023,127 @@ function fileToBase64(file: File): Promise<string> {
   color: #ffbd7a;
   background: rgba(255,166,77,0.1);
   border-color: rgba(255,166,77,0.2);
+}
+
+.fallback-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: #ffbd7a;
+  background: rgba(255,166,77,0.08);
+  border: 1px solid rgba(255,166,77,0.16);
+  font-size: 12px;
+}
+
+.fallback-row strong {
+  color: #ffd89b;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.agent-steps {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.agent-step {
+  padding: 9px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(0,212,255,0.12);
+}
+
+.agent-step.error {
+  border-color: rgba(255,166,77,0.24);
+  background: rgba(255,166,77,0.06);
+}
+
+.agent-step.blocked {
+  border-color: rgba(255,94,94,0.24);
+  background: rgba(255,94,94,0.06);
+}
+
+.agent-step-head,
+.agent-step-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.agent-step-head span {
+  min-width: 0;
+  color: #e6f7ff;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.agent-step-head strong {
+  flex: 0 0 auto;
+  color: #8be7ff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.agent-step-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+.agent-step-summary,
+.agent-step-error,
+.agent-step-fallback {
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+.agent-step-summary {
+  color: #9fb2c6;
+}
+
+.agent-step-error {
+  color: #ffbd7a;
+}
+
+.agent-step-fallback {
+  color: #ffd89b;
+}
+
+.flow-chip,
+.status-chip {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 4px;
+  color: #c8d0da;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+}
+
+.tool-chip.readonly {
+  color: #8be7ff;
+}
+
+.tool-chip.controlled {
+  color: #8df0b4;
+  background: rgba(62,204,124,0.1);
+  border-color: rgba(62,204,124,0.2);
+}
+
+.tool-chip.prohibited {
+  color: #ff9e9e;
+  background: rgba(255,94,94,0.1);
+  border-color: rgba(255,94,94,0.2);
 }
 
 .missing-item,
