@@ -21,6 +21,7 @@ type SceneBindingStore interface {
 type SceneBusinessBindingService struct {
 	sceneStore    SceneBindingStore
 	objectService *AgriculturalObjectService
+	assetAuditor  *AssetQualityAuditService
 }
 
 func NewSceneBusinessBindingService(sceneStore SceneBindingStore, objectService *AgriculturalObjectService) *SceneBusinessBindingService {
@@ -30,7 +31,11 @@ func NewSceneBusinessBindingService(sceneStore SceneBindingStore, objectService 
 	if objectService == nil {
 		objectService = NewAgriculturalObjectService()
 	}
-	return &SceneBusinessBindingService{sceneStore: sceneStore, objectService: objectService}
+	return &SceneBusinessBindingService{
+		sceneStore:    sceneStore,
+		objectService: objectService,
+		assetAuditor:  NewAssetQualityAuditService(NewAssetRegistryService()),
+	}
 }
 
 func NewDefaultSceneBusinessBindingService() *SceneBusinessBindingService {
@@ -190,6 +195,8 @@ func (s *SceneBusinessBindingService) ValidateScene(sceneName string) vo.SceneBi
 				businessType = obj.Type
 			}
 			summary.Issues = append(summary.Issues, validationIssue("missing_asset_metadata", models[i], businessType, "场景对象缺少资产元数据 assetKey"))
+		} else {
+			summary.Issues = append(summary.Issues, s.assetGovernanceValidationIssues(models[i], obj)...)
 		}
 	}
 	if summary.TotalSceneObjects > 0 {
@@ -203,6 +210,41 @@ func (s *SceneBusinessBindingService) ValidateScene(sceneName string) vo.SceneBi
 		}
 	}
 	return vo.SceneBindingValidationResponse{Code: 200, Summary: summary}
+}
+
+func (s *SceneBusinessBindingService) assetGovernanceValidationIssues(model vo.SceneModelVo, obj *vo.AgriculturalObjectVo) []vo.SceneBindingValidationIssueVo {
+	if s.assetAuditor == nil {
+		return nil
+	}
+	report := s.assetAuditor.AuditAsset(model.AssetKey)
+	result := make([]vo.SceneBindingValidationIssueVo, 0, len(report.Issues))
+	businessType := ""
+	if obj != nil {
+		businessType = obj.Type
+	}
+	for _, issue := range report.Issues {
+		category := assetValidationCategory(issue.Code)
+		if category == "" {
+			continue
+		}
+		result = append(result, validationIssue(category, model, businessType, issue.Message))
+	}
+	return result
+}
+
+func assetValidationCategory(code string) string {
+	switch code {
+	case "missing_thumbnail":
+		return "missing_asset_thumbnail"
+	case "missing_source":
+		return "missing_asset_source"
+	case "missing_license":
+		return "missing_asset_license"
+	case "missing_quality", "not_threejs_loadable", "invalid_axis", "invalid_unit_scale", "invalid_texture_count":
+		return "asset_quality_issue"
+	default:
+		return ""
+	}
 }
 
 func (s *SceneBusinessBindingService) findSceneModel(sceneName string, sceneObjectId string) (*vo.SceneModelVo, error) {

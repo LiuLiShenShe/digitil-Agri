@@ -165,8 +165,13 @@
               <strong :class="assetGenerationClass(asset)">{{ assetGenerationLabel(asset) }}</strong>
             </div>
             <div class="asset-generation-meta">
+              <span>路由：{{ assetRoutingLabel(asset) }}</span>
+              <span v-if="asset.routing?.fidelityLevel">保真度：{{ asset.routing.fidelityLevel }}</span>
               <span>参考图：{{ referenceImageLabel(asset) }}</span>
               <span v-if="asset.generation?.taskId">任务：{{ asset.generation.taskId }}</span>
+            </div>
+            <div v-if="asset.routing?.routingReason" class="asset-routing-reason">
+              {{ asset.routing.routingReason }}
             </div>
             <div v-if="asset.referenceImage?.url" class="reference-preview">
               <img :src="asset.referenceImage.url" :alt="asset.name" />
@@ -226,6 +231,11 @@
             <div class="asset-source" :class="{ missing: !obj.url }">
               {{ obj.url ? `模型库：${obj.url}` : '模型库：缺失 GLB' }}
             </div>
+            <div v-if="assetCatalogInfo(obj.assetKey)" class="asset-quality-line">
+              <span>{{ assetCatalogInfo(obj.assetKey)?.fidelityLevel || 'standard' }}</span>
+              <span>{{ qualityLabel(assetCatalogInfo(obj.assetKey)?.quality?.qualityStatus) }}</span>
+              <span>{{ assetCatalogInfo(obj.assetKey)?.source || '未记录来源' }}</span>
+            </div>
           </div>
         </div>
 
@@ -259,6 +269,8 @@ import {
   buildSemanticPlan,
   createAssetGenerationJob,
   fetchAssetGenerationJob,
+  fetchAssetSemantics,
+  type AssetSemantic,
   type AssetJobResponse,
   fetchSemanticSamples,
   type BuildModel,
@@ -288,6 +300,7 @@ const applying = ref(false)
 const result = ref<SemanticBuildResponse | null>(null)
 const resultPrompt = ref('')
 const samples = ref<BuildSample[]>([])
+const assetCatalog = ref<AssetSemantic[]>([])
 const assetSubmitting = reactive<Record<string, boolean>>({})
 let assetPollTimer: number | null = null
 const sourceLabel = computed(() => {
@@ -356,6 +369,11 @@ onMounted(async () => {
       { title: '智慧农业示范园区', message: defaultPrompt },
       { title: '标准温室场景', message: '创建标准温室场景，两个大棚纵向排列，每个大棚旁边放灌溉设备。' }
     ]
+  }
+  try {
+    assetCatalog.value = await fetchAssetSemantics()
+  } catch {
+    assetCatalog.value = []
   }
 })
 
@@ -600,6 +618,32 @@ function referenceImageLabel(asset: MissingAsset) {
   if (status === 'resolved') return source === 'preset' ? '预置图库' : source || '已匹配'
   if (status === 'generated') return '图片生成'
   return '待上传'
+}
+
+function assetRoutingLabel(asset: MissingAsset) {
+  const strategy = asset.routing?.strategy
+  const labels: Record<string, string> = {
+    existing_asset: '已有资产',
+    F2DMAS: 'F2DMAS',
+    high_fidelity_reconstruction: '高保真重建',
+    'TRELLIS.2': 'TRELLIS.2',
+    procedural: '程序化',
+    placeholder: '占位'
+  }
+  return labels[strategy || ''] || strategy || '未决策'
+}
+
+function assetCatalogInfo(assetKey: string) {
+  return assetCatalog.value.find(item => item.assetKey === assetKey)
+}
+
+function qualityLabel(status = '') {
+  const labels: Record<string, string> = {
+    accepted: '质量通过',
+    flagged: '质量待修',
+    rejected: '质量拒收'
+  }
+  return labels[status] || status || '质量未审计'
 }
 
 function assetGenerationLabel(asset: MissingAsset) {
@@ -1226,6 +1270,20 @@ function fileToBase64(file: File): Promise<string> {
   margin-top: 8px;
   color: #7f91a5;
   font-size: 11px;
+}
+
+.asset-routing-reason,
+.asset-quality-line {
+  margin-top: 7px;
+  color: #9fb2c8;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.asset-quality-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
 }
 
 .reference-preview {

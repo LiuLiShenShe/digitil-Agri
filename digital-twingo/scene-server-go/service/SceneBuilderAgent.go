@@ -330,6 +330,50 @@ func (a *SceneBuilderAgent) runLayoutSolve(state *sceneAgentState) {
 	})
 }
 
+func (a *SceneBuilderAgent) runAssetRoutingTrace(state *sceneAgentState) {
+	if len(state.plan.Objects) == 0 {
+		return
+	}
+	type routeSummary struct {
+		AssetKey      string `json:"assetKey"`
+		Strategy      string `json:"strategy"`
+		RoutingReason string `json:"routingReason"`
+	}
+	a.recordToolCall(state, "asset.job.create", map[string]interface{}{"mode": state.request.Mode, "scope": "missing-assets"}, func() (interface{}, error) {
+		routes := make([]routeSummary, 0)
+		missingRoutes := make([]routeSummary, 0)
+		missingByKey := map[string]vo.MissingAssetVo{}
+		for _, item := range state.missing {
+			missingByKey[item.AssetKey] = item
+		}
+		for _, obj := range state.plan.Objects {
+			req := vo.AssetFidelityRoutingRequest{
+				AssetKey:      obj.AssetKey,
+				ObjectType:    objectTypeForAsset(obj.AssetKey, obj.Category),
+				BusinessValue: "ordinary",
+			}
+			if obj.AssetKey == "tomato" {
+				req.BusinessValue = "research_sample"
+				req.IsKeyPlant = true
+				req.RequiredFidelity = "trustworthy_geometry"
+			}
+			decision := a.semantic.assetRouter.Decide(req)
+			if missing, ok := missingByKey[obj.AssetKey]; ok {
+				decision.RequiresGenerationTask = true
+				decision.PlaceholderAssetKey = firstNonEmptySemanticAsset(missing.FallbackModelKey, decision.PlaceholderAssetKey, "placeholder.device")
+				missingRoutes = append(missingRoutes, routeSummary{AssetKey: obj.AssetKey, Strategy: decision.Strategy, RoutingReason: decision.RoutingReason})
+			}
+			routes = append(routes, routeSummary{AssetKey: obj.AssetKey, Strategy: decision.Strategy, RoutingReason: decision.RoutingReason})
+		}
+		return map[string]interface{}{
+			"missingStrategy": missingRoutes,
+			"mode":            "preview-only",
+			"summary":         "AssetFidelityAgent 输出资产选择理由；缺失资产使用 TRELLIS.2 任务契约并保留占位模型。",
+			"strategy":        routes,
+		}, nil
+	})
+}
+
 func (a *SceneBuilderAgent) runLayoutValidate(state *sceneAgentState) {
 	a.recordToolCall(state, "layout.validate", layoutValidateToolInput{UseCurrentLayout: true}, func() (interface{}, error) {
 		missing := filterAvailableMissingAssets(state.missing, state.request.Catalog)
@@ -566,6 +610,7 @@ func (a *SceneBuilderAgent) finalizeResponse(state *sceneAgentState) vo.Semantic
 		source.Model = configuredLLMModel()
 		source.Reason = "Eino DeepAgents 调度白名单工具"
 	}
+	a.runAssetRoutingTrace(state)
 	a.runObjectBindingTrace(state)
 
 	return vo.SemanticBuildResponse{

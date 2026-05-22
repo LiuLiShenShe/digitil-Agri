@@ -9,17 +9,17 @@ This is a **3D Digital Twin platform** (智慧农业数字孪生平台) by Beiji
 - **scene-design-v2** — Vue 3 + TypeScript + Vite frontend for building and viewing 3D scenes (GLTF/GLB models, data visualization)
 - **scene-server-go** — Go + Gin backend providing scene storage, model list, data APIs, and AI 3D asset generation
 
-Current implementation phase: **Phase 4 agent operation trace is implemented** as of 2026-05-22. The next planned implementation phase is **Phase 5 asset metadata and fidelity routing**.
+Current implementation phase: **Phase 5 asset metadata and fidelity routing is implemented** as of 2026-05-22. The next planned phase is **Phase 6 integrated acceptance and demo hardening**.
 
 - Previous app baseline still includes Phase 3 data visualization capabilities: real-time line chart, gauge, radar, 3D bar chart, heatmap, pie chart, WebSocket mock data stream, and 3D data overlays.
-- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10), `bind-scene-objects-to-business-objects` is complete (9/9), `add-farm-memory-layer` is complete (10/10), and `add-agent-operation-trace` is complete (10/10). Remaining active implementation change is `add-asset-metadata-and-fidelity-routing` (0/10).
+- OpenSpec implementation progress: `add-agricultural-object-model` is complete (10/10), `bind-scene-objects-to-business-objects` is complete (9/9), `add-farm-memory-layer` is complete (10/10), `add-agent-operation-trace` is complete (10/10), and `add-asset-metadata-and-fidelity-routing` is complete (10/10). These changes remain in `openspec/changes/` pending review/archive to canonical specs.
 - Phase 1 object foundation includes backend object lookup/relation APIs, tomato greenhouse MVP seed data, stable `object.lookup` / `object.relations` output shapes, and the frontend `/objects` debug entry. Archive `add-agricultural-object-model` after review.
 - Phase 2 scene-business binding includes stable `sceneObjectId`, `businessObjectId`, `assetKey`, and `isDefaultBinding` fields on `scenemodel`; `/scene/bindings/*` lookup/update/delete/validation APIs; 3D point-select business detail in `ProperityPane`; `/objects` scene location; and the `番茄温室 MVP` bound scene seed.
 - Phase 3 farm memory layer includes metric dictionary and aliases, default sync policies, object-level latest/timeseries/events/daily-archive/report-source APIs, `farm_event_memory` and `farm_daily_archive` schema, frontend object memory panels, 3D point-select memory summaries, and read-only Assistant tools `timeseries.query` / `event.query`.
 - Phase 4 Agent operation trace includes `FarmTwinOrchestrator` trace mapping over the compatible `SceneBuilderAgent` entry, specialized Agent role boundaries, read-only/controlled/prohibited tool policy, expanded `agentTrace.steps`, deterministic fallback recording, sensitive trace-summary sanitization, and frontend Agent trace step display.
+- Phase 5 asset metadata/fidelity routing includes backend asset registry, quality audit, routing decisions, plant geometry versions, missing-asset task linkage, Validator asset-quality issues, semantic Agent routing reasons, and frontend routing/quality/task display.
 - Phase 3 migration `digital-twingo/phase3_farm_memory_layer_migration.sql` has been executed in the current development database.
 - Phase 0 artifacts live under `openspec/development-phases/phase0-baseline-report.md` and `openspec/tools/phase0_baseline_guard.py`.
-- Do not treat asset metadata/fidelity routing as completed until the matching OpenSpec change tasks are implemented and verified.
 
 ## Common Commands
 
@@ -231,6 +231,14 @@ Gin framework, MySQL via sqlx, Spring Boot-idiom package structure. Port 9010, c
 - `agentTrace.tools` remains for compatibility; new UI should prefer `agentTrace.steps`, with `taskId`, `userGoal`, `agent`, `tool`, `toolCategory`, `status`, `durationMs`, summaries, `failureReason`, and `fallback`.
 - Tool policy categories are read-only, controlled-write, and prohibited. Prohibited shell, filesystem write, arbitrary HTTP, direct database write, and direct device-control operations must be blocked and recorded as policy violations.
 - Preview-mode controlled writes such as `object.bind`, `scene.applyPlan`, `asset.job.create`, and `alert.acknowledge` are trace/contracts only unless an implementation explicitly routes through existing services and state constraints.
+
+### Phase 5 Asset Metadata And Fidelity Routing
+
+- Backend files: `service/AssetRegistryService.go`, `service/AssetQualityAuditService.go`, `service/AssetFidelityRoutingService.go`, `controller/AssetController.go`, and `vo/AssetMetadataVo.go`.
+- Frontend files: `src/services/semanticService.ts`, `src/components/SemanticBuilderPanel.vue`, and `src/mock/modules/semantic.ts`.
+- Asset APIs under `/sceneApi/asset`: `GET /metadata`, `GET /metadata/:assetKey`, `GET /audit`, `POST /routing/decide`, and `GET /plant-geometry/:objectId`.
+- Fidelity strategies include existing managed assets, F2DMAS/high-fidelity reconstruction for key plants, TRELLIS.2 generation for ordinary missing equipment, procedural geometry for rule-based objects, and placeholders with generation-task contracts when assets are unavailable.
+- Semantic scene construction should preserve continuity when an asset is missing: keep the placeholder scene object, expose the routing reason and generation task status, and let Validator output missing thumbnail/source/license/quality issues.
 
 ### Data Flow
 1. Frontend loads scenes via `Scene.laodScene(name)` → `GET /sceneApi/scene/loadScene?scene=name`

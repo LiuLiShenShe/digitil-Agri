@@ -74,8 +74,46 @@ export interface MissingAsset {
   prompt?: string
   fallbackModelKey?: string
   placementRefs?: string[]
+  routing?: AssetFidelityRoutingDecision
   referenceImage?: MissingAssetReferenceImage
   generation?: MissingAssetGeneration
+}
+
+export interface AssetFidelityRoutingDecision {
+  assetKey: string
+  objectType: string
+  strategy: 'existing_asset' | 'F2DMAS' | 'high_fidelity_reconstruction' | 'TRELLIS.2' | 'procedural' | 'placeholder' | string
+  selectedAssetKey?: string
+  selectedUrl?: string
+  fidelityLevel: string
+  routingReason: string
+  requiresGenerationTask: boolean
+  placeholderAssetKey?: string
+  generationMode?: string
+  referenceImageRequired?: boolean
+}
+
+export interface AssetQualityInfo {
+  loadable: boolean
+  axis: string
+  unitScale: number
+  center: { x: number; y: number; z: number }
+  polygonCount: number
+  textureCount: number
+  volumeM3: number
+  hasThumbnail: boolean
+  hasSource: boolean
+  hasLicense: boolean
+  lod?: string
+  qualityStatus: string
+  issues?: string[]
+}
+
+export interface AssetVersionInfo {
+  version: string
+  revision?: string
+  updatedAt: string
+  stage?: string
 }
 
 export interface MissingAssetReferenceImage {
@@ -172,6 +210,16 @@ export interface AssetSemantic {
     depth: number
   }
   layoutRules: string[]
+  source?: string
+  license?: string
+  fidelityLevel?: string
+  thumbnailUrl?: string
+  glbUrl?: string
+  applicableObjectTypes?: string[]
+  quality?: AssetQualityInfo
+  version?: AssetVersionInfo
+  metadataComplete?: boolean
+  routingReason?: string
 }
 
 export interface SemanticBuildResponse {

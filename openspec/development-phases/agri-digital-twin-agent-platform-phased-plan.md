@@ -95,7 +95,7 @@ python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/developm
 
 **Baseline Result:** 2026-05-21 护栏通过，详见 `openspec/development-phases/phase0-baseline-report.md`。Phase 0 当时保持 5 个 active changes 均为 0 个实现任务完成，不将其标为已实现能力。
 
-**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9；2026-05-21 Phase 3 已完成 `add-farm-memory-layer`，当前状态为 10/10；2026-05-22 Phase 4 已完成 `add-agent-operation-trace`，当前状态为 10/10。以上 changes 待 review 后归档到 canonical specs。
+**Later Progress:** 2026-05-21 Phase 1 已完成 `add-agricultural-object-model`，当前状态为 10/10；Phase 2 已完成 `bind-scene-objects-to-business-objects`，当前状态为 9/9；2026-05-21 Phase 3 已完成 `add-farm-memory-layer`，当前状态为 10/10；2026-05-22 Phase 4 已完成 `add-agent-operation-trace`，当前状态为 10/10；2026-05-22 Phase 5 已完成 `add-asset-metadata-and-fidelity-routing`，当前状态为 10/10。以上 changes 待 review 后归档到 canonical specs。
 
 **Verification:**
 
@@ -343,28 +343,30 @@ cd digital-twingo/scene-design-v2 && npm run build
 - `openspec/changes/add-asset-metadata-and-fidelity-routing/tasks.md`
 - `openspec/changes/add-asset-metadata-and-fidelity-routing/specs/asset-fidelity-routing/spec.md`
 
+**Implementation Result:** 2026-05-22 已实现。后端新增资产元数据注册表、质量审计、保真度路由、植株阶段几何版本和 `/sceneApi/asset/metadata`、`/asset/audit`、`/asset/routing/decide`、`/asset/plant-geometry/:objectId` 接口；语义搭建结果为缺失摄像头/传感器生成 TRELLIS.2 任务契约并关联占位模型；Validator 校验输出缺缩略图、缺来源、缺许可和质量异常；前端 AI 搭建面板展示路由策略、保真度、参考图、任务状态和资产质量摘要。
+
 **Backend Tasks:**
 
-- [ ] 定义资产元数据字段：assetKey、分类、来源、许可、保真度、缩略图、GLB 地址、适用对象、质量信息、版本信息。
-- [ ] 统一前端 `public/models` 和后端 `scene-assets` 的资产索引方式。
-- [ ] 定义 Three.js 可加载、坐标轴、单位、中心点、面数、贴图、体积、缩略图、来源和许可检查规则。
-- [ ] 实现或接入资产质量审计流程。
-- [ ] 将缺缩略图、缺来源、缺许可和质量异常暴露给校验流程。
-- [ ] 支持缺失资产创建生成任务并关联到场景占位对象。
+- [x] 定义资产元数据字段：assetKey、分类、来源、许可、保真度、缩略图、GLB 地址、适用对象、质量信息、版本信息。
+- [x] 统一前端 `public/models` 和后端 `scene-assets` 的资产索引方式。
+- [x] 定义 Three.js 可加载、坐标轴、单位、中心点、面数、贴图、体积、缩略图、来源和许可检查规则。
+- [x] 实现或接入资产质量审计流程。
+- [x] 将缺缩略图、缺来源、缺许可和质量异常暴露给校验流程。
+- [x] 支持缺失资产创建生成任务并关联到场景占位对象。
 
 **Frontend Tasks:**
 
-- [ ] 在模型/资产列表中展示资产元数据完整性。
-- [ ] 在语义搭建结果中展示资产选择理由。
-- [ ] 在场景中保留占位模型，并展示关联生成任务状态。
-- [ ] 在 ValidatorAgent 结果中展示缺缩略图、缺来源、缺许可和质量异常。
+- [x] 在模型/资产列表中展示资产元数据完整性。
+- [x] 在语义搭建结果中展示资产选择理由。
+- [x] 在场景中保留占位模型，并展示关联生成任务状态。
+- [x] 在 ValidatorAgent 结果中展示缺缩略图、缺来源、缺许可和质量异常。
 
 **Asset Pipeline Tasks:**
 
-- [ ] 为公开 GLB 批量补充基础元数据和缩略图。
-- [ ] 为关键植株定义阶段性几何版本：苗期、营养生长期、开花期、结果期、成熟期。
-- [ ] 实现资产策略：已有资产、F2DMAS、TRELLIS.2、程序化生成、占位模型。
-- [ ] 验证 AssetFidelityAgent 能为典型温室场景输出资产选择理由。
+- [x] 为公开 GLB 批量补充基础元数据和缩略图。
+- [x] 为关键植株定义阶段性几何版本：苗期、营养生长期、开花期、结果期、成熟期。
+- [x] 实现资产策略：已有资产、F2DMAS、TRELLIS.2、程序化生成、占位模型。
+- [x] 验证 AssetFidelityAgent 能为典型温室场景输出资产选择理由。
 
 **Verification:**
 
@@ -410,7 +412,7 @@ cd digital-twingo/scene-design-v2 && npm run build
 **Exit Criteria:**
 
 - 番茄温室 MVP 端到端演示通过。
-- 5 个 active changes 的任务状态已更新；其中 `add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer` 和 `add-agent-operation-trace` 已完成，剩余 `add-asset-metadata-and-fidelity-routing` 仍待实现。
+- 5 个 active changes 的任务状态已更新；`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已完成，等待 review/archive。
 - 具备归档到 canonical specs 的条件。
 
 ## Cross-Phase Acceptance Matrix

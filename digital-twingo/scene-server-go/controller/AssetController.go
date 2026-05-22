@@ -10,6 +10,9 @@ import (
 )
 
 var assetService = service.NewAssetService()
+var assetRegistryService = service.NewAssetRegistryService()
+var assetAuditService = service.NewAssetQualityAuditService(assetRegistryService)
+var assetRoutingService = service.NewAssetFidelityRoutingService(assetRegistryService)
 
 // RegisterAssetRoutes registers asset generation routes.
 func RegisterAssetRoutes(api *gin.RouterGroup) {
@@ -22,6 +25,11 @@ func RegisterAssetRoutes(api *gin.RouterGroup) {
 		asset.GET("/jobs", listJobs)
 		asset.POST("/jobs/:id/approve", approveJob)
 		asset.POST("/jobs/:id/reject", rejectJob)
+		asset.GET("/metadata", listAssetMetadata)
+		asset.GET("/metadata/:assetKey", getAssetMetadata)
+		asset.GET("/audit", auditAssets)
+		asset.POST("/routing/decide", decideAssetRouting)
+		asset.GET("/plant-geometry/:objectId", getPlantGeometryVersions)
 	}
 }
 
@@ -131,4 +139,40 @@ func rejectJob(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: "rejected"})
+}
+
+func listAssetMetadata(c *gin.Context) {
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: assetRegistryService.List()})
+}
+
+func getAssetMetadata(c *gin.Context) {
+	assetKey := c.Param("assetKey")
+	result, ok := assetRegistryService.Get(assetKey)
+	if !ok {
+		c.JSON(http.StatusOK, vo.ResultVo{Code: 404, Data: "asset metadata not found"})
+		return
+	}
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: result})
+}
+
+func auditAssets(c *gin.Context) {
+	assetKey := c.Query("assetKey")
+	if assetKey != "" {
+		c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: assetAuditService.AuditAsset(assetKey)})
+		return
+	}
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: assetAuditService.AuditAll()})
+}
+
+func decideAssetRouting(c *gin.Context) {
+	var req vo.AssetFidelityRoutingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, vo.ResultVo{Code: 400, Data: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: assetRoutingService.Decide(req)})
+}
+
+func getPlantGeometryVersions(c *gin.Context) {
+	c.JSON(http.StatusOK, vo.ResultVo{Code: 200, Data: assetRegistryService.PlantGeometryVersions(c.Param("objectId"))})
 }

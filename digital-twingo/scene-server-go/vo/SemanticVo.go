@@ -89,14 +89,24 @@ type BuildModelMeta struct {
 }
 
 type AssetSemantic struct {
-	AssetKey     string      `json:"assetKey"`
-	Name         string      `json:"name"`
-	Aliases      []string    `json:"aliases"`
-	Category     string      `json:"category"`
-	URL          string      `json:"url"`
-	DefaultScale float64     `json:"defaultScale"`
-	Footprint    FootprintVo `json:"footprint"`
-	LayoutRules  []string    `json:"layoutRules"`
+	AssetKey              string             `json:"assetKey"`
+	Name                  string             `json:"name"`
+	Aliases               []string           `json:"aliases"`
+	Category              string             `json:"category"`
+	URL                   string             `json:"url"`
+	DefaultScale          float64            `json:"defaultScale"`
+	Footprint             FootprintVo        `json:"footprint"`
+	LayoutRules           []string           `json:"layoutRules"`
+	Source                string             `json:"source,omitempty"`
+	License               string             `json:"license,omitempty"`
+	FidelityLevel         string             `json:"fidelityLevel,omitempty"`
+	ThumbnailURL          string             `json:"thumbnailUrl,omitempty"`
+	GLBURL                string             `json:"glbUrl,omitempty"`
+	ApplicableObjectTypes []string           `json:"applicableObjectTypes,omitempty"`
+	Quality               AssetQualityInfoVo `json:"quality,omitempty"`
+	Version               AssetVersionInfoVo `json:"version,omitempty"`
+	MetadataComplete      bool               `json:"metadataComplete,omitempty"`
+	RoutingReason         string             `json:"routingReason,omitempty"`
 }
 
 type FootprintVo struct {
@@ -105,15 +115,16 @@ type FootprintVo struct {
 }
 
 type MissingAssetVo struct {
-	AssetKey         string                        `json:"assetKey"`
-	Name             string                        `json:"name"`
-	Category         string                        `json:"category,omitempty"`
-	Reason           string                        `json:"reason"`
-	Prompt           string                        `json:"prompt,omitempty"`
-	FallbackModelKey string                        `json:"fallbackModelKey,omitempty"`
-	PlacementRefs    []string                      `json:"placementRefs,omitempty"`
-	ReferenceImage   *MissingAssetReferenceImageVo `json:"referenceImage,omitempty"`
-	Generation       *MissingAssetGenerationVo     `json:"generation,omitempty"`
+	AssetKey         string                          `json:"assetKey"`
+	Name             string                          `json:"name"`
+	Category         string                          `json:"category,omitempty"`
+	Reason           string                          `json:"reason"`
+	Prompt           string                          `json:"prompt,omitempty"`
+	FallbackModelKey string                          `json:"fallbackModelKey,omitempty"`
+	PlacementRefs    []string                        `json:"placementRefs,omitempty"`
+	Routing          *AssetFidelityRoutingDecisionVo `json:"routing,omitempty"`
+	ReferenceImage   *MissingAssetReferenceImageVo   `json:"referenceImage,omitempty"`
+	Generation       *MissingAssetGenerationVo       `json:"generation,omitempty"`
 }
 
 type MissingAssetReferenceImageVo struct {

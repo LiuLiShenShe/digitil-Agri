@@ -16,6 +16,7 @@
 - 2026-05-21：Phase 2 `bind-scene-objects-to-business-objects` 已实现，OpenSpec 任务进度为 9/9，待 review 后归档到 canonical specs。
 - 2026-05-21：Phase 3 `add-farm-memory-layer` 已实现，OpenSpec 任务进度为 10/10，`phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行，待 review 后归档到 canonical specs。
 - 2026-05-22：Phase 4 `add-agent-operation-trace` 已实现，OpenSpec 任务进度为 10/10，待 review 后归档到 canonical specs。
+- 2026-05-22：Phase 5 `add-asset-metadata-and-fidelity-routing` 已实现，OpenSpec 任务进度为 10/10，待 review 后归档到 canonical specs。
 - 本报告中的 Active Changes 表保留 Phase 0 护栏生成时的历史基线，不代表后续开发的当前进度。
 
 ## 命令基线
@@ -57,7 +58,7 @@
 | 真实设备接入 | 缺失 | 未发现 Phase 0 真实设备联调记录，本阶段不做真实设备控制 |
 | LLM Agent | 缺失 | `llm.enabled: false`，语义搭建保留确定性回退路径 |
 | RAG 知识库 | 缺失 | `rag.enabled: false`，不可误标为已完成文档 RAG |
-| 资产元数据 | 缺失 | GLB 数量多于缩略图和元数据治理结果，待 Phase 5 收敛 |
+| 资产元数据 | Phase 0 时缺失 | GLB 数量多于缩略图和元数据治理结果；Phase 5 后续已实现资产元数据和质量审计 |
 | 前端业务展示 | 模拟 | 业务中心、监控大屏、图表主要面向演示和模拟数据聚合 |
 | 过期数据 | 过期 | Phase 0 仅定义状态标签，后续对象/记忆层实现具体判定规则 |
 

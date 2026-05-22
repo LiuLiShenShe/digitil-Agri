@@ -35,7 +35,7 @@
 - `scene-business-binding`：定义 3D 场景对象和业务对象的双向绑定、点选详情、业务对象定位和绑定校验。
 - `farm-memory-layer`：定义指标字典、同步频率、时序查询、事件查询、日级归档和 Agent 分析记录。
 
-当前实现状态：`agricultural-object-model`、`scene-business-binding`、`farm-memory-layer` 和 `agent-operation-trace` 已完成；`add-farm-memory-layer` 与 `add-agent-operation-trace` 仍保留在 active changes 区等待 review/archive，且 `phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行。`asset-fidelity-routing` 仍处于 active change 待实现状态。
+当前实现状态：`agricultural-object-model`、`scene-business-binding`、`farm-memory-layer`、`agent-operation-trace` 和 `asset-fidelity-routing` 已完成；这些 changes 仍保留在 active changes 区等待 review/archive，且 `phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行。
 
 ### P1: 智能体平台
 
@@ -43,7 +43,7 @@
 
 ### P2: 多保真资产
 
-- `asset-fidelity-routing`：定义资产元数据、入库验收、缺失资产任务、几何版本和多保真资产路由。
+- `asset-fidelity-routing`：已实现资产元数据、入库验收、缺失资产任务、几何版本和多保真资产路由。
 
 ## MVP Scenario
 

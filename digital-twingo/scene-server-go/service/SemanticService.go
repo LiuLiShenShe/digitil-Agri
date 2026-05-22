@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -82,6 +83,8 @@ type SemanticService struct {
 	agent             *SceneBuilderAgent
 	referenceResolver *ReferenceImageResolver
 	assetMapper       *mapper.AssetMapper
+	assetRegistry     *AssetRegistryService
+	assetRouter       *AssetFidelityRoutingService
 }
 
 type semanticLLMResponse struct {
@@ -118,10 +121,13 @@ type objectIntent struct {
 }
 
 func NewSemanticService() *SemanticService {
+	registry := NewAssetRegistryService()
 	svc := &SemanticService{
 		httpClient:        &http.Client{},
 		referenceResolver: NewReferenceImageResolver(),
 		assetMapper:       mapper.NewAssetMapper(),
+		assetRegistry:     registry,
+		assetRouter:       NewAssetFidelityRoutingService(registry),
 	}
 	svc.agent = NewSceneBuilderAgent(svc)
 	return svc
@@ -160,7 +166,7 @@ func (s *SemanticService) BuildPlan(req vo.SemanticBuildRequest) vo.ResultVo {
 }
 
 func (s *SemanticService) AssetSemantics() vo.ResultVo {
-	return vo.ResultVo{Code: 200, Data: semanticAssets()}
+	return vo.ResultVo{Code: 200, Data: enrichAssetSemanticsWithMetadata(semanticAssets(), s.assetRegistry)}
 }
 
 func (s *SemanticService) Samples() []vo.BuildSampleVo {
@@ -536,7 +542,7 @@ func resolveCatalogAssetKey(obj vo.ScenePlanObject, catalog semanticAssetCatalog
 }
 
 func semanticCatalog() semanticAssetCatalog {
-	items := semanticAssets()
+	items := enrichAssetSemanticsWithMetadata(semanticAssets(), NewAssetRegistryService())
 	catalog := semanticAssetCatalog{
 		items:   items,
 		byKey:   map[string]vo.AssetSemantic{},
@@ -554,6 +560,39 @@ func semanticCatalog() semanticAssetCatalog {
 		}
 	}
 	return catalog
+}
+
+func enrichAssetSemanticsWithMetadata(items []vo.AssetSemantic, registry *AssetRegistryService) []vo.AssetSemantic {
+	if registry == nil {
+		registry = NewAssetRegistryService()
+	}
+	result := make([]vo.AssetSemantic, len(items))
+	for i, item := range items {
+		result[i] = item
+		if meta, ok := registry.Get(item.AssetKey); ok {
+			result[i].Source = meta.Source
+			result[i].License = meta.License
+			result[i].FidelityLevel = meta.FidelityLevel
+			result[i].ThumbnailURL = meta.ThumbnailURL
+			result[i].GLBURL = meta.GLBURL
+			result[i].ApplicableObjectTypes = append([]string{}, meta.ApplicableObjectTypes...)
+			result[i].Quality = meta.Quality
+			result[i].Version = meta.Version
+			result[i].MetadataComplete = meta.MetadataComplete
+			result[i].RoutingReason = defaultRoutingReasonForAsset(meta)
+		}
+	}
+	return result
+}
+
+func defaultRoutingReasonForAsset(meta vo.AssetMetadataVo) string {
+	if strings.TrimSpace(meta.GLBURL) == "" {
+		return "资产库暂无可用 GLB，使用占位模型并进入补资产生成流程。"
+	}
+	if meta.FidelityLevel == "procedural_ready" {
+		return "规则几何可由程序化生成或已有低面数模型承担。"
+	}
+	return "资产库已有可加载 GLB，优先复用已有资产。"
 }
 
 func registerAssetAlias(index map[string]string, alias string, assetKey string) {
@@ -591,14 +630,19 @@ func semanticCatalogSummary(catalog semanticAssetCatalog) []map[string]interface
 	result := make([]map[string]interface{}, 0, len(catalog.items))
 	for _, item := range catalog.items {
 		result = append(result, map[string]interface{}{
-			"assetKey":     item.AssetKey,
-			"name":         item.Name,
-			"aliases":      item.Aliases,
-			"category":     item.Category,
-			"modelUrl":     item.URL,
-			"modelFile":    modelURLBase(item.URL),
-			"defaultScale": item.DefaultScale,
-			"footprint":    item.Footprint,
+			"assetKey":      item.AssetKey,
+			"name":          item.Name,
+			"aliases":       item.Aliases,
+			"category":      item.Category,
+			"modelUrl":      item.URL,
+			"modelFile":     modelURLBase(item.URL),
+			"defaultScale":  item.DefaultScale,
+			"footprint":     item.Footprint,
+			"fidelity":      item.FidelityLevel,
+			"source":        item.Source,
+			"license":       item.License,
+			"quality":       item.Quality.QualityStatus,
+			"routingReason": item.RoutingReason,
 		})
 	}
 	return result
@@ -780,6 +824,12 @@ func (s *SemanticService) enrichMissingAssetWorkflow(resp *vo.SemanticBuildRespo
 		if strings.TrimSpace(asset.FallbackModelKey) == "" {
 			asset.FallbackModelKey = "placeholder.device"
 		}
+		routing := s.assetRouter.Decide(vo.AssetFidelityRoutingRequest{
+			AssetKey:      asset.AssetKey,
+			ObjectType:    objectTypeForAsset(asset.AssetKey, asset.Category),
+			BusinessValue: "ordinary",
+		})
+		asset.Routing = &routing
 
 		reference := s.referenceResolver.Resolve(*asset)
 		generation := vo.MissingAssetGenerationVo{
@@ -787,8 +837,13 @@ func (s *SemanticService) enrichMissingAssetWorkflow(resp *vo.SemanticBuildRespo
 			Status:       missingGenerationStatusWaiting,
 			ReviewStatus: "personal_draft",
 		}
+		if routing.RequiresGenerationTask && reference.Status != missingReferenceStatusMissing {
+			generation.TaskID = deterministicGenerationTaskID(ownerKey, asset.AssetKey, asset.PlacementRefs)
+			generation.Status = missingGenerationStatusQueued
+			generation.Progress = 5
+		}
 		if reference.Status == missingReferenceStatusResolved {
-			generation.Status = missingGenerationStatusWaiting
+			generation.Status = missingGenerationStatusQueued
 		}
 		if job, ok := jobsByAsset[asset.AssetKey]; ok {
 			reference.Status = missingReferenceStatusUploaded
@@ -810,6 +865,37 @@ func (s *SemanticService) enrichMissingAssetWorkflow(resp *vo.SemanticBuildRespo
 				model.Meta.GenerationTaskID = generation.TaskID
 			}
 		}
+	}
+}
+
+func deterministicGenerationTaskID(ownerKey string, assetKey string, placementRefs []string) string {
+	seed := strings.TrimSpace(ownerKey) + "|" + strings.TrimSpace(assetKey) + "|" + strings.Join(placementRefs, ",")
+	if seed == "||" {
+		seed = "anonymous|asset|placeholder"
+	}
+	sum := sha1.Sum([]byte(seed))
+	return fmt.Sprintf("asset-job-%x", sum[:6])
+}
+
+func objectTypeForAsset(assetKey string, category string) string {
+	switch strings.TrimSpace(assetKey) {
+	case "greenhouse":
+		return string(vo.ObjectTypeGreenhouse)
+	case "tomato", "corn", "wheat", "rice", "lettuce", "pumpkin":
+		return string(vo.ObjectTypePlant)
+	case "sensor", "weather_station":
+		return string(vo.ObjectTypeSensor)
+	case "camera":
+		return string(vo.ObjectTypeCamera)
+	case "irrigation", "water_tower":
+		return string(vo.ObjectTypeDevice)
+	case "road", "fence":
+		return "Infrastructure"
+	default:
+		if strings.TrimSpace(category) == "device" {
+			return string(vo.ObjectTypeDevice)
+		}
+		return "SceneObject"
 	}
 }
 

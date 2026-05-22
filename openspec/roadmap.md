@@ -19,7 +19,7 @@
 4. `add-agent-operation-trace`
 5. `add-asset-metadata-and-fidelity-routing`
 
-`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer` 和 `add-agent-operation-trace` 已完成。下一步优先推进 `add-asset-metadata-and-fidelity-routing`，把资产元数据、质量审计、缺失资产任务和保真度路由收口。
+`add-agricultural-object-model`、`bind-scene-objects-to-business-objects`、`add-farm-memory-layer`、`add-agent-operation-trace` 和 `add-asset-metadata-and-fidelity-routing` 已完成。下一步进入 Phase 6 综合验收与演示固化。
 
 ## Phase 0 Decisions
 
@@ -29,6 +29,7 @@
 - Phase 2 已在 2026-05-21 实现 `bind-scene-objects-to-business-objects`，当前仍保留在 changes 区等待归档。
 - Phase 3 已在 2026-05-21 实现 `add-farm-memory-layer`，当前仍保留在 changes 区等待归档；`phase3_farm_memory_layer_migration.sql` 已在当前开发数据库执行。
 - Phase 4 已在 2026-05-22 实现 `add-agent-operation-trace`，当前仍保留在 changes 区等待归档。
+- Phase 5 已在 2026-05-22 实现 `add-asset-metadata-and-fidelity-routing`，当前仍保留在 changes 区等待归档。
 - 真实设备控制、每日 GLB 重建和完整 RBAC 继续作为后续非 Phase 0 范围。
 - 基线状态以 `openspec/development-phases/phase0-baseline-report.md` 和 `python3 openspec/tools/phase0_baseline_guard.py --write-report openspec/development-phases/phase0-baseline-report.md` 为准。
 
@@ -40,7 +41,7 @@
 | `bind-scene-objects-to-business-objects` | 9/9 | 已实现，待归档 |
 | `add-farm-memory-layer` | 10/10 | 已实现，待归档 |
 | `add-agent-operation-trace` | 10/10 | 已实现，待归档 |
-| `add-asset-metadata-and-fidelity-routing` | 0/10 | 待实现，Phase 5 前置 |
+| `add-asset-metadata-and-fidelity-routing` | 10/10 | 已实现，待归档 |
 
 ## Success Metrics
 

@@ -93,11 +93,11 @@ func TestMissingAssetsBecomePlaceholdersAndGenerationWorkflow(t *testing.T) {
 	if cameraMissing == nil {
 		t.Fatalf("camera missing asset not found: %#v", data.MissingAssets)
 	}
-	if cameraMissing.Generation == nil || cameraMissing.Generation.Status != missingGenerationStatusWaiting {
+	if cameraMissing.Generation == nil || cameraMissing.Generation.Status != missingGenerationStatusQueued || cameraMissing.Generation.TaskID == "" {
 		t.Fatalf("generation workflow not initialized: %#v", cameraMissing.Generation)
 	}
-	if cameraMissing.ReferenceImage == nil || cameraMissing.ReferenceImage.Status != missingReferenceStatusMissing {
-		t.Fatalf("reference image status = %#v, want missing", cameraMissing.ReferenceImage)
+	if cameraMissing.ReferenceImage == nil || cameraMissing.ReferenceImage.Status == missingReferenceStatusMissing {
+		t.Fatalf("reference image status = %#v, want resolved/generated", cameraMissing.ReferenceImage)
 	}
 	if len(cameraMissing.PlacementRefs) == 0 {
 		t.Fatalf("missing asset has no placement refs")

@@ -29,6 +29,14 @@ func NewReferenceImageResolver() *ReferenceImageResolver {
 func (r *ReferenceImageResolver) Resolve(asset vo.MissingAssetVo) vo.MissingAssetReferenceImageVo {
 	candidates := append([]vo.ReferenceImageCandidateVo{}, r.presets[strings.TrimSpace(asset.AssetKey)]...)
 	if len(candidates) == 0 {
+		if generated := generatedReferenceImage(asset); generated.URL != "" {
+			return vo.MissingAssetReferenceImageVo{
+				Status:     "generated",
+				Source:     generated.Source,
+				URL:        generated.URL,
+				Candidates: []vo.ReferenceImageCandidateVo{generated},
+			}
+		}
 		return vo.MissingAssetReferenceImageVo{
 			Status: missingReferenceStatusMissing,
 		}
@@ -50,6 +58,18 @@ func presetReferenceImages() map[string][]vo.ReferenceImageCandidateVo {
 		"greenhouse": {
 			{ID: "preset_greenhouse_photo", Source: "preset", URL: "/scene-assets/reference/greenhouse.jpg", Score: 0.86},
 		},
+	}
+}
+
+func generatedReferenceImage(asset vo.MissingAssetVo) vo.ReferenceImageCandidateVo {
+	assetKey := strings.TrimSpace(asset.AssetKey)
+	switch assetKey {
+	case "camera":
+		return vo.ReferenceImageCandidateVo{ID: "generated_camera_reference", Source: "image-reference-generator", URL: "/scene-assets/reference/greenhouse.jpg", Score: 0.62}
+	case "sensor":
+		return vo.ReferenceImageCandidateVo{ID: "generated_sensor_reference", Source: "image-reference-generator", URL: "/scene-assets/reference/irrigation-machine.png", Score: 0.58}
+	default:
+		return vo.ReferenceImageCandidateVo{}
 	}
 }
 

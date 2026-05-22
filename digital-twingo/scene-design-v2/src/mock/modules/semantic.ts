@@ -62,7 +62,36 @@ function buildSemanticPlan(req: any) {
     ],
     warnings: useLLM ? [] : ['LLM 未启用，已使用规则版解析。'],
     missingAssets: [
-      { assetKey: 'camera', name: '摄像头', reason: '当前模型库没有可用 GLB。' }
+      {
+        assetKey: 'camera',
+        name: '摄像头',
+        category: 'device',
+        reason: '当前模型库没有可用 GLB。',
+        routing: {
+          assetKey: 'camera',
+          objectType: 'Camera',
+          strategy: 'TRELLIS.2',
+          fidelityLevel: 'generated_standard',
+          routingReason: '普通设备资产缺失，进入 TRELLIS.2 图片转 3D 生成任务，同时保留占位模型。',
+          requiresGenerationTask: true,
+          placeholderAssetKey: 'placeholder.device',
+          generationMode: 'image_to_3d',
+          referenceImageRequired: true
+        },
+        referenceImage: {
+          status: 'generated',
+          source: 'image-reference-generator',
+          url: '/scene-assets/reference/greenhouse.jpg',
+          candidates: []
+        },
+        generation: {
+          enabled: true,
+          taskId: 'asset-job-mock-camera',
+          status: 'queued',
+          progress: 5,
+          reviewStatus: 'personal_draft'
+        }
+      }
     ],
     samples: semanticSamples,
     planSource: {
@@ -106,9 +135,56 @@ export const semanticMock = [
       return {
         code: 200,
         data: [
-          { assetKey: 'greenhouse', name: '温室大棚', aliases: ['温室', '大棚', '玻璃温室'], category: 'facility', url: '/scene-assets/models/Silo_House.glb', defaultScale: 0.9, footprint: { width: 140, depth: 90 }, layoutRules: ['row', 'column', 'grid'] },
-          { assetKey: 'corn', name: '玉米地', aliases: ['玉米', '玉米田'], category: 'crop', url: '/scene-assets/models/Corn_Crop.glb', defaultScale: 1.1, footprint: { width: 90, depth: 90 }, layoutRules: ['grid', 'row'] },
-          { assetKey: 'weather_station', name: '气象站', aliases: ['气象站', '监测站'], category: 'device', url: '/scene-assets/models/TowerWindmill.glb', defaultScale: 0.7, footprint: { width: 60, depth: 60 }, layoutRules: ['single'] }
+          {
+            assetKey: 'greenhouse',
+            name: '温室大棚',
+            aliases: ['温室', '大棚', '玻璃温室'],
+            category: 'facility',
+            url: '/scene-assets/models/Silo_House.glb',
+            defaultScale: 0.9,
+            footprint: { width: 140, depth: 90 },
+            layoutRules: ['row', 'column', 'grid'],
+            source: 'scene-assets managed library',
+            license: 'project-internal demo asset',
+            fidelityLevel: 'standard_scene_asset',
+            thumbnailUrl: '/scene-assets/thumbs/b31242a80a54.jpg',
+            glbUrl: '/scene-assets/models/Silo_House.glb',
+            applicableObjectTypes: ['Greenhouse'],
+            quality: { loadable: true, axis: 'Y-up', unitScale: 1, center: { x: 0, y: 0, z: 0 }, polygonCount: 18000, textureCount: 2, volumeM3: 920, hasThumbnail: true, hasSource: true, hasLicense: true, qualityStatus: 'accepted' },
+            version: { version: 'v1.0.0', updatedAt: '2026-05-22' },
+            metadataComplete: true,
+            routingReason: '资产库已有可加载 GLB，优先复用已有资产。'
+          },
+          {
+            assetKey: 'corn',
+            name: '玉米地',
+            aliases: ['玉米', '玉米田'],
+            category: 'crop',
+            url: '/scene-assets/models/Corn_Crop.glb',
+            defaultScale: 1.1,
+            footprint: { width: 90, depth: 90 },
+            layoutRules: ['grid', 'row'],
+            source: 'scene-assets managed library',
+            license: 'project-internal demo asset',
+            fidelityLevel: 'standard_scene_asset',
+            quality: { loadable: true, axis: 'Y-up', unitScale: 1, center: { x: 0, y: 0, z: 0 }, polygonCount: 4500, textureCount: 2, volumeM3: 2.5, hasThumbnail: true, hasSource: true, hasLicense: true, qualityStatus: 'accepted' },
+            metadataComplete: true
+          },
+          {
+            assetKey: 'weather_station',
+            name: '气象站',
+            aliases: ['气象站', '监测站'],
+            category: 'device',
+            url: '/scene-assets/models/TowerWindmill.glb',
+            defaultScale: 0.7,
+            footprint: { width: 60, depth: 60 },
+            layoutRules: ['single'],
+            source: 'scene-assets managed library',
+            license: 'project-internal demo asset',
+            fidelityLevel: 'standard_scene_asset',
+            quality: { loadable: true, axis: 'Y-up', unitScale: 1, center: { x: 0, y: 0, z: 0 }, polygonCount: 6000, textureCount: 2, volumeM3: 25, hasThumbnail: true, hasSource: true, hasLicense: true, qualityStatus: 'accepted' },
+            metadataComplete: true
+          }
         ]
       }
     }

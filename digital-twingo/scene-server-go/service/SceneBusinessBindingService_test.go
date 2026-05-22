@@ -121,6 +121,22 @@ func TestSceneBusinessBindingValidationReportsMissingBusinessDataAndAssetMetadat
 	}
 }
 
+func TestSceneBusinessBindingValidationReportsAssetGovernanceIssues(t *testing.T) {
+	sceneStore := newMemorySceneBindingStore([]vo.SceneModelVo{
+		{SceneModelVoKey: vo.SceneModelVoKey{SceneName: "tomato-demo", ModelId: 1}, SceneObjectId: "scene-camera", BusinessObjectId: "camera-greenhouse-001", AssetKey: "camera"},
+	})
+	objectSvc := seededAgriculturalObjectService(t)
+	svc := NewSceneBusinessBindingService(sceneStore, objectSvc)
+
+	report := svc.ValidateScene("tomato-demo")
+	if report.Code != 200 {
+		t.Fatalf("validation failed: %#v", report)
+	}
+	for _, category := range []string{"missing_asset_thumbnail", "missing_asset_source", "missing_asset_license", "asset_quality_issue"} {
+		assertHasIssue(t, report.Summary.Issues, category, "scene-camera")
+	}
+}
+
 func TestSceneBusinessBindingValidationVerifiesSixCoreObjectTypes(t *testing.T) {
 	sceneStore := newMemorySceneBindingStore([]vo.SceneModelVo{
 		{SceneModelVoKey: vo.SceneModelVoKey{SceneName: "tomato-demo", ModelId: 0}, SceneObjectId: "scene-gh", BusinessObjectId: "gh-tomato-001", AssetKey: "greenhouse"},
