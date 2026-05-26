@@ -1,6 +1,7 @@
 package service
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -105,6 +106,101 @@ func TestSemanticTomatoPromptHonorsExplicitMVPCounts(t *testing.T) {
 		}
 		if missing.Generation == nil || missing.Generation.TaskID == "" {
 			t.Fatalf("missing asset %s should expose generation task: %#v", missingKey, missing)
+		}
+	}
+}
+
+func TestSemanticTomatoVisualTemplateKeepsTomatoesInsideGreenhouse(t *testing.T) {
+	svc := NewSemanticService()
+	result := svc.BuildPlan(vo.SemanticBuildRequest{
+		Message:  TomatoGreenhouseAcceptancePrompt,
+		Mode:     "preview",
+		OwnerKey: "phase6-visual-template",
+	})
+	if result.Code != 200 {
+		t.Fatalf("unexpected code: %d", result.Code)
+	}
+
+	data, ok := result.Data.(vo.SemanticBuildResponse)
+	if !ok {
+		t.Fatalf("unexpected data type: %T", result.Data)
+	}
+	if data.VisualTemplate == nil {
+		t.Fatalf("visual template is nil")
+	}
+	if data.VisualTemplate.TemplateKey != "tomato_greenhouse_visual_template" {
+		t.Fatalf("templateKey = %q, want tomato_greenhouse_visual_template", data.VisualTemplate.TemplateKey)
+	}
+	if data.ScenePlan.Ground.Terrain != "greenhouse_daylight" {
+		t.Fatalf("terrain = %q, want greenhouse_daylight", data.ScenePlan.Ground.Terrain)
+	}
+	if data.VisualTemplate.Greenhouse.Width <= 0 || data.VisualTemplate.Greenhouse.Depth <= 0 || data.VisualTemplate.Greenhouse.Height <= 0 {
+		t.Fatalf("invalid greenhouse dimensions: %#v", data.VisualTemplate.Greenhouse)
+	}
+	if data.VisualTemplate.PlantGrid.Rows != 4 || data.VisualTemplate.PlantGrid.Columns != 5 {
+		t.Fatalf("plant grid = %#v, want 4x5", data.VisualTemplate.PlantGrid)
+	}
+	if data.VisualTemplate.Irrigation.BedCount < 4 || data.VisualTemplate.Irrigation.DripLineCount < 4 {
+		t.Fatalf("irrigation continuity not represented: %#v", data.VisualTemplate.Irrigation)
+	}
+
+	greenhouse := findModelByAsset(data.Models, "greenhouse")
+	if greenhouse == nil {
+		t.Fatalf("greenhouse model not found")
+	}
+	var tomatoCount int
+	halfW := data.VisualTemplate.Greenhouse.Width / 2
+	halfD := data.VisualTemplate.Greenhouse.Depth / 2
+	for _, model := range data.Models {
+		if model.Meta.AssetKey != "tomato" {
+			continue
+		}
+		tomatoCount++
+		dx := model.Options.Offset.X - greenhouse.Options.Offset.X
+		dz := model.Options.Offset.Z - greenhouse.Options.Offset.Z
+		if math.Abs(dx) > halfW-30 || math.Abs(dz) > halfD-30 {
+			t.Fatalf("tomato outside greenhouse envelope: offset=%#v greenhouse=%#v dims=%#v", model.Options.Offset, greenhouse.Options.Offset, data.VisualTemplate.Greenhouse)
+		}
+		if model.Options.Scale <= 0 || model.Options.Scale > 3 {
+			t.Fatalf("tomato semantic scale = %.2f, want real-scale range", model.Options.Scale)
+		}
+	}
+	if tomatoCount != 20 {
+		t.Fatalf("tomato count = %d, want 20", tomatoCount)
+	}
+}
+
+func TestSemanticTomatoVisualTemplateExposesLocalGenerationPipeline(t *testing.T) {
+	svc := NewSemanticService()
+	result := svc.BuildPlan(vo.SemanticBuildRequest{
+		Message:  TomatoGreenhouseAcceptancePrompt,
+		Mode:     "preview",
+		OwnerKey: "phase6-visual-template",
+	})
+	if result.Code != 200 {
+		t.Fatalf("unexpected code: %d", result.Code)
+	}
+
+	data, ok := result.Data.(vo.SemanticBuildResponse)
+	if !ok {
+		t.Fatalf("unexpected data type: %T", result.Data)
+	}
+	for _, missingKey := range []string{"camera", "sensor"} {
+		missing := findMissingAsset(data.MissingAssets, missingKey)
+		if missing == nil {
+			t.Fatalf("missing asset %s not found: %#v", missingKey, data.MissingAssets)
+		}
+		if missing.Generation == nil || len(missing.Generation.Pipeline) < 4 {
+			t.Fatalf("missing asset %s should expose full generation pipeline: %#v", missingKey, missing.Generation)
+		}
+		wantStages := []string{"local_text_to_image", "local_image_to_glb", "asset_registry", "auto_replace"}
+		for i, want := range wantStages {
+			if missing.Generation.Pipeline[i].Stage != want {
+				t.Fatalf("pipeline[%d] = %#v, want stage %s", i, missing.Generation.Pipeline[i], want)
+			}
+		}
+		if !strings.Contains(missing.Prompt, "本地生图") || !strings.Contains(missing.Prompt, "图像生成 GLB") {
+			t.Fatalf("prompt should mention local image and GLB generation: %q", missing.Prompt)
 		}
 	}
 }
@@ -293,6 +389,15 @@ func findMissingAsset(items []vo.MissingAssetVo, assetKey string) *vo.MissingAss
 	for i := range items {
 		if items[i].AssetKey == assetKey {
 			return &items[i]
+		}
+	}
+	return nil
+}
+
+func findModelByAsset(models []vo.BuildModel, assetKey string) *vo.BuildModel {
+	for i := range models {
+		if models[i].Meta.AssetKey == assetKey {
+			return &models[i]
 		}
 	}
 	return nil

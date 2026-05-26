@@ -157,6 +157,7 @@ func (s *SemanticService) BuildPlan(req vo.SemanticBuildRequest) vo.ResultVo {
 		Mode:    mode,
 		Catalog: catalog,
 	})
+	s.applyVisualTemplate(&agentResult.Response, message)
 	s.enrichMissingAssetWorkflow(&agentResult.Response, req.OwnerKey, catalog)
 
 	return vo.ResultVo{
@@ -398,6 +399,32 @@ func (s *SemanticService) buildRulePlan(message string, sceneName string, mode s
 		Relations: relations,
 	}
 	return plan, warnings
+}
+
+func (s *SemanticService) applyVisualTemplate(resp *vo.SemanticBuildResponse, message string) {
+	if resp == nil {
+		return
+	}
+	templatePtr := s.visualTemplateForMessage(message)
+	if templatePtr == nil {
+		return
+	}
+	template := *templatePtr
+	resp.VisualTemplate = &template
+	resp.ScenePlan.Ground = vo.GroundPlan{Width: 980, Height: 720, Color: template.Lighting.GroundColor, Terrain: "greenhouse_daylight"}
+	resp.ScenePlan.SceneName = "番茄温室 MVP"
+	resp.ScenePlan.Intent = message
+	resp.Warnings = uniqueStrings(append(resp.Warnings, "已启用番茄温室视觉模板：程序化温室壳体、连续畦面、滴灌管线和白天农业光照。"))
+	applyTemplateObjectMetadata(resp, template)
+	applyTemplateModelLayout(resp, template)
+}
+
+func (s *SemanticService) visualTemplateForMessage(message string) *vo.SemanticVisualTemplateVo {
+	if !isTomatoGreenhouseMVPText(message) {
+		return nil
+	}
+	template := tomatoGreenhouseVisualTemplate()
+	return &template
 }
 
 func (s *SemanticService) normalizeBuildContext(req vo.SemanticBuildRequest, message string) vo.SemanticBuildContext {
@@ -821,6 +848,9 @@ func (s *SemanticService) enrichMissingAssetWorkflow(resp *vo.SemanticBuildRespo
 		if strings.TrimSpace(asset.Prompt) == "" {
 			asset.Prompt = buildMissingAssetPrompt(*asset)
 		}
+		if resp.VisualTemplate != nil && resp.VisualTemplate.TemplateKey == "tomato_greenhouse_visual_template" {
+			asset.Prompt = buildVisualTemplateMissingAssetPrompt(*asset)
+		}
 		if strings.TrimSpace(asset.FallbackModelKey) == "" {
 			asset.FallbackModelKey = "placeholder.device"
 		}
@@ -857,6 +887,7 @@ func (s *SemanticService) enrichMissingAssetWorkflow(resp *vo.SemanticBuildRespo
 			generation.ErrorMessage = job.ErrorMsg
 			generation.ReviewStatus = reviewStatusForAssetJob(job.Status)
 		}
+		generation.Pipeline = buildLocalAssetGenerationPipeline(*asset, generation.Status)
 		asset.ReferenceImage = &reference
 		asset.Generation = &generation
 		for j := range resp.Models {
@@ -1422,6 +1453,242 @@ func mergeDefault(objects map[string]objectIntent, assetKey string, count int, a
 
 func setObjectIntent(objects map[string]objectIntent, assetKey string, count int, area string, layout string) {
 	objects[assetKey] = objectIntent{assetKey: assetKey, count: count, area: area, layout: layout}
+}
+
+func isTomatoGreenhouseMVPText(message string) bool {
+	text := normalizeText(message)
+	return semanticHasAny(text, "番茄温室") &&
+		semanticHasAny(text, "20株番茄", "20个番茄", "20棵番茄", "二十株番茄", "二十个番茄", "二十棵番茄") &&
+		semanticHasAny(text, "气象站") &&
+		semanticHasAny(text, "水泵", "灌溉设备") &&
+		semanticHasAny(text, "摄像头", "摄像机", "监控") &&
+		semanticHasAny(text, "传感器")
+}
+
+func tomatoGreenhouseVisualTemplate() vo.SemanticVisualTemplateVo {
+	center := vo.OffsetVo{X: 0, Y: 0, Z: 0}
+	return vo.SemanticVisualTemplateVo{
+		TemplateKey:   "tomato_greenhouse_visual_template",
+		Label:         "番茄温室视觉模板",
+		RenderingMode: "procedural_greenhouse_with_glb_assets",
+		Greenhouse: vo.SemanticGreenhouseEnvelopeVo{
+			Center: center,
+			Width:  620,
+			Depth:  420,
+			Height: 170,
+		},
+		PlantGrid: vo.SemanticPlantGridVo{
+			Rows:       4,
+			Columns:    5,
+			SpacingX:   92,
+			SpacingZ:   78,
+			BedCount:   4,
+			InsideOnly: true,
+		},
+		Irrigation: vo.SemanticIrrigationTemplateVo{
+			BedCount:       4,
+			DripLineCount:  8,
+			MainPipeLength: 520,
+			PumpPosition:   vo.OffsetVo{X: 270, Y: 0, Z: 235},
+			ValvePositions: []vo.OffsetVo{
+				{X: -185, Y: 2, Z: 212},
+				{X: -62, Y: 2, Z: 212},
+				{X: 62, Y: 2, Z: 212},
+				{X: 185, Y: 2, Z: 212},
+			},
+		},
+		Lighting: vo.SemanticLightingTemplateVo{
+			SkyColor:              "#dff5ff",
+			GroundColor:           "#b9d98f",
+			AmbientIntensity:      1.85,
+			DirectionalIntensity:  2.25,
+			MinimumScreenshotLuma: 88,
+		},
+		ScaleCalibrations: map[string]vo.SemanticScaleCalibrationVo{
+			"greenhouse":      scaleCalibration("greenhouse", 620, 420, 170, "以温室壳体包络作为真实尺度基准"),
+			"tomato":          scaleCalibration("tomato", 34, 34, 82, "以单株番茄冠幅和棚内行距作为真实尺度基准"),
+			"weather_station": scaleCalibration("weather_station", 34, 34, 120, "以温室旁气象杆高度作为真实尺度基准"),
+			"irrigation":      scaleCalibration("irrigation", 42, 42, 58, "以水泵和阀门组外形作为真实尺度基准"),
+			"camera":          scaleCalibration("camera", 28, 28, 90, "以入口监控杆高度作为真实尺度基准"),
+			"sensor":          scaleCalibration("sensor", 18, 18, 36, "以土壤/环境传感器插杆高度作为真实尺度基准"),
+		},
+		Acceptance: vo.SemanticVisualAcceptanceVo{
+			ExpectedTomatoesInsideGreenhouse: 20,
+			MinimumScreenshotLuma:            88,
+			MaximumTomatoScale:               3,
+			RequiresContinuousIrrigation:     true,
+		},
+	}
+}
+
+func scaleCalibration(assetKey string, width float64, depth float64, height float64, anchor string) vo.SemanticScaleCalibrationVo {
+	return vo.SemanticScaleCalibrationVo{
+		AssetKey:          assetKey,
+		ScaleMode:         "real_world_semantic",
+		RealWidth:         width,
+		RealDepth:         depth,
+		RealHeight:        height,
+		AnchorDescription: anchor,
+	}
+}
+
+func applyTemplateObjectMetadata(resp *vo.SemanticBuildResponse, template vo.SemanticVisualTemplateVo) {
+	for i := range resp.ScenePlan.Objects {
+		obj := &resp.ScenePlan.Objects[i]
+		switch obj.AssetKey {
+		case "greenhouse":
+			obj.Area = "center"
+			obj.Layout = "single"
+			obj.Scale = 1
+			obj.Size = vo.FootprintVo{Width: template.Greenhouse.Width, Depth: template.Greenhouse.Depth}
+		case "tomato":
+			obj.Area = "center"
+			obj.Layout = "grid"
+			obj.Scale = 1.25
+			obj.Size = vo.FootprintVo{Width: 34, Depth: 34}
+		case "weather_station":
+			obj.Area = "northeast"
+			obj.Layout = "single"
+			obj.Scale = 0.55
+			obj.Size = vo.FootprintVo{Width: 34, Depth: 34}
+		case "irrigation":
+			obj.Area = "southeast"
+			obj.Layout = "single"
+			obj.Scale = 0.55
+			obj.Size = vo.FootprintVo{Width: 42, Depth: 42}
+		case "camera":
+			obj.Area = "south"
+			obj.Layout = "single"
+			obj.Scale = 0.5
+			obj.Size = vo.FootprintVo{Width: 28, Depth: 28}
+		case "sensor":
+			obj.Area = "center"
+			obj.Layout = "single"
+			obj.Scale = 0.45
+			obj.Size = vo.FootprintVo{Width: 18, Depth: 18}
+		}
+	}
+}
+
+func applyTemplateScenePlanObjects(plan *vo.ScenePlan, template vo.SemanticVisualTemplateVo) {
+	if plan == nil {
+		return
+	}
+	resp := vo.SemanticBuildResponse{ScenePlan: *plan}
+	applyTemplateObjectMetadata(&resp, template)
+	plan.Objects = resp.ScenePlan.Objects
+}
+
+func applyTemplateModelLayout(resp *vo.SemanticBuildResponse, template vo.SemanticVisualTemplateVo) {
+	if len(resp.Models) == 0 {
+		return
+	}
+	tomatoIndex := 0
+	for i := range resp.Models {
+		model := &resp.Models[i]
+		model.Meta.TemplateKey = template.TemplateKey
+		model.Meta.ScaleMode = "real_world_semantic"
+		switch assetKeyForBuildModel(*model) {
+		case "greenhouse":
+			model.Options.Offset = template.Greenhouse.Center
+			model.Options.Scale = 1
+			model.Options.Angle = 0
+			model.Meta.AssetKey = "greenhouse"
+			model.Meta.Area = "center"
+			model.Meta.Layout = "single"
+		case "tomato":
+			model.Options.Offset = tomatoGridPoint(tomatoIndex, template)
+			model.Options.Scale = 1.25
+			model.Options.Angle = 0
+			model.Meta.Area = "center"
+			model.Meta.Layout = "grid"
+			tomatoIndex++
+		case "weather_station":
+			model.Options.Offset = vo.OffsetVo{X: -260, Y: 0, Z: -245}
+			model.Options.Scale = 0.55
+		case "irrigation":
+			model.Options.Offset = template.Irrigation.PumpPosition
+			model.Options.Scale = 0.55
+		case "camera":
+			model.Options.Offset = vo.OffsetVo{X: 0, Y: 0, Z: 248}
+			model.Options.Scale = 0.5
+			model.Options.Angle = 180
+		case "sensor":
+			model.Options.Offset = vo.OffsetVo{X: -245, Y: 0, Z: 0}
+			model.Options.Scale = 0.45
+		}
+	}
+}
+
+func tomatoGridPoint(index int, template vo.SemanticVisualTemplateVo) vo.OffsetVo {
+	cols := template.PlantGrid.Columns
+	rows := template.PlantGrid.Rows
+	if cols <= 0 {
+		cols = 5
+	}
+	if rows <= 0 {
+		rows = 4
+	}
+	col := index % cols
+	row := index / cols
+	x := template.Greenhouse.Center.X + (float64(col)-float64(cols-1)/2)*template.PlantGrid.SpacingX
+	z := template.Greenhouse.Center.Z + (float64(row)-float64(rows-1)/2)*template.PlantGrid.SpacingZ
+	return vo.OffsetVo{X: x, Y: 0, Z: z}
+}
+
+func assetKeyForBuildModel(model vo.BuildModel) string {
+	if model.Meta.Placeholder && model.Meta.MissingAssetKey != "" {
+		return model.Meta.MissingAssetKey
+	}
+	return model.Meta.AssetKey
+}
+
+func buildVisualTemplateMissingAssetPrompt(asset vo.MissingAssetVo) string {
+	base := buildMissingAssetPrompt(asset)
+	return base + "；本地生图模型先生成正交参考图，再由本地图像生成 GLB 模型，产物经资产入库审核后自动替换当前占位模型。"
+}
+
+func buildLocalAssetGenerationPipeline(asset vo.MissingAssetVo, status string) []vo.AssetGenerationPipelineStepVo {
+	name := strings.TrimSpace(asset.Name)
+	if name == "" {
+		name = asset.AssetKey
+	}
+	return []vo.AssetGenerationPipelineStepVo{
+		{
+			Stage:       "local_text_to_image",
+			Label:       "本地生图",
+			Status:      "queued",
+			LocalModel:  "local-image-generator",
+			Input:       "asset prompt",
+			Output:      "reference image",
+			Description: fmt.Sprintf("根据 %s 的农业场景描述生成可控参考图。", name),
+		},
+		{
+			Stage:       "local_image_to_glb",
+			Label:       "图像生成 GLB",
+			Status:      status,
+			LocalModel:  "TRELLIS.2",
+			Input:       "reference image",
+			Output:      "draft glb",
+			Description: "调用本地图像到 3D 模型链路生成 GLB 草稿。",
+		},
+		{
+			Stage:       "asset_registry",
+			Label:       "资产入库",
+			Status:      "waiting",
+			Input:       "draft glb",
+			Output:      "managed asset metadata",
+			Description: "登记来源、缩略图、质量审计和保真度路由信息。",
+		},
+		{
+			Stage:       "auto_replace",
+			Label:       "自动替换",
+			Status:      "waiting",
+			Input:       "approved glb",
+			Output:      "scene placeholder replacement",
+			Description: "审核通过后按 placementRefs 替换当前占位模型。",
+		},
+	}
 }
 
 func matchesAsset(text string, item vo.AssetSemantic) bool {

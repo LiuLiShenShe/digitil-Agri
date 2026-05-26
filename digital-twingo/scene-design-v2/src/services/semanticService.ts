@@ -60,9 +60,59 @@ export interface BuildModel {
     category: string
     area: string
     layout: string
+    scaleMode?: string
+    templateKey?: string
     placeholder?: boolean
     missingAssetKey?: string
     generationTaskId?: string
+  }
+}
+
+export interface SemanticVisualTemplate {
+  templateKey: string
+  label: string
+  renderingMode: string
+  greenhouse: {
+    center: { x: number; y: number; z: number }
+    width: number
+    depth: number
+    height: number
+  }
+  plantGrid: {
+    rows: number
+    columns: number
+    spacingX: number
+    spacingZ: number
+    bedCount: number
+    insideOnly: boolean
+  }
+  irrigation: {
+    bedCount: number
+    dripLineCount: number
+    mainPipeLength: number
+    pumpPosition: { x: number; y: number; z: number }
+    valvePositions?: Array<{ x: number; y: number; z: number }>
+  }
+  lighting: {
+    skyColor: string
+    groundColor: string
+    ambientIntensity: number
+    directionalIntensity: number
+    minimumScreenshotLuma: number
+  }
+  scaleCalibrations?: Record<string, {
+    assetKey: string
+    scaleMode: string
+    realWidth: number
+    realDepth: number
+    realHeight: number
+    anchorDescription?: string
+  }>
+  acceptance: {
+    expectedTomatoesInsideGreenhouse: number
+    minimumScreenshotLuma: number
+    maximumTomatoScale: number
+    requiresContinuousIrrigation: boolean
   }
 }
 
@@ -139,6 +189,17 @@ export interface MissingAssetGeneration {
   thumbnailUrl?: string
   errorMessage?: string
   reviewStatus?: string
+  pipeline?: AssetGenerationPipelineStep[]
+}
+
+export interface AssetGenerationPipelineStep {
+  stage: string
+  label: string
+  status: string
+  localModel?: string
+  input?: string
+  output?: string
+  description?: string
 }
 
 export interface AssetJobResponse {
@@ -230,6 +291,7 @@ export interface SemanticBuildResponse {
   samples: BuildSample[]
   planSource: SemanticPlanSource
   context: SemanticBuildContext
+  visualTemplate?: SemanticVisualTemplate
   rawLlmPlan?: string
   agentTrace?: SceneAgentTrace
 }

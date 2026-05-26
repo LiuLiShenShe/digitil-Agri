@@ -79,15 +79,16 @@ type sceneAgentResult struct {
 }
 
 type sceneAgentState struct {
-	request   sceneAgentRequest
-	trace     *vo.SceneAgentTraceVo
-	plan      vo.ScenePlan
-	models    []vo.BuildModel
-	missing   []vo.MissingAssetVo
-	warnings  []string
-	source    vo.SemanticPlanSource
-	rawLLM    string
-	toolNames []string
+	request        sceneAgentRequest
+	trace          *vo.SceneAgentTraceVo
+	plan           vo.ScenePlan
+	models         []vo.BuildModel
+	missing        []vo.MissingAssetVo
+	warnings       []string
+	source         vo.SemanticPlanSource
+	rawLLM         string
+	toolNames      []string
+	visualTemplate *vo.SemanticVisualTemplateVo
 }
 
 type sceneCurrentToolInput struct {
@@ -298,6 +299,13 @@ func (a *SceneBuilderAgent) runScenePlan(state *sceneAgentState) {
 			raw = ""
 		}
 		normalizeScenePlan(&plan, state.request.Context.SceneName, state.request.Request.Message, state.request.Mode)
+		template := a.semantic.visualTemplateForMessage(state.request.Request.Message)
+		if template != nil {
+			state.visualTemplate = template
+			plan.Ground = vo.GroundPlan{Width: 980, Height: 720, Color: template.Lighting.GroundColor, Terrain: "greenhouse_daylight"}
+			plan.SceneName = "番茄温室 MVP"
+			applyTemplateScenePlanObjects(&plan, *template)
+		}
 		state.plan = plan
 		state.source = source
 		state.rawLLM = raw
@@ -319,6 +327,11 @@ func (a *SceneBuilderAgent) runLayoutSolve(state *sceneAgentState) {
 			return nil, fmt.Errorf("scene.plan has no objects")
 		}
 		models, missing, warnings := solveLayout(state.plan.Objects, state.plan.Ground)
+		if state.visualTemplate != nil {
+			resp := vo.SemanticBuildResponse{Models: models}
+			applyTemplateModelLayout(&resp, *state.visualTemplate)
+			models = resp.Models
+		}
 		state.models = models
 		state.missing = mergeMissingAssets(state.missing, missing)
 		state.warnings = append(state.warnings, warnings...)
@@ -614,14 +627,15 @@ func (a *SceneBuilderAgent) finalizeResponse(state *sceneAgentState) vo.Semantic
 	a.runObjectBindingTrace(state)
 
 	return vo.SemanticBuildResponse{
-		ScenePlan:     plan,
-		Models:        state.models,
-		Warnings:      uniqueStrings(warnings),
-		MissingAssets: uniqueMissingAssets(missing),
-		Samples:       a.semantic.Samples(),
-		PlanSource:    source,
-		Context:       state.request.Context,
-		RawLLMPlan:    state.rawLLM,
+		ScenePlan:      plan,
+		Models:         state.models,
+		Warnings:       uniqueStrings(warnings),
+		MissingAssets:  uniqueMissingAssets(missing),
+		Samples:        a.semantic.Samples(),
+		PlanSource:     source,
+		Context:        state.request.Context,
+		VisualTemplate: state.visualTemplate,
+		RawLLMPlan:     state.rawLLM,
 	}
 }
 

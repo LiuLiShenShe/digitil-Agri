@@ -31,6 +31,27 @@ type AssetJobRecord struct {
 // AssetMapper provides database operations for the asset_jobs table.
 type AssetMapper struct{}
 
+const assetJobSelectColumns = `
+	jobId,
+	COALESCE(ownerKey, '') AS ownerKey,
+	COALESCE(assetKey, '') AS assetKey,
+	COALESCE(assetName, '') AS assetName,
+	COALESCE(prompt, '') AS prompt,
+	COALESCE(referenceImageSource, '') AS referenceImageSource,
+	COALESCE(status, '') AS status,
+	COALESCE(progress, 0) AS progress,
+	COALESCE(resolution, 512) AS resolution,
+	COALESCE(decimationTarget, 300000) AS decimationTarget,
+	COALESCE(textureSize, 2048) AS textureSize,
+	COALESCE(modelName, '') AS modelName,
+	COALESCE(modelUrl, '') AS modelUrl,
+	COALESCE(thumbUrl, '') AS thumbUrl,
+	COALESCE(sourceImageUrl, '') AS sourceImageUrl,
+	COALESCE(fileSize, 0) AS fileSize,
+	COALESCE(errorMsg, '') AS errorMsg,
+	createdAt,
+	updatedAt`
+
 func NewAssetMapper() *AssetMapper {
 	return &AssetMapper{}
 }
@@ -161,7 +182,7 @@ func (m *AssetMapper) GetByID(jobID string) (*AssetJobRecord, error) {
 		return nil, fmt.Errorf("database is not initialized")
 	}
 	var job AssetJobRecord
-	err := db.Get(&job, "SELECT * FROM asset_jobs WHERE jobId=?", jobID)
+	err := db.Get(&job, "SELECT "+assetJobSelectColumns+" FROM asset_jobs WHERE jobId=?", jobID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +194,7 @@ func (m *AssetMapper) ListByOwner(ownerKey string) ([]AssetJobRecord, error) {
 		return nil, fmt.Errorf("database is not initialized")
 	}
 	var jobs []AssetJobRecord
-	err := db.Select(&jobs, "SELECT * FROM asset_jobs WHERE ownerKey=? ORDER BY createdAt DESC", ownerKey)
+	err := db.Select(&jobs, "SELECT "+assetJobSelectColumns+" FROM asset_jobs WHERE ownerKey=? ORDER BY createdAt DESC", ownerKey)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +206,7 @@ func (m *AssetMapper) ListApproved() ([]AssetJobRecord, error) {
 		return nil, fmt.Errorf("database is not initialized")
 	}
 	var jobs []AssetJobRecord
-	err := db.Select(&jobs, "SELECT * FROM asset_jobs WHERE status='approved' ORDER BY createdAt DESC")
+	err := db.Select(&jobs, "SELECT "+assetJobSelectColumns+" FROM asset_jobs WHERE status='approved' ORDER BY createdAt DESC")
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +220,7 @@ func (m *AssetMapper) ListForModelTree(ownerKey string) ([]AssetJobRecord, error
 	}
 	var jobs []AssetJobRecord
 	err := db.Select(&jobs,
-		"SELECT * FROM asset_jobs WHERE status IN ('completed','approved') AND (status='approved' OR ownerKey=?) ORDER BY createdAt DESC",
+		"SELECT "+assetJobSelectColumns+" FROM asset_jobs WHERE status IN ('completed','approved') AND (status='approved' OR ownerKey=?) ORDER BY createdAt DESC",
 		ownerKey)
 	if err != nil {
 		return nil, err

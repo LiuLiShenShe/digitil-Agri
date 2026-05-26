@@ -20,3 +20,33 @@ declare module 'mockjs' {
 declare module 'three' {
   export * from '@types/three'
 }
+
+export {}
+
+declare global {
+  interface Window {
+    __tomatoGreenhouseVisualAcceptance?: {
+      templateKey: string
+      greenhouse: {
+        center: { x: number; y: number; z: number }
+        width: number
+        depth: number
+        height: number
+      }
+      tomatoes: Array<{ x: number; y: number; z: number; scale: number }>
+      irrigation: {
+        bedCount: number
+        dripLineCount: number
+        mainPipeLength: number
+        valveCount: number
+      }
+      lighting: {
+        skyColor: string
+        groundColor: string
+        ambientIntensity: number
+        directionalIntensity: number
+        minimumScreenshotLuma: number
+      }
+    } | null
+  }
+}

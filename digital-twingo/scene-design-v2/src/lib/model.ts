@@ -194,7 +194,10 @@ export class Model {
   }
 
   private setModel(modelObj: any, options: any) {
-    if (Number.isFinite(options.semanticScale) && options.semanticScale > 0) {
+    if (options.scaleMode === 'real_world_semantic' && Number.isFinite(options.semanticScale) && options.semanticScale > 0) {
+      this.options.scale = options.semanticScale
+      delete this.options.semanticScale
+    } else if (Number.isFinite(options.semanticScale) && options.semanticScale > 0) {
       this.options.scale = modelObj.fitScale * options.semanticScale
       delete this.options.semanticScale
     } else {

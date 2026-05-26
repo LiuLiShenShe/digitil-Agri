@@ -9,6 +9,28 @@ __all__ = [
 ]
 
 
+def _split_by_seqlen(tensor: torch.Tensor, seqlen: List[int]) -> List[torch.Tensor]:
+    parts = []
+    start = 0
+    for length in seqlen:
+        parts.append(tensor[start:start + length])
+        start += length
+    return parts
+
+
+def _sdpa_varlen(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, q_seqlen: List[int], kv_seqlen: List[int]) -> torch.Tensor:
+    from torch.nn.functional import scaled_dot_product_attention as sdpa
+
+    out = []
+    for q_part, k_part, v_part in zip(_split_by_seqlen(q, q_seqlen), _split_by_seqlen(k, kv_seqlen), _split_by_seqlen(v, kv_seqlen)):
+        q_part = q_part.unsqueeze(0).permute(0, 2, 1, 3)
+        k_part = k_part.unsqueeze(0).permute(0, 2, 1, 3)
+        v_part = v_part.unsqueeze(0).permute(0, 2, 1, 3)
+        out_part = sdpa(q_part, k_part, v_part).permute(0, 2, 1, 3)[0]
+        out.append(out_part)
+    return torch.cat(out, dim=0)
+
+
 @overload
 def sparse_scaled_dot_product_attention(qkv: VarLenTensor) -> VarLenTensor:
     """
@@ -211,6 +233,12 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
             max_q_seqlen = max(q_seqlen)
             max_kv_seqlen = max(kv_seqlen)
         out = flash_attn_3.flash_attn_varlen_func(q, k, v, cu_seqlens_q, cu_seqlens_kv, max_q_seqlen, max_kv_seqlen)
+    elif config.ATTN == 'sdpa':
+        if num_all_args == 1:
+            q, k, v = qkv.unbind(dim=1)
+        elif num_all_args == 2:
+            k, v = kv.unbind(dim=1)
+        out = _sdpa_varlen(q, k, v, q_seqlen, kv_seqlen)
     else:
         raise ValueError(f"Unknown attention module: {config.ATTN}")
     

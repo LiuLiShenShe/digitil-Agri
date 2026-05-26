@@ -1,0 +1,14 @@
+{
+  "job_id": "c20a85c2ddb7",
+  "status": "completed",
+  "progress": 100,
+  "result": {
+    "glb_url": "/scene-assets/models/c20a85c2ddb7.glb",
+    "thumb_url": "/scene-assets/thumbs/c20a85c2ddb7.jpg",
+    "file_size": 4820480
+  },
+  "elapsed_sec": 130.13891862501623,
+  "submit_elapsed_sec": 0.037268343003233895,
+  "started_at": "2026-05-26 21:11:05",
+  "ended_at": "2026-05-26 21:13:42"
+}

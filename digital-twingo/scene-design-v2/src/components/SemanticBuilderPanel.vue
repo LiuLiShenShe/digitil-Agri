@@ -173,6 +173,16 @@
             <div v-if="asset.routing?.routingReason" class="asset-routing-reason">
               {{ asset.routing.routingReason }}
             </div>
+            <div v-if="asset.generation?.pipeline?.length" class="asset-pipeline">
+              <span
+                v-for="step in asset.generation.pipeline"
+                :key="`${asset.assetKey}-${step.stage}`"
+                class="pipeline-step"
+                :class="step.status"
+              >
+                {{ step.label }}
+              </span>
+            </div>
             <div v-if="asset.referenceImage?.url" class="reference-preview">
               <img :src="asset.referenceImage.url" :alt="asset.name" />
             </div>
@@ -270,12 +280,14 @@ import {
   createAssetGenerationJob,
   fetchAssetGenerationJob,
   fetchAssetSemantics,
+  type AssetGenerationPipelineStep,
   type AssetSemantic,
   type AssetJobResponse,
   fetchSemanticSamples,
   type BuildModel,
   type BuildSample,
   type MissingAsset,
+  type SemanticVisualTemplate,
   type SceneAgentStep,
   type SemanticBuildContext,
   type SemanticBuildResponse,
@@ -508,13 +520,20 @@ async function applyPlan(clearFirst: boolean, plan = result.value) {
     }
     const ground = plan.scenePlan.ground
     scene.enableRoomEnvironment()
-    scene.setAmbientLight({ color: '#ffffff', intensity: 1.15 })
-    scene.setDirectionalLight({ color: '#fff2d0', intensity: 1.6, position: { x: 260, y: 520, z: 320 } })
+    const lighting = plan.visualTemplate?.lighting
+    scene.setAmbientLight({ color: '#ffffff', intensity: lighting?.ambientIntensity || 1.15 })
+    scene.setDirectionalLight({ color: '#fff2d0', intensity: lighting?.directionalIntensity || 1.6, position: { x: 260, y: 520, z: 320 } })
+    if (plan.visualTemplate) {
+      scene.setDaylightBackground(plan.visualTemplate.lighting.skyColor || '#dff5ff')
+    }
     if (clearFirst || scene.isEmpty()) {
       scene.setSceneName(plan.scenePlan.sceneName)
       scene.setGroundPane({ color: ground.color || '#88aa66', width: ground.width, height: ground.height })
       scene.setGrid({ size: Math.max(ground.width, ground.height), division: 24 })
       scene.setView('origin')
+    }
+    if (plan.visualTemplate?.templateKey === 'tomato_greenhouse_visual_template') {
+      applyTomatoVisualTemplate(scene, plan.visualTemplate, plan.models)
     }
 
     const settled = await Promise.allSettled(
@@ -538,8 +557,22 @@ function semanticModelOptions(item: BuildModel) {
     offset: item.options.offset,
     angle: item.options.angle,
     semanticScale: item.options.scale,
+    scaleMode: item.meta.scaleMode,
     meta: item.meta
   }
+}
+
+function applyTomatoVisualTemplate(scene: Scene, template: SemanticVisualTemplate, models: BuildModel[]) {
+  const tomatoModels = models
+    .filter(item => item.meta.assetKey === 'tomato')
+    .map(item => ({ offset: item.options.offset, scale: item.options.scale }))
+  scene.applyTomatoGreenhouseVisualTemplate(template, tomatoModels)
+  exposeVisualAcceptanceSnapshot(scene)
+}
+
+function exposeVisualAcceptanceSnapshot(scene: Scene) {
+  if (typeof window === 'undefined') return
+  window.__tomatoGreenhouseVisualAcceptance = scene.getSemanticTemplateSnapshot()
 }
 
 function areaLabel(area: string) {
@@ -708,6 +741,7 @@ async function pollMissingAssetJob(asset: MissingAsset) {
   try {
     const job = await fetchAssetGenerationJob(taskId)
     mergeAssetJob(asset, job)
+    await autoReplaceCompletedAsset(asset)
     return job.status === 'completed' || job.status === 'failed' || job.status === 'approved' || job.status === 'rejected'
   } catch {
     return false
@@ -742,6 +776,8 @@ function stopAssetPolling() {
 }
 
 function mergeAssetJob(asset: MissingAsset, job: AssetJobResponse) {
+  const existingPipeline = asset.generation?.pipeline || []
+  const previousReviewStatus = asset.generation?.reviewStatus
   asset.referenceImage = {
     status: job.sourceImageUrl ? 'uploaded' : asset.referenceImage?.status || 'missing',
     source: job.referenceImageSource || 'upload',
@@ -756,7 +792,12 @@ function mergeAssetJob(asset: MissingAsset, job: AssetJobResponse) {
     resultUrl: job.modelUrl || asset.generation?.resultUrl,
     thumbnailUrl: job.thumbUrl || asset.generation?.thumbnailUrl,
     errorMessage: job.errorMsg || '',
-    reviewStatus: job.status === 'approved' ? 'approved' : 'personal_draft'
+    reviewStatus: previousReviewStatus === 'auto_replaced'
+      ? 'auto_replaced'
+      : job.status === 'approved'
+        ? 'approved'
+        : 'personal_draft',
+    pipeline: updatePipelineStatus(existingPipeline, mapJobStatus(job.status))
   }
   result.value?.models.forEach(model => {
     if (model.meta.placeholder && model.meta.missingAssetKey === asset.assetKey) {
@@ -765,13 +806,35 @@ function mergeAssetJob(asset: MissingAsset, job: AssetJobResponse) {
   })
 }
 
+function updatePipelineStatus(pipeline: AssetGenerationPipelineStep[] = [], status: string) {
+  return pipeline.map(step => {
+    if (step.stage === 'local_text_to_image' && ['queued', 'running', 'completed'].includes(status)) {
+      return { ...step, status: 'completed' }
+    }
+    if (step.stage === 'local_image_to_glb') {
+      return { ...step, status }
+    }
+    if ((step.stage === 'asset_registry' || step.stage === 'auto_replace') && status === 'completed') {
+      return { ...step, status: 'completed' }
+    }
+    return step
+  })
+}
+
+async function autoReplaceCompletedAsset(asset: MissingAsset) {
+  if (asset.generation?.status !== 'completed' || !asset.generation.resultUrl) return
+  if (asset.generation.reviewStatus === 'auto_replaced') return
+  await replaceGeneratedAsset(asset, true)
+  asset.generation.reviewStatus = 'auto_replaced'
+}
+
 function mapJobStatus(status: string) {
   if (status === 'approved') return 'completed'
   if (status === 'rejected') return 'failed'
   return status || 'waiting_image'
 }
 
-async function replaceGeneratedAsset(asset: MissingAsset) {
+async function replaceGeneratedAsset(asset: MissingAsset, silent = false) {
   const url = asset.generation?.resultUrl
   if (!url) return
   const scene = Scene.getInstance()
@@ -792,9 +855,13 @@ async function replaceGeneratedAsset(asset: MissingAsset) {
     ))
     placeholders.forEach(item => scene.removeModel(item.modelId))
     scene.refreshLayerStore()
-    ElMessage.success(`${asset.name} 已替换占位模型`)
+    if (!silent) {
+      ElMessage.success(`${asset.name} 已替换占位模型`)
+    }
   } catch (err: any) {
-    ElMessage.error(err?.message || '生成模型加载失败')
+    if (!silent) {
+      ElMessage.error(err?.message || '生成模型加载失败')
+    }
   }
 }
 
@@ -1284,6 +1351,44 @@ function fileToBase64(file: File): Promise<string> {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
+}
+
+.asset-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pipeline-step {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 4px;
+  color: #9fb2c6;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+}
+
+.pipeline-step.queued,
+.pipeline-step.running {
+  color: #8be7ff;
+  background: rgba(0,212,255,0.1);
+  border-color: rgba(0,212,255,0.18);
+}
+
+.pipeline-step.completed {
+  color: #8df0b4;
+  background: rgba(62,204,124,0.1);
+  border-color: rgba(62,204,124,0.2);
+}
+
+.pipeline-step.failed {
+  color: #ff9e9e;
+  background: rgba(255,94,94,0.1);
+  border-color: rgba(255,94,94,0.2);
 }
 
 .reference-preview {

@@ -139,9 +139,14 @@ func (s *AssetService) GetJob(jobID string) (*vo.AssetJobResponse, error) {
 		pyStatus, err := s.pollPythonStatus(jobID)
 		if err == nil {
 			if pyStatus.Status == "completed" {
-				s.assetMapper.UpdateStatus(jobID, "completed", 100,
+				finalStatus := finalGeneratedAssetStatus(pyStatus.Status)
+				job.ModelName = generatedAssetModelName(job)
+				s.assetMapper.UpdateStatus(jobID, finalStatus, 100,
 					pyStatus.Result.GlbURL, pyStatus.Result.ThumbURL, pyStatus.Result.FileSize, "")
-				job.Status = "completed"
+				if finalStatus == "approved" {
+					_ = s.assetMapper.ApproveJob(jobID, job.ModelName)
+				}
+				job.Status = finalStatus
 				job.ModelURL = pyStatus.Result.GlbURL
 				job.ThumbURL = pyStatus.Result.ThumbURL
 				job.FileSize = pyStatus.Result.FileSize
@@ -158,6 +163,26 @@ func (s *AssetService) GetJob(jobID string) (*vo.AssetJobResponse, error) {
 	}
 
 	return jobToResponse(job), nil
+}
+
+func finalGeneratedAssetStatus(status string) string {
+	if status == "completed" {
+		return "approved"
+	}
+	return status
+}
+
+func generatedAssetModelName(job *mapper.AssetJobRecord) string {
+	if job == nil {
+		return "AI Generated Asset"
+	}
+	for _, value := range []string{job.ModelName, job.AssetName, job.AssetKey, job.JobID} {
+		name := strings.TrimSpace(value)
+		if name != "" {
+			return name
+		}
+	}
+	return "AI Generated Asset"
 }
 
 // ListJobs returns all jobs for a given owner.

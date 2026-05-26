@@ -87,7 +87,7 @@
         <div class="ai-config">
           <label class="config-label">生成精度</label>
           <el-select v-model="genResolution" style="width:100%" size="small">
-            <el-option label="快速 512 — ~30秒" :value="512" />
+            <el-option label="快速 512 — 约2-3分钟" :value="512" />
             <el-option label="精细 1024 — ~2分钟" :value="1024" />
           </el-select>
         </div>
@@ -113,7 +113,7 @@
                 <div class="job-status">{{ jobStatusText(job) }}</div>
                 <el-progress v-if="job.status === 'queued' || job.status === 'running'"
                   :percentage="job.progress" :stroke-width="4" style="margin-top:2px" />
-                <div v-if="job.status === 'completed'" class="job-ok">可预览和添加</div>
+                <div v-if="isReusableJob(job)" class="job-ok">可预览和添加</div>
                 <div v-if="job.status === 'failed'" class="job-err">{{ job.errorMsg }}</div>
               </div>
             </div>
@@ -398,8 +398,12 @@ function onImageSelected(file: any) {
 }
 
 function jobStatusText(job: any) {
-  const map: Record<string, string> = { queued: '排队中', running: '生成中...', completed: '已完成', failed: '失败' }
+  const map: Record<string, string> = { queued: '排队中', running: '生成中...', completed: '已完成', approved: '已入库', failed: '失败' }
   return map[job.status] || job.status
+}
+
+function isReusableJob(job: any): boolean {
+  return (job.status === 'completed' || job.status === 'approved') && !!job.modelUrl
 }
 
 async function startGenerate() {
@@ -430,7 +434,7 @@ async function startGenerate() {
 
 function onClickJob(job: any) {
   selectedJob.value = job
-  if (job.status === 'completed' && job.modelUrl) {
+  if (isReusableJob(job)) {
     aiSelectedUrl.value = job.modelUrl
     nextTick(() => {
       if (!aiPreviewScene) initAiPreview()
@@ -447,7 +451,7 @@ function onClickJob(job: any) {
         })
       }
     })
-  } else if (job.status !== 'completed') {
+  } else if (!isReusableJob(job)) {
     aiSelectedUrl.value = ''
   }
 }
@@ -459,7 +463,7 @@ async function pollJob(jobId: string) {
       const updated = resp.data.data
       const idx = recentJobs.value.findIndex(j => j.jobId === jobId)
       if (idx >= 0) recentJobs.value[idx] = updated
-      if (updated.status === 'completed' && updated.modelUrl) {
+      if (isReusableJob(updated)) {
         aiSelectedUrl.value = updated.modelUrl
         if (selectedJob.value?.jobId === jobId && aiPreviewScene) {
           aiLoading.value = true
@@ -474,7 +478,7 @@ async function pollJob(jobId: string) {
           })
         }
       }
-      if (updated.status === 'completed' || updated.status === 'failed') return true
+      if (updated.status === 'completed' || updated.status === 'approved' || updated.status === 'failed') return true
     }
   } catch (e) { /* ignore */ }
   return false
@@ -728,7 +732,7 @@ async function loadRecentJobs() {
 }
 
 .job-item:hover { border-color: #409EFF; box-shadow: 0 2px 8px rgba(64,158,255,0.12); }
-.job-item.completed { border-left: 3px solid #67C23A; }
+.job-item.completed, .job-item.approved { border-left: 3px solid #67C23A; }
 .job-item.failed { border-left: 3px solid #F56C6C; }
 .job-item.queued, .job-item.running { border-left: 3px solid #E6A23C; }
 

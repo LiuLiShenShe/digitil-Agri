@@ -9,15 +9,16 @@ type SemanticBuildRequest struct {
 }
 
 type SemanticBuildResponse struct {
-	ScenePlan     ScenePlan            `json:"scenePlan"`
-	Models        []BuildModel         `json:"models"`
-	Warnings      []string             `json:"warnings"`
-	MissingAssets []MissingAssetVo     `json:"missingAssets"`
-	Samples       []BuildSampleVo      `json:"samples"`
-	PlanSource    SemanticPlanSource   `json:"planSource"`
-	Context       SemanticBuildContext `json:"context"`
-	RawLLMPlan    string               `json:"rawLlmPlan,omitempty"`
-	AgentTrace    *SceneAgentTraceVo   `json:"agentTrace,omitempty"`
+	ScenePlan      ScenePlan                 `json:"scenePlan"`
+	Models         []BuildModel              `json:"models"`
+	Warnings       []string                  `json:"warnings"`
+	MissingAssets  []MissingAssetVo          `json:"missingAssets"`
+	Samples        []BuildSampleVo           `json:"samples"`
+	PlanSource     SemanticPlanSource        `json:"planSource"`
+	Context        SemanticBuildContext      `json:"context"`
+	VisualTemplate *SemanticVisualTemplateVo `json:"visualTemplate,omitempty"`
+	RawLLMPlan     string                    `json:"rawLlmPlan,omitempty"`
+	AgentTrace     *SceneAgentTraceVo        `json:"agentTrace,omitempty"`
 }
 
 type ScenePlan struct {
@@ -83,9 +84,71 @@ type BuildModelMeta struct {
 	Category         string `json:"category"`
 	Area             string `json:"area"`
 	Layout           string `json:"layout"`
+	ScaleMode        string `json:"scaleMode,omitempty"`
+	TemplateKey      string `json:"templateKey,omitempty"`
 	Placeholder      bool   `json:"placeholder,omitempty"`
 	MissingAssetKey  string `json:"missingAssetKey,omitempty"`
 	GenerationTaskID string `json:"generationTaskId,omitempty"`
+}
+
+type SemanticVisualTemplateVo struct {
+	TemplateKey       string                                `json:"templateKey"`
+	Label             string                                `json:"label"`
+	RenderingMode     string                                `json:"renderingMode"`
+	Greenhouse        SemanticGreenhouseEnvelopeVo          `json:"greenhouse"`
+	PlantGrid         SemanticPlantGridVo                   `json:"plantGrid"`
+	Irrigation        SemanticIrrigationTemplateVo          `json:"irrigation"`
+	Lighting          SemanticLightingTemplateVo            `json:"lighting"`
+	ScaleCalibrations map[string]SemanticScaleCalibrationVo `json:"scaleCalibrations,omitempty"`
+	Acceptance        SemanticVisualAcceptanceVo            `json:"acceptance"`
+}
+
+type SemanticGreenhouseEnvelopeVo struct {
+	Center OffsetVo `json:"center"`
+	Width  float64  `json:"width"`
+	Depth  float64  `json:"depth"`
+	Height float64  `json:"height"`
+}
+
+type SemanticPlantGridVo struct {
+	Rows       int     `json:"rows"`
+	Columns    int     `json:"columns"`
+	SpacingX   float64 `json:"spacingX"`
+	SpacingZ   float64 `json:"spacingZ"`
+	BedCount   int     `json:"bedCount"`
+	InsideOnly bool    `json:"insideOnly"`
+}
+
+type SemanticIrrigationTemplateVo struct {
+	BedCount       int        `json:"bedCount"`
+	DripLineCount  int        `json:"dripLineCount"`
+	MainPipeLength float64    `json:"mainPipeLength"`
+	PumpPosition   OffsetVo   `json:"pumpPosition"`
+	ValvePositions []OffsetVo `json:"valvePositions,omitempty"`
+}
+
+type SemanticLightingTemplateVo struct {
+	SkyColor              string  `json:"skyColor"`
+	GroundColor           string  `json:"groundColor"`
+	AmbientIntensity      float64 `json:"ambientIntensity"`
+	DirectionalIntensity  float64 `json:"directionalIntensity"`
+	MinimumScreenshotLuma float64 `json:"minimumScreenshotLuma"`
+}
+
+type SemanticScaleCalibrationVo struct {
+	AssetKey          string  `json:"assetKey"`
+	ScaleMode         string  `json:"scaleMode"`
+	RealWidth         float64 `json:"realWidth"`
+	RealDepth         float64 `json:"realDepth"`
+	RealHeight        float64 `json:"realHeight"`
+	AnchorDescription string  `json:"anchorDescription,omitempty"`
+}
+
+type SemanticVisualAcceptanceVo struct {
+	ExpectedTomatoesInsideGreenhouse int     `json:"expectedTomatoesInsideGreenhouse"`
+	MinimumScreenshotLuma            float64 `json:"minimumScreenshotLuma"`
+	MaximumTomatoScale               float64 `json:"maximumTomatoScale"`
+	RequiresContinuousIrrigation     bool    `json:"requiresContinuousIrrigation"`
 }
 
 type AssetSemantic struct {
@@ -142,14 +205,25 @@ type ReferenceImageCandidateVo struct {
 }
 
 type MissingAssetGenerationVo struct {
-	Enabled      bool   `json:"enabled"`
-	TaskID       string `json:"taskId,omitempty"`
-	Status       string `json:"status"`
-	Progress     int    `json:"progress,omitempty"`
-	ResultURL    string `json:"resultUrl,omitempty"`
-	ThumbnailURL string `json:"thumbnailUrl,omitempty"`
-	ErrorMessage string `json:"errorMessage,omitempty"`
-	ReviewStatus string `json:"reviewStatus,omitempty"`
+	Enabled      bool                            `json:"enabled"`
+	TaskID       string                          `json:"taskId,omitempty"`
+	Status       string                          `json:"status"`
+	Progress     int                             `json:"progress,omitempty"`
+	ResultURL    string                          `json:"resultUrl,omitempty"`
+	ThumbnailURL string                          `json:"thumbnailUrl,omitempty"`
+	ErrorMessage string                          `json:"errorMessage,omitempty"`
+	ReviewStatus string                          `json:"reviewStatus,omitempty"`
+	Pipeline     []AssetGenerationPipelineStepVo `json:"pipeline,omitempty"`
+}
+
+type AssetGenerationPipelineStepVo struct {
+	Stage       string `json:"stage"`
+	Label       string `json:"label"`
+	Status      string `json:"status"`
+	LocalModel  string `json:"localModel,omitempty"`
+	Input       string `json:"input,omitempty"`
+	Output      string `json:"output,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 type BuildSampleVo struct {

@@ -64,17 +64,23 @@ pipeline: Optional[Trellis2ImageTo3DPipeline] = None
 envmap: Optional[EnvMap] = None
 task_queue: asyncio.Queue = None
 worker_task = None
+load_task = None
+load_status = "not_started"
+load_error: Optional[str] = None
 job_store: dict = {}  # job_id -> {status, progress, result, error}
 
 # ---------- fastapi ----------
 app = FastAPI(title="TRELLIS.2 Image-to-3D Service", version="1.0.0")
 
 
-async def run_generation(job: dict):
+def run_generation_sync(job: dict):
     """Run a single generation job (called by background worker)."""
     job_id = job["job_id"]
     try:
+        if pipeline is None:
+            raise RuntimeError("Pipeline not loaded yet")
         job["status"] = "running"
+        job["progress"] = 5
         logger.info(f"[{job_id}] Starting generation (resolution={job['resolution']})")
 
         # Load image
@@ -82,6 +88,7 @@ async def run_generation(job: dict):
 
         # Run pipeline
         mesh = pipeline.run(image)[0]
+        job["progress"] = 70
         mesh.simplify(16777216)
 
         job["progress"] = 80
@@ -104,6 +111,7 @@ async def run_generation(job: dict):
         )
         glb_path = MODEL_DIR / f"{job_id}.glb"
         glb.export(str(glb_path))
+        job["progress"] = 90
         logger.info(f"[{job_id}] GLB saved: {glb_path} ({glb_path.stat().st_size / 1e6:.1f} MB)")
 
         # Generate thumbnail (first frame of turntable video)
@@ -114,6 +122,7 @@ async def run_generation(job: dict):
             imageio.imwrite(str(thumb_path), first_frame)
         logger.info(f"[{job_id}] Thumbnail saved: {thumb_path}")
 
+        job["progress"] = 95
         job["status"] = "completed"
         job["result"] = {
             "glb_url": f"/scene-assets/models/{job_id}.glb",
@@ -141,7 +150,9 @@ async def worker():
     while True:
         job = await task_queue.get()
         try:
-            await run_generation(job)
+            while pipeline is None:
+                await asyncio.sleep(1)
+            await asyncio.to_thread(run_generation_sync, job)
         except Exception as e:
             logger.exception(f"Worker error: {e}")
         finally:
@@ -149,29 +160,48 @@ async def worker():
             torch.cuda.empty_cache()
 
 
+def load_pipeline_sync():
+    """Load model weights in a worker thread so FastAPI can serve health/docs."""
+    global pipeline, envmap, load_status, load_error
+
+    try:
+        load_status = "loading"
+        load_error = None
+        logger.info(f"Loading TRELLIS.2 pipeline from {WEIGHTS_PATH}...")
+        logger.info(f"GPU: {torch.cuda.get_device_name(0)}, VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+
+        envmap = EnvMap(torch.tensor(
+            cv2.cvtColor(cv2.imread(str(HDRI_PATH), cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB),
+            dtype=torch.float32, device='cuda'
+        ))
+
+        loaded_pipeline = Trellis2ImageTo3DPipeline.from_pretrained(str(WEIGHTS_PATH))
+        loaded_pipeline.cuda()
+        pipeline = loaded_pipeline
+        load_status = "ready"
+        logger.info("Pipeline loaded.")
+    except Exception as e:
+        load_status = "failed"
+        load_error = str(e)
+        logger.exception("Pipeline load failed: %s", e)
+
+
 @app.on_event("startup")
 async def startup():
-    global pipeline, envmap, task_queue, worker_task
-
-    logger.info(f"Loading TRELLIS.2 pipeline from {WEIGHTS_PATH}...")
-    logger.info(f"GPU: {torch.cuda.get_device_name(0)}, VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
-
-    envmap = EnvMap(torch.tensor(
-        cv2.cvtColor(cv2.imread(str(HDRI_PATH), cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB),
-        dtype=torch.float32, device='cuda'
-    ))
-
-    pipeline = Trellis2ImageTo3DPipeline.from_pretrained(str(WEIGHTS_PATH))
-    pipeline.cuda()
-    logger.info("Pipeline loaded.")
-
+    global task_queue, worker_task, load_task
     task_queue = asyncio.Queue()
     worker_task = asyncio.create_task(worker())
+    load_task = asyncio.create_task(asyncio.to_thread(load_pipeline_sync))
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "pipeline_loaded": pipeline is not None}
+    return {
+        "status": "ok" if load_status != "failed" else "error",
+        "pipeline_loaded": pipeline is not None,
+        "load_status": load_status,
+        "load_error": load_error,
+    }
 
 
 @app.post("/generate")
@@ -182,7 +212,7 @@ async def generate(
     texture_size: int = Form(2048),
 ):
     if pipeline is None:
-        raise HTTPException(503, "Pipeline not loaded yet")
+        raise HTTPException(503, f"Pipeline not loaded yet; load_status={load_status}")
 
     if resolution not in (512, 1024, 1536):
         raise HTTPException(400, "Resolution must be 512, 1024, or 1536")

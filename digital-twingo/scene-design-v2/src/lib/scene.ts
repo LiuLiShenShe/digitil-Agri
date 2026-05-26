@@ -24,6 +24,68 @@ import { BoxSelector } from '@/lib/boxSelector'
 import { TerrainBrush } from '@/lib/terrainBrush'
 import { sceneTemplates, type SceneTemplate } from '@/data/templates'
 
+interface TomatoGreenhouseVisualTemplate {
+  templateKey: string
+  greenhouse: {
+    center: { x: number; y: number; z: number }
+    width: number
+    depth: number
+    height: number
+  }
+  plantGrid: {
+    rows: number
+    columns: number
+    spacingX: number
+    spacingZ: number
+    bedCount: number
+    insideOnly: boolean
+  }
+  irrigation: {
+    bedCount: number
+    dripLineCount: number
+    mainPipeLength: number
+    pumpPosition: { x: number; y: number; z: number }
+    valvePositions?: Array<{ x: number; y: number; z: number }>
+  }
+  lighting: {
+    skyColor: string
+    groundColor: string
+    ambientIntensity: number
+    directionalIntensity: number
+    minimumScreenshotLuma: number
+  }
+  acceptance: {
+    expectedTomatoesInsideGreenhouse: number
+    minimumScreenshotLuma: number
+    maximumTomatoScale: number
+    requiresContinuousIrrigation: boolean
+  }
+}
+
+interface TomatoGreenhouseSnapshot {
+  templateKey: string
+  greenhouse: {
+    center: { x: number; y: number; z: number }
+    width: number
+    depth: number
+    height: number
+  }
+  tomatoes: Array<{ x: number; y: number; z: number; scale: number }>
+  irrigation: {
+    bedCount: number
+    dripLineCount: number
+    mainPipeLength: number
+    valveCount: number
+  }
+  lighting: {
+    skyColor: string
+    groundColor: string
+    ambientIntensity: number
+    directionalIntensity: number
+    minimumScreenshotLuma: number
+  }
+}
+
 const viewPositions: Record<string, number[]> = {
   origin: [500, 80, 90],
   top: [0, 500, 0],
@@ -95,6 +157,8 @@ export class Scene {
   private terrainBrush: TerrainBrush | null = null
   private snapConfig: SnapConfig = { gridSize: 10, enabled: false }
   private snapIndicatorMesh: THREE.Mesh | null = null
+  private semanticTemplateLayer: THREE.Group | null = null
+  private semanticTemplateSnapshot: TomatoGreenhouseSnapshot | null = null
 
   private static sceneInstance = new Scene()
   private static extScenes = [] as Scene[]
@@ -182,10 +246,7 @@ export class Scene {
       this.boxSelector.dispose()
       this.boxSelector = null
     }
-    if (this.background) {
-      this.scene.background.dispose()
-      this.background = null
-    }
+    this.disposeBackgroundTexture()
     if (this.terrainBrush) {
       this.terrainBrush.dispose()
       this.terrainBrush = null
@@ -363,17 +424,7 @@ export class Scene {
 
   // ==================== 背景 =====================
   public setBackground(options: any) {
-    if (this.background) {
-      this.scene.background.dispose()
-      this.scene.background = null
-      this.background = undefined
-      this.sceneArgs.background = undefined
-
-      if (this.bgEnv) {
-        this.bgEnv.dispose()
-        this.bgEnv = null
-      }
-    }
+    this.disposeBackgroundTexture()
     if (options.turnOff) {
       if (!this.useRoomEnv) {
         this.scene.environment = null
@@ -403,6 +454,22 @@ export class Scene {
     useSceneStore().setSkybox(JSON.stringify({ path: texturePath, imgs: imgs }))
   }
 
+  private disposeBackgroundTexture() {
+    if (this.background && typeof this.background.dispose === 'function') {
+      this.background.dispose()
+    }
+    this.background = null
+    if (this.scene) {
+      this.scene.background = null
+    }
+    this.sceneArgs.background = undefined
+
+    if (this.bgEnv) {
+      this.bgEnv.dispose()
+      this.bgEnv = null
+    }
+  }
+
   public toggleRoomEnviroment() {
     if (!this.roomEnv) {
       const pmremGenerator = new THREE.PMREMGenerator(this.renderer)
@@ -429,6 +496,15 @@ export class Scene {
     }
     this.scene.environment = this.roomEnv
     this.useRoomEnv = true
+  }
+
+  public setDaylightBackground(color: string) {
+    this.disposeBackgroundTexture()
+    const nextColor = new THREE.Color(color || '#dff5ff')
+    this.renderer.setClearColor(nextColor)
+    this.scene.background = nextColor
+    this.background = null
+    this.sceneArgs.background = { color: color || '#dff5ff', type: 'daylight-color' }
   }
 
   public setGrid(options: any) {
@@ -504,6 +580,225 @@ export class Scene {
     this.groundPane.userData.type = 'groundPane'
     this.scene.add(this.groundPane)
     useSceneStore().setGroundPane({ texture: options.texture, color: options.color, on: true })
+  }
+
+  public applyTomatoGreenhouseVisualTemplate(template: TomatoGreenhouseVisualTemplate, tomatoModels: Array<{ offset: { x: number; y: number; z: number }; scale: number }>) {
+    this.clearSemanticTemplateLayer()
+    const layer = new THREE.Group()
+    layer.name = template.templateKey || 'tomato_greenhouse_visual_template'
+    layer.userData.type = 'semanticVisualTemplate'
+    layer.userData.templateKey = template.templateKey
+
+    this.addGreenhouseShell(layer, template)
+    this.addGreenhouseBeds(layer, template)
+    this.addIrrigationNetwork(layer, template)
+    this.addTemplateEquipmentMarkers(layer, template)
+
+    this.scene.add(layer)
+    this.semanticTemplateLayer = layer
+    this.semanticTemplateSnapshot = {
+      templateKey: template.templateKey,
+      greenhouse: template.greenhouse,
+      tomatoes: tomatoModels.map(item => ({
+        x: item.offset.x,
+        y: item.offset.y,
+        z: item.offset.z,
+        scale: item.scale
+      })),
+      irrigation: {
+        bedCount: template.irrigation.bedCount,
+        dripLineCount: template.irrigation.dripLineCount,
+        mainPipeLength: template.irrigation.mainPipeLength,
+        valveCount: template.irrigation.valvePositions?.length || 0
+      },
+      lighting: template.lighting
+    }
+  }
+
+  public clearSemanticTemplateLayer() {
+    if (!this.semanticTemplateLayer) return
+    this.disposeObjectTree(this.semanticTemplateLayer)
+    this.scene.remove(this.semanticTemplateLayer)
+    this.semanticTemplateLayer = null
+    this.semanticTemplateSnapshot = null
+  }
+
+  public getSemanticTemplateSnapshot(): TomatoGreenhouseSnapshot | null {
+    return this.semanticTemplateSnapshot
+  }
+
+  private addGreenhouseShell(layer: THREE.Group, template: TomatoGreenhouseVisualTemplate) {
+    const { center, width, depth, height } = template.greenhouse
+    const shell = new THREE.Group()
+    shell.name = 'greenhouse-shell'
+    shell.position.set(center.x, center.y, center.z)
+
+    const glassMaterial = new THREE.MeshPhysicalMaterial({
+      color: '#d9fff4',
+      transparent: true,
+      opacity: 0.24,
+      roughness: 0.18,
+      metalness: 0,
+      side: THREE.DoubleSide,
+      transmission: 0.35
+    })
+    const roofMaterial = new THREE.MeshPhysicalMaterial({
+      color: '#efffff',
+      transparent: true,
+      opacity: 0.34,
+      roughness: 0.2,
+      side: THREE.DoubleSide,
+      transmission: 0.28
+    })
+    const frameMaterial = new THREE.MeshStandardMaterial({ color: '#d7e4e8', metalness: 0.25, roughness: 0.36 })
+
+    const sideGeometry = new THREE.BoxGeometry(width, height * 0.62, 4)
+    const front = new THREE.Mesh(sideGeometry, glassMaterial)
+    front.position.set(0, height * 0.31, depth / 2)
+    const back = front.clone()
+    back.position.z = -depth / 2
+    shell.add(front, back)
+
+    const sideWallGeometry = new THREE.BoxGeometry(4, height * 0.62, depth)
+    const left = new THREE.Mesh(sideWallGeometry, glassMaterial)
+    left.position.set(-width / 2, height * 0.31, 0)
+    const right = left.clone()
+    right.position.x = width / 2
+    shell.add(left, right)
+
+    const roofShape = new THREE.Shape()
+    roofShape.moveTo(-width / 2, 0)
+    roofShape.lineTo(0, height * 0.38)
+    roofShape.lineTo(width / 2, 0)
+    roofShape.lineTo(-width / 2, 0)
+    const roofGeometry = new THREE.ExtrudeGeometry(roofShape, { depth, bevelEnabled: false })
+    roofGeometry.rotateX(Math.PI / 2)
+    roofGeometry.translate(0, height * 0.62, depth / 2)
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial)
+    shell.add(roof)
+
+    const frameRadius = 3
+    const makeBeam = (length: number, axis: 'x' | 'y' | 'z') => {
+      const geometry = axis === 'x'
+        ? new THREE.BoxGeometry(length, frameRadius, frameRadius)
+        : axis === 'y'
+          ? new THREE.BoxGeometry(frameRadius, length, frameRadius)
+          : new THREE.BoxGeometry(frameRadius, frameRadius, length)
+      return new THREE.Mesh(geometry, frameMaterial)
+    }
+    const yMid = height * 0.32
+    ;[-width / 2, width / 2].forEach(x => {
+      ;[-depth / 2, depth / 2].forEach(z => {
+        const post = makeBeam(height * 0.72, 'y')
+        post.position.set(x, height * 0.36, z)
+        shell.add(post)
+      })
+    })
+    ;[-depth / 2, depth / 2].forEach(z => {
+      const beam = makeBeam(width, 'x')
+      beam.position.set(0, yMid, z)
+      shell.add(beam)
+    })
+    ;[-width / 2, width / 2].forEach(x => {
+      const beam = makeBeam(depth, 'z')
+      beam.position.set(x, yMid, 0)
+      shell.add(beam)
+    })
+
+    layer.add(shell)
+  }
+
+  private addGreenhouseBeds(layer: THREE.Group, template: TomatoGreenhouseVisualTemplate) {
+    const bedCount = Math.max(1, template.plantGrid.bedCount || 4)
+    const { center, width, depth } = template.greenhouse
+    const bedWidth = width / (bedCount + 1.2)
+    const bedDepth = depth * 0.72
+    const spacing = width / bedCount
+    const material = new THREE.MeshStandardMaterial({ color: '#7d5a34', roughness: 0.88, metalness: 0.02 })
+    const edgeMaterial = new THREE.MeshStandardMaterial({ color: '#d7c58b', roughness: 0.72 })
+    for (let i = 0; i < bedCount; i++) {
+      const x = center.x + (i - (bedCount - 1) / 2) * spacing * 0.82
+      const bed = new THREE.Mesh(new THREE.BoxGeometry(bedWidth, 8, bedDepth), material)
+      bed.position.set(x, center.y + 3.5, center.z)
+      bed.receiveShadow = true
+      layer.add(bed)
+
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(bedWidth + 6, 3, bedDepth + 8), edgeMaterial)
+      edge.position.set(x, center.y + 1.2, center.z)
+      edge.receiveShadow = true
+      layer.add(edge)
+    }
+  }
+
+  private addIrrigationNetwork(layer: THREE.Group, template: TomatoGreenhouseVisualTemplate) {
+    const pipeMaterial = new THREE.MeshStandardMaterial({ color: '#1e7aa8', roughness: 0.42, metalness: 0.18 })
+    const dripMaterial = new THREE.MeshStandardMaterial({ color: '#111820', roughness: 0.5 })
+    const valveMaterial = new THREE.MeshStandardMaterial({ color: '#f5b642', roughness: 0.32, metalness: 0.12 })
+    const { center, depth } = template.greenhouse
+    const mainPipe = this.cylinderBetween(
+      new THREE.Vector3(center.x - template.irrigation.mainPipeLength / 2, 7, center.z + depth * 0.44),
+      new THREE.Vector3(center.x + template.irrigation.mainPipeLength / 2, 7, center.z + depth * 0.44),
+      4,
+      pipeMaterial
+    )
+    mainPipe.name = 'irrigation-main-pipe'
+    layer.add(mainPipe)
+
+    const lineCount = Math.max(1, template.irrigation.dripLineCount || 8)
+    const usableWidth = template.greenhouse.width * 0.72
+    for (let i = 0; i < lineCount; i++) {
+      const x = center.x + (i - (lineCount - 1) / 2) * (usableWidth / Math.max(1, lineCount - 1))
+      const line = this.cylinderBetween(
+        new THREE.Vector3(x, 10, center.z - depth * 0.33),
+        new THREE.Vector3(x, 10, center.z + depth * 0.34),
+        1.4,
+        dripMaterial
+      )
+      line.name = 'irrigation-drip-line'
+      layer.add(line)
+    }
+
+    ;(template.irrigation.valvePositions || []).forEach((pos, index) => {
+      const valve = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 12), valveMaterial)
+      valve.name = `irrigation-valve-${index + 1}`
+      valve.position.set(pos.x, pos.y + 8, pos.z)
+      layer.add(valve)
+    })
+  }
+
+  private addTemplateEquipmentMarkers(layer: THREE.Group, template: TomatoGreenhouseVisualTemplate) {
+    const pumpMaterial = new THREE.MeshStandardMaterial({ color: '#2f7d55', roughness: 0.5, metalness: 0.2 })
+    const pump = new THREE.Mesh(new THREE.BoxGeometry(28, 18, 24), pumpMaterial)
+    pump.name = 'procedural-pump-marker'
+    pump.position.set(template.irrigation.pumpPosition.x, 11, template.irrigation.pumpPosition.z)
+    layer.add(pump)
+  }
+
+  private cylinderBetween(start: THREE.Vector3, end: THREE.Vector3, radius: number, material: THREE.Material) {
+    const direction = new THREE.Vector3().subVectors(end, start)
+    const length = direction.length()
+    const geometry = new THREE.CylinderGeometry(radius, radius, length, 16)
+    const cylinder = new THREE.Mesh(geometry, material)
+    cylinder.position.copy(start).add(end).multiplyScalar(0.5)
+    cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize())
+    cylinder.castShadow = true
+    cylinder.receiveShadow = true
+    return cylinder
+  }
+
+  private disposeObjectTree(obj: THREE.Object3D) {
+    obj.traverse((child: any) => {
+      if (child.geometry) {
+        child.geometry.dispose()
+      }
+      if (child.material) {
+        const materials = Array.isArray(child.material) ? child.material : [child.material]
+        materials.forEach((material: any) => {
+          if (material.map) material.map.dispose()
+          material.dispose()
+        })
+      }
+    })
   }
 
   public setCameraPosition(pos: any) {
@@ -971,6 +1266,7 @@ export class Scene {
     this.setBackground({ turnOff: true })
     this.setGroundPane({ turnOff: true })
     this.setGrid({ turnOff: true })
+    this.clearSemanticTemplateLayer()
     this.removeTerrain()
     if (this.terrainBrush) {
       this.terrainBrush.dispose()
