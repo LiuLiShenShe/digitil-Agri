@@ -1,0 +1,42 @@
+[
+  {
+    "method": "Ours",
+    "useOntology": true,
+    "useMemory": true,
+    "useAssetRouter": true,
+    "useValidator": true,
+    "description": "Full KAFarmTwin pipeline with ontology, memory, asset routing, validator, and trace enabled."
+  },
+  {
+    "method": "Ours w/o Ontology",
+    "useOntology": false,
+    "useMemory": true,
+    "useAssetRouter": true,
+    "useValidator": true,
+    "description": "Disable agricultural object ontology constraints and flatten hierarchy relations."
+  },
+  {
+    "method": "Ours w/o Memory",
+    "useOntology": true,
+    "useMemory": false,
+    "useAssetRouter": true,
+    "useValidator": true,
+    "description": "Disable object-level memory and history/event query evidence."
+  },
+  {
+    "method": "Ours w/o Asset Router",
+    "useOntology": true,
+    "useMemory": true,
+    "useAssetRouter": false,
+    "useValidator": true,
+    "description": "Disable fidelity routing, missing-asset task generation, and asset routing trace evidence."
+  },
+  {
+    "method": "Ours w/o Validator",
+    "useOntology": true,
+    "useMemory": true,
+    "useAssetRouter": true,
+    "useValidator": false,
+    "description": "Disable layout/rule validation and leave rule-repair tasks unresolved."
+  }
+]

@@ -1,0 +1,9 @@
+能体，引导模型对组件进行迭代式互连，在组装过程
+中逐步解决接口不匹配与集成问题，最终成功构建
+出完整可运行的TPU 和MAERI 架构的模拟器。其
+中，TPU 架构模拟器代码规模为2 385 行，MAERI 架
+ 
+Table 5　Latency and Its Errors Comparison Between RTL
+and SimulatorGen on TPU and MAERI Layers
+表 5   比较RTL 和SimulatorGen 在TPU 和MAERI 层上
+的模拟延迟与其误差

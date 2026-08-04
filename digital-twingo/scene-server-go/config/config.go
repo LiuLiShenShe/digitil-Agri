@@ -94,18 +94,21 @@ func applyEnvOverrides() {
 	if AppConfig == nil {
 		return
 	}
+	if value := firstEnv("SERVER_PORT", "SCENE_SERVER_PORT"); value != "" {
+		AppConfig.Server.Port = value
+	}
 	if value, ok := os.LookupEnv("LLM_ENABLED"); ok {
 		if enabled, err := strconv.ParseBool(value); err == nil {
 			AppConfig.LLM.Enabled = enabled
 		}
 	}
-	if value := firstEnv("LLM_BASE_URL", "DEEPSEEK_BASE_URL"); value != "" {
+	if value := firstEnv("LLM_BASE_URL", "STEP_BASE_URL", "DEEPSEEK_BASE_URL"); value != "" {
 		AppConfig.LLM.BaseURL = value
 	}
-	if value := firstEnv("LLM_API_KEY", "DEEPSEEK_API_KEY"); value != "" {
+	if value := firstEnv("LLM_API_KEY", "STEP_API_KEY", "DEEPSEEK_API_KEY"); value != "" {
 		AppConfig.LLM.APIKey = value
 	}
-	if value := firstEnv("LLM_MODEL", "DEEPSEEK_MODEL"); value != "" {
+	if value := firstEnv("LLM_MODEL", "STEP_MODEL", "DEEPSEEK_MODEL"); value != "" {
 		AppConfig.LLM.Model = value
 	}
 	if value := firstEnv("LLM_TIMEOUT_SECONDS"); value != "" {

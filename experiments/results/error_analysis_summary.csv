@@ -1,0 +1,7 @@
+method,missing_objects,extra_objects,hierarchy_errors,relation_direction_errors,missing_relations,missing_bindings,binding_missing_fields,asset_type_errors,layout_boundary_errors,pseudo_trace_steps,trace_not_auditable,memory_range_errors
+Direct-LLM + Schema,182,78,3,7,362,308,3,3,1,34,30,2
+LLM + Ontology/Rules Prompt,76,46,3,39,303,316,5,2,1,58,30,5
+RAG-Agent + Ontology/Rules,149,86,4,83,301,259,33,3,1,157,30,1
+Single-Agent + Validator,174,37,2,1,338,287,0,0,1,147,30,2
+Multi-Agent + Shared Knowledge,147,336,1,1,315,269,0,1,1,178,30,1
+Ours KAFarmTwin,309,12,0,118,229,205,0,0,0,0,0,9

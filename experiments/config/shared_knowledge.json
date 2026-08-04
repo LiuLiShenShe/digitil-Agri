@@ -1,0 +1,64 @@
+{
+  "version": "v2",
+  "object_types": [
+    "Greenhouse",
+    "Plot",
+    "CropRow",
+    "Plant",
+    "Sensor",
+    "Camera",
+    "Device",
+    "Trait",
+    "Event",
+    "Asset",
+    "WeatherStation",
+    "Irrigation",
+    "Pump",
+    "ReportSource"
+  ],
+  "relation_predicates": [
+    "contains",
+    "belongs_to",
+    "monitors",
+    "observes",
+    "controls",
+    "has_asset",
+    "has_trait",
+    "has_event",
+    "located_in",
+    "has_instance",
+    "generates_task"
+  ],
+  "asset_types": [
+    "F2DMAS",
+    "high_fidelity_reconstruction",
+    "lightweight_glb",
+    "TRELLIS.2_task",
+    "procedural_model",
+    "placeholder"
+  ],
+  "rules": {
+    "R1": "对象层级合法：温室包含地块或栽培区，地块包含作物行或苗床，作物行包含植株。",
+    "R2": "数据绑定合法：传感器、表型和事件数据必须有绑定对象、单位和时间戳。",
+    "R3": "空间布局合法：对象不悬空、不越界，作物行或苗床位于地块或温室边界内。",
+    "R4": "资产类型一致：对象类型与 GLB、F2DMAS、TRELLIS.2、程序化或占位资产策略一致。",
+    "R5": "摄像头合法：摄像头必须有位姿、观测目标和视场覆盖关系。",
+    "R6": "设备覆盖合法：灌溉、水肥、补光和通风设备必须绑定控制区域或服务对象。",
+    "R7": "Agent Trace 完整：至少记录规划、布局、资产路由、数据绑定和校验步骤。",
+    "R8": "记忆查询合法：历史查询必须限制对象、指标、时间范围、事件类型和返回条数。",
+    "R9": "缺失资产不中断：缺失 GLB 时必须生成占位对象和资产生成任务。",
+    "R10": "错误可修正：规则冲突必须输出冲突类型、触发规则和修正方案。"
+  },
+  "trace_components": [
+    "planning",
+    "layout",
+    "asset_routing",
+    "data_binding",
+    "validation"
+  ],
+  "trace_types": {
+    "declared": "模型声明的计划或步骤，不能单独证明工具真实执行。",
+    "executed": "来自系统工具调用链的执行记录，应包含 evidenceId 或 callId。"
+  },
+  "baseline_budget_note": "所有 v2 baseline 均可读取本文件中的对象类型、关系谓词、资产类型、规则和输出 schema。差异只体现在是否工具化、是否检索、是否 Validator、是否闭环修正。"
+}

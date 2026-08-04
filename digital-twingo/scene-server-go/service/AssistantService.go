@@ -606,6 +606,9 @@ func (s *AssistantService) callLLM(message string, toolCalls []vo.AssistantToolC
 		},
 		"temperature": 0.2,
 	}
+	if isStepFunLLM() {
+		payload["reasoning_effort"] = "low"
+	}
 	body, _ := json.Marshal(payload)
 
 	url := config.LLMChatCompletionsURL()
@@ -625,8 +628,10 @@ func (s *AssistantService) callLLM(message string, toolCalls []vo.AssistantToolC
 	var result struct {
 		Choices []struct {
 			Message struct {
-				Content string `json:"content"`
+				Content   string `json:"content"`
+				Reasoning string `json:"reasoning"`
 			} `json:"message"`
+			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
 		Error *struct {
 			Message string `json:"message"`
@@ -642,6 +647,13 @@ func (s *AssistantService) callLLM(message string, toolCalls []vo.AssistantToolC
 		return "", fmt.Errorf("LLM error status: %d", resp.StatusCode)
 	}
 	if len(result.Choices) == 0 || strings.TrimSpace(result.Choices[0].Message.Content) == "" {
+		if len(result.Choices) > 0 {
+			return "", fmt.Errorf(
+				"LLM content 为空，finish_reason=%s, reasoning_chars=%d",
+				result.Choices[0].FinishReason,
+				len(result.Choices[0].Message.Reasoning),
+			)
+		}
 		return "", fmt.Errorf("LLM 返回为空")
 	}
 	return strings.TrimSpace(result.Choices[0].Message.Content), nil

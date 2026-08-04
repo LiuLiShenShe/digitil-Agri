@@ -1,0 +1,270 @@
+%0 Journal Article
+%T Digital twins in smart farming
+%A Verdouw, Cor
+%A Tekinerdogan, Bedir
+%A Beulens, Adrie
+%A Wolfert, Sjaak
+%J Agricultural Systems
+%V 189
+%P 103046
+%D 2021
+%R 10.1016/j.agsy.2020.103046
+%U https://doi.org/10.1016/j.agsy.2020.103046
+
+%0 Journal Article
+%T Smart farming is key to developing sustainable agriculture
+%A Walter, Achim
+%A Finger, Robert
+%A Huber, Robert
+%A Buchmann, Nina
+%J Proceedings of the National Academy of Sciences
+%V 114
+%N 24
+%P 6148-6150
+%D 2017
+%R 10.1073/pnas.1707462114
+%U https://doi.org/10.1073/pnas.1707462114
+
+%0 Journal Article
+%T Deep learning in agriculture: A survey
+%A Kamilaris, Andreas
+%A Prenafeta-Boldú, Francesc X.
+%J Computers and Electronics in Agriculture
+%V 147
+%P 70-90
+%D 2018
+%R 10.1016/j.compag.2018.02.016
+%U https://doi.org/10.1016/j.compag.2018.02.016
+
+%0 Journal Article
+%T AgroPortal: A vocabulary and ontology repository for agronomy
+%A Jonquet, Clément
+%A Toulet, Anne
+%A Arnaud, Elizabeth
+%A Aubin, Sophie
+%J Computers and Electronics in Agriculture
+%V 144
+%P 126-143
+%D 2018
+%R 10.1016/j.compag.2017.10.012
+%U https://doi.org/10.1016/j.compag.2017.10.012
+
+%0 Journal Article
+%T The SSN ontology of the W3C semantic sensor network incubator group
+%A Compton, Michael
+%A Barnaghi, Payam
+%A Bermudez, Luis
+%A García-Castro, Raúl
+%A Corcho, Oscar
+%A Cox, Simon
+%J Journal of Web Semantics
+%V 17
+%P 25-32
+%D 2012
+%R 10.1016/j.websem.2012.05.003
+%U https://doi.org/10.1016/j.websem.2012.05.003
+
+%0 Journal Article
+%T SOSA: A lightweight ontology for sensors, observations, samples, and actuators
+%A Janowicz, Krzysztof
+%A Haller, Armin
+%A Cox, Simon J. D.
+%A Le Phuoc, Danh
+%A Lefrançois, Maxime
+%J Journal of Web Semantics
+%V 56
+%P 1-10
+%D 2019
+%R 10.1016/j.websem.2018.06.003
+%U https://doi.org/10.1016/j.websem.2018.06.003
+
+%0 Conference Paper
+%T Generative Agents: Interactive Simulacra of Human Behavior
+%A Park, Joon Sung
+%A O'Brien, Joseph
+%A Cai, Carrie Jun
+%A Morris, Meredith Ringel
+%A Liang, Percy
+%A Bernstein, Michael S.
+%B Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology
+%P 1-22
+%D 2023
+%R 10.1145/3586183.3606763
+%U https://doi.org/10.1145/3586183.3606763
+
+%0 Conference Paper
+%T Reflexion: Language Agents with Verbal Reinforcement Learning
+%A Shinn, Noah
+%A Cassano, Federico
+%A Gopinath, Ashwin
+%A Narasimhan, Karthik
+%A Yao, Shunyu
+%B Advances in Neural Information Processing Systems 36
+%P 8634-8652
+%D 2023
+%R 10.52202/075280-0377
+%U https://doi.org/10.52202/075280-0377
+
+%0 Conference Paper
+%T CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society
+%A Li, Guohao
+%A Hammoud, Hasan
+%A Itani, Hani
+%A Khizbullin, Dmitrii
+%A Ghanem, Bernard
+%B Advances in Neural Information Processing Systems 36
+%P 51991-52008
+%D 2023
+%R 10.52202/075280-2264
+%U https://doi.org/10.52202/075280-2264
+
+%0 Conference Paper
+%T Chain-of-Thought Prompting Elicits Reasoning in Large Language Models
+%A Wei, Jason
+%A Wang, Xuezhi
+%A Schuurmans, Dale
+%A Bosma, Maarten
+%A Chi, Ed
+%A Le, Quoc V.
+%A Zhou, Denny
+%B Advances in Neural Information Processing Systems 35
+%P 24824-24837
+%D 2022
+%R 10.52202/068431-1800
+%U https://doi.org/10.52202/068431-1800
+
+%0 Conference Paper
+%T Large Language Models Are Zero-Shot Reasoners
+%A Kojima, Takeshi
+%A Gu, Shixiang Shane
+%A Reid, Machel
+%A Matsuo, Yutaka
+%A Iwasawa, Yusuke
+%B Advances in Neural Information Processing Systems 35
+%P 22199-22213
+%D 2022
+%R 10.52202/068431-1613
+%U https://doi.org/10.52202/068431-1613
+
+%0 Conference Paper
+%T Tree of Thoughts: Deliberate Problem Solving with Large Language Models
+%A Yao, Shunyu
+%A Yu, Dian
+%A Zhao, Jeffrey
+%A Shafran, Izhak
+%A Griffiths, Thomas L.
+%A Cao, Yuan
+%A Narasimhan, Karthik
+%B Advances in Neural Information Processing Systems 36
+%P 11809-11822
+%D 2023
+%R 10.52202/075280-0517
+%U https://doi.org/10.52202/075280-0517
+
+%0 Conference Paper
+%T Magic3D: High-Resolution Text-to-3D Content Creation
+%A Lin, Chen-Hsuan
+%A Gao, Jun
+%A Tang, Luming
+%A Takikawa, Towaki
+%A Zeng, Xiaohui
+%A Huang, Xun
+%A Kreis, Karsten
+%A Fidler, Sanja
+%A Liu, Ming-Yu
+%A Lin, Tsung-Yi
+%B Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+%P 300-309
+%D 2023
+%R 10.1109/CVPR52729.2023.00037
+%U https://doi.org/10.1109/CVPR52729.2023.00037
+
+%0 Conference Paper
+%T Text2Room: Extracting Textured 3D Meshes from 2D Text-to-Image Models
+%A Höllein, Lukas
+%A Cao, Ang
+%A Owens, Andrew
+%A Johnson, Justin
+%A Nießner, Matthias
+%B Proceedings of the IEEE/CVF International Conference on Computer Vision
+%P 7875-7886
+%D 2023
+%R 10.1109/ICCV51070.2023.00727
+%U https://doi.org/10.1109/ICCV51070.2023.00727
+
+%0 Journal Article
+%T 3D Gaussian Splatting for Real-Time Radiance Field Rendering
+%A Kerbl, Bernhard
+%A Kopanas, Georgios
+%A Leimkühler, Thomas
+%A Drettakis, George
+%J ACM Transactions on Graphics
+%V 42
+%N 4
+%P 139
+%D 2023
+%R 10.1145/3592433
+%U https://doi.org/10.1145/3592433
+
+%0 Conference Paper
+%T Holodeck: Language Guided Generation of 3D Embodied AI Environments
+%A Yang, Yue
+%A Sun, Fan-Yun
+%A Weihs, Luca
+%A Vanderbilt, Eli
+%A Herrasti, Alvaro
+%A Han, Winson
+%A Wu, Jiajun
+%A Haber, Nick
+%A Krishna, Ranjay
+%A Liu, Lingjie
+%B Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+%P 16277-16287
+%D 2024
+%R 10.1109/CVPR52733.2024.01536
+%U https://doi.org/10.1109/CVPR52733.2024.01536
+
+%0 Conference Paper
+%T CommonScenes: Generating Commonsense 3D Indoor Scenes with Scene Graph Diffusion
+%A Zhai, Guangyao
+%A Örnek, Evin Pinar
+%A Wu, Shun-Cheng
+%A Di, Yan
+%A Tombari, Federico
+%A Navab, Nassir
+%A Busam, Benjamin
+%B Advances in Neural Information Processing Systems 36
+%P 30026-30038
+%D 2023
+%R 10.52202/075280-1307
+%U https://doi.org/10.52202/075280-1307
+
+%0 Conference Paper
+%T DiffuScene: Denoising Diffusion Models for Generative Indoor Scene Synthesis
+%A Tang, Jiapeng
+%A Nie, Yinyu
+%A Markhasin, Lev
+%A Dai, Angela
+%A Thies, Justus
+%A Nießner, Matthias
+%B Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+%P 20507-20518
+%D 2024
+%R 10.1109/CVPR52733.2024.01938
+%U https://doi.org/10.1109/CVPR52733.2024.01938
+
+%0 Conference Paper
+%T Text-to-3D Generation with Bidirectional Diffusion Using Both 2D and 3D Priors
+%A Ding, Lihe
+%A Dong, Shaocong
+%A Huang, Zhanpeng
+%A Wang, Zibin
+%A Zhang, Yiyuan
+%A Gong, Kaixiong
+%A Xu, Dan
+%A Xue, Tianfan
+%B Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+%P 5115-5124
+%D 2024
+%R 10.1109/CVPR52733.2024.00489
+%U https://doi.org/10.1109/CVPR52733.2024.00489

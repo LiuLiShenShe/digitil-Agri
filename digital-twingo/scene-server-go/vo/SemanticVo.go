@@ -259,6 +259,8 @@ type SceneAgentTraceVo struct {
 }
 
 type SceneAgentToolCallVo struct {
+	CallID        string                `json:"callId,omitempty"`
+	EvidenceID    string                `json:"evidenceId,omitempty"`
 	Name          string                `json:"name"`
 	Agent         string                `json:"agent,omitempty"`
 	ToolCategory  string                `json:"toolCategory,omitempty"`
@@ -274,6 +276,8 @@ type SceneAgentToolCallVo struct {
 
 type SceneAgentStepVo struct {
 	StepID        string                `json:"stepId"`
+	CallID        string                `json:"callId,omitempty"`
+	EvidenceID    string                `json:"evidenceId,omitempty"`
 	Agent         string                `json:"agent"`
 	Tool          string                `json:"tool"`
 	ToolCategory  string                `json:"toolCategory"`

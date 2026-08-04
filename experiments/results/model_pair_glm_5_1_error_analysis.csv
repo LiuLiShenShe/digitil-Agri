@@ -1,0 +1,61 @@
+task_id,task_category,method,missing_objects,extra_objects,hierarchy_errors,relation_direction_errors,missing_relations,missing_bindings,binding_missing_fields,asset_type_errors,layout_boundary_errors,pseudo_trace_steps,trace_not_auditable,memory_range_errors
+T01,场景构建,Direct-LLM + Schema,15,0,0,0,24,5,0,0,0,1,1,0
+T01,场景构建,Ours KAFarmTwin,5,0,0,21,0,0,0,0,0,0,0,0
+T02,场景构建,Direct-LLM + Schema,0,0,0,0,9,5,0,0,0,1,1,0
+T02,场景构建,Ours KAFarmTwin,8,0,0,2,1,0,0,0,0,0,0,0
+T03,场景构建,Direct-LLM + Schema,32,0,0,0,49,4,0,0,0,1,1,0
+T03,场景构建,Ours KAFarmTwin,22,0,0,24,0,0,0,0,0,0,0,0
+T04,场景构建,Direct-LLM + Schema,23,0,0,0,37,6,0,0,0,1,1,0
+T04,场景构建,Ours KAFarmTwin,13,0,0,26,0,0,0,0,0,0,0,0
+T05,场景构建,Direct-LLM + Schema,18,0,0,0,34,5,0,0,0,1,1,0
+T05,场景构建,Ours KAFarmTwin,1,0,0,0,0,0,0,0,0,0,0,0
+T06,场景构建,Direct-LLM + Schema,20,0,0,0,34,7,0,0,0,1,1,0
+T06,场景构建,Ours KAFarmTwin,32,0,0,2,38,2,0,0,0,0,0,0
+T07,资产路由,Direct-LLM + Schema,13,0,0,0,25,16,0,0,0,1,1,0
+T07,资产路由,Ours KAFarmTwin,2,0,0,21,0,0,0,0,0,0,0,0
+T08,资产路由,Direct-LLM + Schema,81,0,0,0,102,83,0,0,0,1,1,0
+T08,资产路由,Ours KAFarmTwin,82,0,0,4,91,82,0,0,0,0,0,0
+T09,资产路由,Direct-LLM + Schema,11,0,0,0,21,13,0,0,0,1,1,0
+T09,资产路由,Ours KAFarmTwin,14,0,0,0,16,13,0,0,0,0,0,0
+T10,资产路由,Direct-LLM + Schema,6,0,0,0,13,8,0,0,0,1,1,0
+T10,资产路由,Ours KAFarmTwin,8,0,0,0,8,4,0,0,0,0,0,0
+T11,资产路由,Direct-LLM + Schema,8,0,0,0,17,9,0,0,0,1,1,0
+T11,资产路由,Ours KAFarmTwin,4,0,0,4,0,0,0,0,0,0,0,0
+T12,资产路由,Direct-LLM + Schema,1,0,0,0,10,6,0,0,0,1,1,0
+T12,资产路由,Ours KAFarmTwin,9,0,0,3,4,6,0,0,0,0,0,0
+T13,数据绑定,Direct-LLM + Schema,7,0,0,0,12,8,0,0,0,1,1,0
+T13,数据绑定,Ours KAFarmTwin,7,0,0,2,3,5,0,0,0,0,0,0
+T14,数据绑定,Direct-LLM + Schema,0,4,0,0,6,0,0,0,0,1,1,0
+T14,数据绑定,Ours KAFarmTwin,1,0,0,6,0,0,0,0,0,0,0,0
+T15,数据绑定,Direct-LLM + Schema,4,0,0,0,11,7,0,0,0,1,1,0
+T15,数据绑定,Ours KAFarmTwin,7,0,0,0,6,11,0,0,0,0,0,0
+T16,数据绑定,Direct-LLM + Schema,0,2,0,0,10,0,0,0,0,1,1,0
+T16,数据绑定,Ours KAFarmTwin,5,0,0,10,0,7,0,0,0,0,0,0
+T17,数据绑定,Direct-LLM + Schema,0,0,0,0,6,7,0,0,0,1,1,0
+T17,数据绑定,Ours KAFarmTwin,6,0,0,0,4,9,0,0,0,0,0,1
+T18,数据绑定,Direct-LLM + Schema,7,0,0,0,19,18,0,0,0,1,1,1
+T18,数据绑定,Ours KAFarmTwin,6,0,0,4,1,13,0,0,0,0,0,1
+T19,规则修正,Direct-LLM + Schema,6,0,0,0,10,6,0,0,0,1,1,0
+T19,规则修正,Ours KAFarmTwin,6,0,0,1,5,2,0,0,0,0,0,0
+T20,规则修正,Direct-LLM + Schema,13,0,0,0,19,7,0,0,1,1,1,0
+T20,规则修正,Ours KAFarmTwin,11,0,0,0,5,3,0,0,0,0,0,0
+T21,规则修正,Direct-LLM + Schema,8,0,1,0,16,3,0,0,0,1,1,1
+T21,规则修正,Ours KAFarmTwin,10,0,0,8,0,0,0,0,0,0,0,1
+T22,规则修正,Direct-LLM + Schema,6,0,0,0,11,5,0,0,0,1,1,0
+T22,规则修正,Ours KAFarmTwin,4,0,0,0,0,0,0,0,0,0,0,0
+T23,规则修正,Direct-LLM + Schema,3,0,0,0,8,9,0,0,0,1,1,0
+T23,规则修正,Ours KAFarmTwin,7,0,0,1,5,9,0,0,0,0,0,0
+T24,规则修正,Direct-LLM + Schema,1,0,0,0,9,5,0,1,0,1,1,0
+T24,规则修正,Ours KAFarmTwin,8,0,0,0,9,7,0,0,0,0,0,0
+T25,历史查询,Direct-LLM + Schema,0,2,0,0,4,11,0,0,0,1,1,1
+T25,历史查询,Ours KAFarmTwin,4,0,0,2,0,7,0,0,0,0,0,1
+T26,历史查询,Direct-LLM + Schema,0,3,0,0,1,6,0,0,0,1,1,1
+T26,历史查询,Ours KAFarmTwin,3,0,0,0,2,7,0,0,0,0,0,1
+T27,历史查询,Direct-LLM + Schema,0,1,0,0,4,13,0,0,0,1,1,1
+T27,历史查询,Ours KAFarmTwin,0,3,0,8,0,2,0,0,0,0,0,1
+T28,历史查询,Direct-LLM + Schema,0,3,0,0,2,9,0,0,0,1,1,1
+T28,历史查询,Ours KAFarmTwin,0,4,0,0,0,3,0,0,0,0,0,1
+T29,历史查询,Direct-LLM + Schema,2,0,1,0,7,7,0,0,0,1,1,1
+T29,历史查询,Ours KAFarmTwin,3,0,0,1,0,2,0,0,0,0,0,1
+T30,历史查询,Direct-LLM + Schema,1,0,0,0,10,16,0,0,0,1,1,1
+T30,历史查询,Ours KAFarmTwin,0,3,0,6,0,0,0,0,0,0,0,1

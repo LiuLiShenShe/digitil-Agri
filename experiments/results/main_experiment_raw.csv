@@ -1,0 +1,151 @@
+task_id,task_category,method,run_id,success,required_objects,generated_objects,required_relations,correct_relations,required_bindings,correct_bindings,checked_rules,violated_rules,manual_corrections,expected_trace_steps,traceable_steps,elapsed_ms,notes
+T01,场景构建,Direct-LLM,1,1,30,29,38,28,10,6,6,0,0,1,1,14329,直接生成，无工具调用
+T01,场景构建,Single-Agent,1,1,30,30,38,29,10,3,4,0,0,5,4,15505,单Agent顺序执行，无RAG或多Agent
+T01,场景构建,RAG-Agent,1,1,30,29,38,28,10,7,6,0,0,5,5,13911,构建完成，无违规
+T01,场景构建,Multi-Agent,1,1,30,29,38,28,10,7,6,0,0,5,5,14325,场景构建完成，符合任务要求
+T01,场景构建,Ours,1,1,30,25,38,38,10,10,6,0,0,5,5,29624,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T02,场景构建,Direct-LLM,1,1,16,14,24,14,9,9,6,0,0,1,1,8183,直接生成，未使用工具
+T02,场景构建,Single-Agent,1,1,16,15,24,14,9,9,2,0,0,5,4,10136,单Agent顺序完成解析、资产选择、布局和绑定
+T02,场景构建,RAG-Agent,1,1,16,15,24,14,9,9,6,0,0,5,5,10630,根据任务构建了草莓育苗温室，包含6苗床、3补光灯、2温湿度传感器、2摄像头、1微喷灌溉。
+T02,场景构建,Multi-Agent,1,1,16,14,24,8,9,4,3,0,0,5,5,9244,构建草莓育苗温室场景，满足基本要求。
+T02,场景构建,Ours,1,1,16,15,24,24,9,9,6,0,0,5,5,28197,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=3"
+T03,场景构建,Direct-LLM,1,1,48,47,58,44,8,2,5,0,0,1,1,17444,直接生成，未使用工具
+T03,场景构建,Single-Agent,1,1,48,47,58,46,8,2,4,0,0,5,4,20735,单Agent顺序执行，未使用RAG或多Agent
+T03,场景构建,RAG-Agent,1,1,48,47,58,46,8,2,10,0,0,5,2,17938,任务完成，未使用多Agent或Validator
+T03,场景构建,Multi-Agent,1,1,48,47,58,44,8,2,5,0,0,5,5,19641,任务完成，对象数量符合要求
+T03,场景构建,Ours,1,1,48,31,58,58,8,8,5,0,0,5,5,29187,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=4"
+T04,场景构建,Direct-LLM,1,1,42,42,54,49,12,3,6,0,0,1,1,18666,直接生成，未使用工具
+T04,场景构建,Single-Agent,1,1,42,42,54,41,12,4,4,0,0,5,4,19953,单Agent顺序完成解析、资产选择、布局和绑定，未使用RAG或多Agent
+T04,场景构建,RAG-Agent,1,1,42,42,54,41,12,4,10,0,0,5,4,18896,根据任务构建了完整的水培生菜温室场景，所有对象、关系和绑定均符合知识片段规则。
+T04,场景构建,Multi-Agent,1,1,42,42,54,40,12,4,5,0,0,5,5,18973,任务完成，无违规
+T04,场景构建,Ours,1,1,42,30,54,54,12,12,6,0,0,5,5,30011,"planSource={'mode': 'llm', 'model': 'deepseek-v4-flash', 'provider': 'openai-compatible', 'attempt': 1, 'reason': 'llm json plan'}; missingAssets=2"
+T05,场景构建,Direct-LLM,1,1,34,35,45,34,10,3,6,0,0,1,1,13339,直接生成，未使用工具
+T05,场景构建,Single-Agent,1,1,34,34,45,33,10,3,3,0,0,5,4,14281,单Agent顺序执行，无RAG或多Agent
+T05,场景构建,RAG-Agent,1,1,34,35,45,33,10,2,6,0,0,5,2,14652,根据任务构建了1个育苗地块、5行、25幼苗、1气象站、1滴灌、1摄像头
+T05,场景构建,Multi-Agent,1,1,34,35,45,33,10,3,3,0,0,5,5,16585,任务完成，无违规
+T05,场景构建,Ours,1,1,34,33,45,45,10,10,6,0,0,5,5,29749,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T06,场景构建,Direct-LLM,1,1,35,34,48,33,12,3,6,0,0,1,1,12927,直接生成，未使用工具
+T06,场景构建,Single-Agent,1,1,35,34,48,33,12,3,3,0,0,5,4,14853,单Agent顺序完成，无RAG或多Agent
+T06,场景构建,RAG-Agent,1,1,35,34,48,33,12,5,6,0,0,5,4,15374,根据任务构建了食用菌栽培房，包含4个培养架、24个托盘、传感器、设备、摄像头，符合规则。
+T06,场景构建,Multi-Agent,1,1,35,34,48,5,12,2,6,0,0,5,5,12267,任务完成，未使用Validator闭环修正
+T06,场景构建,Ours,1,1,35,36,48,48,12,12,6,0,0,5,5,28015,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=3"
+T07,资产路由,Direct-LLM,1,1,24,23,31,22,24,20,4,0,0,1,1,12108,直接生成，未使用工具
+T07,资产路由,Single-Agent,1,1,24,23,31,22,24,20,3,0,0,5,4,13735,单Agent顺序执行，无RAG或多Agent
+T07,资产路由,RAG-Agent,1,1,24,23,31,22,24,22,10,0,0,5,2,14052,根据任务构建了20株番茄，5株F2DMAS，15株GLB，并保留摄像头和传感器占位。
+T07,资产路由,Multi-Agent,1,1,24,23,31,22,24,22,3,0,0,5,5,15398,任务完成，未使用Validator闭环修正
+T07,资产路由,Ours,1,1,24,22,31,31,24,24,4,0,0,5,5,28078,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=4"
+T08,资产路由,Direct-LLM,1,1,88,5,108,4,88,4,5,0,0,1,1,5735,直接根据自然语言生成，未使用任何工具或规则校验。
+T08,资产路由,Single-Agent,1,1,88,4,108,3,88,3,2,0,0,5,4,6323,使用程序化建模，缺失设备生成占位任务
+T08,资产路由,RAG-Agent,1,1,88,6,108,5,88,2,10,0,0,5,4,6783,根据任务构建了温室、结构、栽培槽、生菜和缺失设备占位对象，并建立了相应关系和绑定。
+T08,资产路由,Multi-Agent,1,1,88,5,108,4,88,4,2,0,0,5,5,6715,任务完成，缺失设备已生成占位
+T08,资产路由,Ours,1,0,88,6,108,17,88,6,5,1,1,5,5,28825,"planSource={'mode': 'rule', 'model': '', 'provider': 'scene-agent', 'attempt': 2, 'reason': 'SceneBuilderAgent scene.plan 回退到规则规划器'}; missingAssets=0"
+T09,资产路由,Direct-LLM,1,1,18,8,27,7,18,2,4,0,0,1,1,6331,程序化模型未指定具体参数，GLB复用已有资源
+T09,资产路由,Single-Agent,1,1,18,10,27,9,18,2,2,0,0,5,4,7800,单Agent顺序执行，无RAG或多Agent
+T09,资产路由,RAG-Agent,1,1,18,8,27,7,18,2,8,0,0,5,4,7144,使用程序化模型构建温室骨架、作物行、滴灌主管和支管，植株复用GLB。
+T09,资产路由,Multi-Agent,1,1,18,8,27,7,18,8,5,0,0,5,5,9028,所有程序化模型和GLB模型已按规则分配
+T09,资产路由,Ours,1,1,18,17,27,27,18,18,4,0,0,5,5,30353,"planSource={'mode': 'llm', 'model': 'deepseek-v4-flash', 'provider': 'openai-compatible', 'attempt': 1, 'reason': 'llm json plan'}; missingAssets=0"
+T10,资产路由,Direct-LLM,1,1,12,6,18,6,12,2,2,2,0,1,1,4946,资产库缺失，已生成占位和TRELLIS.2任务
+T10,资产路由,Single-Agent,1,1,12,5,18,4,12,2,3,0,0,5,5,7798,资产库缺少虫情灯和AI摄像头，生成占位对象并创建TRELLIS.2生成任务
+T10,资产路由,RAG-Agent,1,1,12,4,18,3,12,2,10,0,0,5,3,5484,资产库缺少虫情灯和AI摄像头，生成占位对象和TRELLIS.2生成任务
+T10,资产路由,Multi-Agent,1,1,12,5,18,4,12,2,2,2,0,5,5,6318,资产库缺少虫情灯和AI摄像头，已生成占位对象并创建TRELLIS.2生成任务
+T10,资产路由,Ours,1,1,12,4,18,10,12,8,4,0,0,5,5,30011,"planSource={'mode': 'rule', 'model': '', 'provider': 'scene-agent', 'attempt': 2, 'reason': 'SceneBuilderAgent scene.plan 回退到规则规划器'}; missingAssets=1"
+T11,资产路由,Direct-LLM,1,1,14,5,22,4,14,5,5,0,0,1,1,4505,使用F2DMAS和TRELLIS.2，温室和地面用程序化模型
+T11,资产路由,Single-Agent,1,1,14,5,22,3,14,3,2,0,0,5,4,5514,使用F2DMAS绑定番茄，TRELLIS.2绑定水泵和摄像头，温室和地面使用已有资产。
+T11,资产路由,RAG-Agent,1,1,14,6,22,5,14,5,10,0,0,5,4,6801,使用F2DMAS绑定番茄单株，水泵和摄像头用TRELLIS.2占位，温室和地面用已有资产或程序化模型。
+T11,资产路由,Multi-Agent,1,1,14,5,22,2,14,3,2,0,0,5,5,5850,番茄单株使用F2DMAS，水泵和摄像头使用TRELLIS.2，温室和地面使用已有资产。
+T11,资产路由,Ours,1,1,14,4,22,16,14,8,5,0,0,5,5,28956,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=1"
+T12,资产路由,Direct-LLM,1,1,12,11,20,9,14,3,4,0,0,1,1,6393,直接生成，未使用工具
+T12,资产路由,Single-Agent,1,1,12,14,20,15,14,14,4,0,0,5,4,11589,单Agent顺序执行，无RAG或多Agent
+T12,资产路由,RAG-Agent,1,1,12,11,20,9,14,6,8,0,0,5,4,9768,根据知识片段R1-R10生成，未使用多Agent或Validator。
+T12,资产路由,Multi-Agent,1,1,12,14,20,15,14,5,4,0,0,5,5,10180,构建5株关键植株对应5个生长阶段，并绑定几何和表型指标。
+T12,资产路由,Ours,1,1,12,3,20,15,14,8,4,0,0,5,5,25437,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=5"
+T13,数据绑定,Direct-LLM,1,1,10,2,15,1,12,5,3,0,0,1,1,4506,单位和时间戳在绑定中隐含，实际数据需在数据层实现
+T13,数据绑定,Single-Agent,1,1,10,2,15,1,12,1,3,0,0,5,4,5618,单Agent顺序完成，未使用RAG或多Agent
+T13,数据绑定,RAG-Agent,1,1,10,2,15,1,12,1,4,0,0,5,2,4482,根据任务要求，将温湿度传感器组绑定到番茄温室，指标包括温度、湿度、CO2和光照，但绑定对象本身不包含指标细节，仅表示数据绑定关系。
+T13,数据绑定,Multi-Agent,1,1,10,2,15,1,12,4,1,0,0,5,5,5688,绑定完成，指标单位与时间戳由数据源保证
+T13,数据绑定,Ours,1,1,10,3,15,15,12,7,3,0,0,5,5,22333,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T14,数据绑定,Direct-LLM,1,1,8,7,14,1,10,10,4,0,0,1,1,6487,直接根据自然语言生成绑定，未使用工具。
+T14,数据绑定,Single-Agent,1,1,8,7,14,1,10,5,4,0,0,5,4,6496,单Agent顺序执行，未使用RAG或多Agent
+T14,数据绑定,RAG-Agent,1,1,8,7,14,1,10,10,6,0,0,5,5,8204,根据任务要求，将摄像头C02绑定到第3行番茄，并为5株样本植株绑定株高、冠幅、叶面积表型指标。
+T14,数据绑定,Multi-Agent,1,1,8,7,14,6,10,10,2,0,0,5,5,8733,完成摄像头C02与第3行番茄的绑定，以及5株样本植株的表型指标绑定。
+T14,数据绑定,Ours,1,1,8,7,14,14,10,10,4,0,0,5,5,24526,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T15,数据绑定,Direct-LLM,1,1,9,3,16,2,14,5,3,0,0,1,1,4095,直接生成，未使用工具
+T15,数据绑定,Single-Agent,1,1,9,3,16,2,14,5,3,0,0,5,4,5327,单Agent顺序完成解析、选择、布局和绑定
+T15,数据绑定,RAG-Agent,1,1,9,3,16,2,14,5,3,0,0,5,4,5675,根据任务要求，将灌溉事件绑定到地块B01和水泵，并记录5个数据字段。
+T15,数据绑定,Multi-Agent,1,1,9,3,16,2,14,5,3,0,0,5,5,5787,完成灌溉事件数据绑定
+T15,数据绑定,Ours,1,1,9,2,16,10,14,3,3,0,0,5,5,12742,"planSource={'mode': 'llm', 'model': 'deepseek-v4-flash', 'provider': 'openai-compatible', 'attempt': 1, 'reason': 'llm json plan'}; missingAssets=0"
+T16,数据绑定,Direct-LLM,1,1,15,15,22,14,18,10,3,0,0,1,1,8983,phenotype对象未显式列出，但绑定指向它们。
+T16,数据绑定,Single-Agent,1,1,15,13,22,12,18,10,2,0,0,5,4,10100,表型记录包含株高冠幅长势评分异常标签，7天数据未显式建模为独立对象，但绑定隐含了记录
+T16,数据绑定,RAG-Agent,1,1,15,13,22,12,18,10,8,0,0,5,5,10291,模拟单Agent完成，未使用多Agent或Validator
+T16,数据绑定,Multi-Agent,1,1,15,21,22,20,18,10,3,0,0,5,5,13895,为10株番茄各创建1个7天表型记录，保留作物行关系。
+T16,数据绑定,Ours,1,1,15,10,22,22,18,10,3,0,0,5,5,20127,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T17,数据绑定,Direct-LLM,1,1,8,3,13,6,12,2,3,0,0,1,1,4428,直接根据任务描述生成对象、关系和绑定，未使用任何工具。
+T17,数据绑定,Single-Agent,1,1,8,4,13,6,12,2,2,0,0,5,4,5893,单Agent顺序执行，无RAG或多Agent
+T17,数据绑定,RAG-Agent,1,1,8,4,13,3,12,2,6,0,0,5,5,6183,任务完成，无违规
+T17,数据绑定,Multi-Agent,1,1,8,4,13,2,12,2,2,0,0,5,5,5639,完成气象站绑定和日报关联
+T17,数据绑定,Ours,1,1,8,2,13,12,12,3,3,0,0,5,5,17099,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T18,数据绑定,Direct-LLM,1,1,14,6,25,5,22,1,4,0,0,1,1,4882,直接生成，未使用工具
+T18,数据绑定,Single-Agent,1,1,14,6,25,5,22,5,1,0,0,5,4,5981,单Agent顺序执行，无RAG或多Agent
+T18,数据绑定,RAG-Agent,1,1,14,7,25,6,22,7,10,0,0,5,4,7189,根据知识片段生成日报数据源
+T18,数据绑定,Multi-Agent,1,1,14,7,25,5,22,5,4,0,0,5,5,7596,生成番茄温室日报数据源，聚合环境、设备、事件、告警和建议。
+T18,数据绑定,Ours,1,1,14,6,25,25,22,14,4,0,0,5,5,25929,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T19,规则修正,Direct-LLM,1,1,8,2,12,0,7,1,1,0,0,1,1,3057,直接根据规则修正，未使用工具
+T19,规则修正,Single-Agent,1,1,8,2,12,1,7,1,1,1,0,5,3,4332,自动修正未绑定问题
+T19,规则修正,RAG-Agent,1,1,8,2,12,1,7,1,8,0,0,5,3,4085,自动绑定未绑定传感器到温室
+T19,规则修正,Multi-Agent,1,1,8,2,12,1,7,1,1,1,0,5,5,4781,Auto-binding applied to fix violation
+T19,规则修正,Ours,1,1,8,2,12,7,7,5,3,0,0,5,5,19279,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=1"
+T20,规则修正,Direct-LLM,1,1,16,2,22,1,8,1,1,1,0,1,1,3834,直接生成结果，未使用工具
+T20,规则修正,Single-Agent,1,1,16,3,22,2,8,2,1,1,0,5,4,6078,单Agent顺序执行，无RAG或多Agent
+T20,规则修正,RAG-Agent,1,0,16,3,22,3,8,1,10,1,0,5,3,5792,根据R10错误可修正，手动调整作物行位置
+T20,规则修正,Multi-Agent,1,1,16,3,22,2,8,1,1,1,0,5,5,5767,越界检测后重新布局，生成新作物行替换原行
+T20,规则修正,Ours,1,1,16,1,22,4,8,1,4,0,0,5,5,13663,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T21,规则修正,Direct-LLM,1,1,18,8,25,6,9,0,2,0,0,1,1,4951,根据空间位置最近原则分配
+T21,规则修正,Single-Agent,1,1,18,8,25,6,9,0,2,1,0,5,4,6296,自动归属完成
+T21,规则修正,RAG-Agent,1,1,18,8,25,6,9,0,6,0,0,5,3,6593,根据知识片段R9和R10，自动修正缺失归属关系
+T21,规则修正,Multi-Agent,1,1,18,8,25,6,9,0,1,0,0,5,5,6443,根据最近作物行自动归属完成
+T21,规则修正,Ours,1,1,18,6,25,24,9,6,4,0,0,5,5,26560,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T22,规则修正,Direct-LLM,1,1,10,3,15,2,8,2,3,0,0,1,1,3895,根据任务描述，补充了观测目标和视场覆盖关系。
+T22,规则修正,Single-Agent,1,1,10,3,15,2,8,2,2,2,0,5,4,5654,补充了位姿和观测目标
+T22,规则修正,RAG-Agent,1,1,10,2,15,1,8,1,10,0,0,5,2,4004,根据知识片段补充了目标作物行和观测关系
+T22,规则修正,Multi-Agent,1,1,10,3,15,2,8,2,2,2,0,5,5,6688,补充了位姿和观测目标，满足规则
+T22,规则修正,Ours,1,1,10,2,15,9,8,6,3,0,0,5,5,18839,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T23,规则修正,Direct-LLM,1,1,8,2,12,1,10,1,3,0,0,1,1,3836,直接根据自然语言补齐缺失信息
+T23,规则修正,Single-Agent,1,1,8,4,12,3,10,1,3,0,0,5,4,5669,补齐缺失信息，无违规
+T23,规则修正,RAG-Agent,1,1,8,4,12,4,10,1,10,0,0,5,2,5057,根据任务要求，补充了单位、时间戳和绑定对象，未违反任何规则。
+T23,规则修正,Multi-Agent,1,1,8,3,12,2,10,1,3,3,0,5,5,5579,补齐单位、时间戳和绑定
+T23,规则修正,Ours,1,1,8,6,12,12,10,10,3,0,0,5,5,23777,"planSource={'mode': 'rule', 'model': '', 'provider': 'scene-agent', 'attempt': 2, 'reason': 'SceneBuilderAgent scene.plan 回退到规则规划器'}; missingAssets=1"
+T24,规则修正,Direct-LLM,1,1,9,3,14,3,9,1,1,1,0,1,1,4218,修正了资产绑定错误
+T24,规则修正,Single-Agent,1,1,9,3,14,1,9,1,1,1,0,5,3,4319,修正了资产类型不匹配
+T24,规则修正,RAG-Agent,1,0,9,3,14,3,9,1,3,1,0,5,2,4368,根据R4规则修正绑定，使用R9和R10确保不中断和可修正
+T24,规则修正,Multi-Agent,1,1,9,4,14,4,9,1,1,1,0,5,5,6197,使用灌溉设备作为替代资产
+T24,规则修正,Ours,1,1,9,1,14,4,9,2,5,0,0,5,5,15641,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T25,历史查询,Direct-LLM,1,1,7,4,12,3,14,1,3,0,0,1,1,4169,根据任务描述，直接生成结果，未使用任何工具或规则校验。
+T25,历史查询,Single-Agent,1,1,7,8,12,7,14,8,4,0,0,5,4,9303,单Agent顺序执行，未使用RAG或多Agent分工。
+T25,历史查询,RAG-Agent,1,1,7,4,12,3,14,6,10,0,0,5,3,6450,模拟单Agent查询，未使用多Agent分工
+T25,历史查询,Multi-Agent,1,1,7,4,12,3,14,6,2,2,0,5,5,7133,任务完成，发现2项规则违反，已给出建议
+T25,历史查询,Ours,1,1,7,1,12,4,14,1,3,0,0,5,5,20005,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T26,历史查询,Direct-LLM,1,1,5,2,9,1,10,1,3,0,0,1,1,3291,直接生成结果，未使用工具
+T26,历史查询,Single-Agent,1,1,5,2,9,1,10,2,3,0,0,5,3,4773,单Agent顺序执行，未使用RAG或多Agent
+T26,历史查询,RAG-Agent,1,1,5,2,9,1,10,2,10,0,0,5,3,4379,任务完成，无异常告警和维护事件
+T26,历史查询,Multi-Agent,1,1,5,2,9,1,10,2,2,1,0,5,5,5262,查询成功，发现水压异常告警
+T26,历史查询,Ours,1,1,5,2,9,7,10,3,3,0,0,5,5,19329,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T27,历史查询,Direct-LLM,1,1,6,7,10,6,18,6,2,0,0,1,1,6426,直接生成结果，未使用工具
+T27,历史查询,Single-Agent,1,1,6,7,10,6,18,6,2,0,0,5,4,6661,单Agent顺序执行，未使用RAG或多Agent
+T27,历史查询,RAG-Agent,1,1,6,7,10,6,18,6,9,0,0,5,2,6634,根据知识片段生成对象关系和绑定，未使用多Agent
+T27,历史查询,Multi-Agent,1,1,6,7,10,6,18,6,2,0,0,5,5,7288,查询番茄温室最近7天环境状态，汇总各项指标。
+T27,历史查询,Ours,1,1,6,4,10,10,18,8,2,0,0,5,5,24149,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=1"
+T28,历史查询,Direct-LLM,1,1,4,5,8,4,12,4,3,0,0,1,1,4762,直接生成结果，未使用工具
+T28,历史查询,Single-Agent,1,1,4,5,8,4,12,4,3,0,0,5,4,5488,单Agent顺序执行，无RAG或多Agent
+T28,历史查询,RAG-Agent,1,1,4,5,8,4,12,4,3,0,0,5,3,6089,根据任务查询P15的生育阶段、几何版本、株高变化和表型记录
+T28,历史查询,Multi-Agent,1,1,4,5,8,4,12,4,3,0,0,5,5,6317,查询成功，返回所有请求信息
+T28,历史查询,Ours,1,1,4,8,8,8,12,9,3,0,0,5,5,22668,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 2, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=0"
+T29,历史查询,Direct-LLM,1,1,5,3,9,2,8,2,2,0,0,1,1,3757,基于常识推断，未使用外部工具
+T29,历史查询,Single-Agent,1,1,5,2,9,2,8,2,2,0,0,5,3,4351,单Agent顺序查询，无RAG或多Agent
+T29,历史查询,RAG-Agent,1,1,5,4,9,3,8,1,7,0,0,5,4,5051,根据知识片段，C02覆盖第3行番茄，无巡检事件。
+T29,历史查询,Multi-Agent,1,1,5,3,9,2,8,2,2,0,0,5,5,5411,任务完成，所有查询结果已返回。
+T29,历史查询,Ours,1,1,5,2,9,9,8,6,2,0,0,5,5,20290,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"
+T30,历史查询,Direct-LLM,1,1,8,4,16,3,20,3,4,0,0,1,1,4467,直接生成，未使用工具
+T30,历史查询,Single-Agent,1,1,8,5,16,5,20,5,4,0,0,5,5,5786,单Agent顺序查询并汇总
+T30,历史查询,RAG-Agent,1,1,8,5,16,4,20,4,10,0,0,5,2,5634,根据知识片段生成对象、关系和绑定，未使用多Agent或Validator。
+T30,历史查询,Multi-Agent,1,1,8,11,16,11,20,5,5,0,0,5,5,9585,模拟多Agent协作完成历史查询任务，未启用完整本体和闭环修正。
+T30,历史查询,Ours,1,1,8,6,16,16,20,14,4,0,0,5,5,27965,"planSource={'mode': 'agent', 'model': 'deepseek-v4-flash', 'provider': 'eino-deepagents', 'attempt': 1, 'reason': 'Eino DeepAgents 调度白名单工具'}; missingAssets=2"

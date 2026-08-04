@@ -1,0 +1,44 @@
+ 
+ 
+Table 6　Latency  and  Its  Errors  Comparison  Between
+SimulatorGen and STONNE on TPU Architecture
+表 6   SimulatorGen 与STONNE 在TPU 架构上的延迟与其
+误差对比
+DNN 模型
+延迟/cycle
+误差/%
+SimulatorGen
+STONNE
+AlexNet
+6.23E+06
+6.43E+06
+3.18
+MobileNetV1
+6.15E+06
+6.23E+06
+1.32
+ResNet50
+1.75E+07
+1.79E+07
+2.26
+VGG16
+6.74E+07
+6.99E+07
+3.50
+ 
+ 
+Table 7　Latency  and  Its  Errors  Comparison  Between
+SimulatorGen
+ and
+ STONNE
+ on
+ MAERI
+Architecture
+表 7   SimulatorGen 与STONNE 在MAERI 架构上的延迟
+与其误差对比
+接
+差
+需
+与
+ 
+ 

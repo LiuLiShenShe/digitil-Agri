@@ -136,6 +136,8 @@ func RecordAgentPolicyViolationForTest(toolName string, input interface{}) vo.Sc
 
 func buildAgentTraceStep(index int, toolName string, inputSummary string, outputSummary string, durationMs int64, err error, fallback *vo.SceneAgentFallbackVo) vo.SceneAgentStepVo {
 	policy := agentToolPolicyFor(toolName)
+	stepID := fmt.Sprintf("step-%02d", index)
+	evidenceID := fmt.Sprintf("trace-%s-%s", stepID, sanitizeEvidenceToken(toolName))
 	status := AgentTraceStatusSuccess
 	failureReason := ""
 	if policy.Category == AgentToolCategoryProhibited {
@@ -146,7 +148,9 @@ func buildAgentTraceStep(index int, toolName string, inputSummary string, output
 		failureReason = err.Error()
 	}
 	return vo.SceneAgentStepVo{
-		StepID:        fmt.Sprintf("step-%02d", index),
+		StepID:        stepID,
+		CallID:        evidenceID,
+		EvidenceID:    evidenceID,
 		Agent:         policy.Agent,
 		Tool:          toolName,
 		ToolCategory:  policy.Category,
@@ -158,6 +162,26 @@ func buildAgentTraceStep(index int, toolName string, inputSummary string, output
 		Fallback:      fallback,
 		Flow:          policy.Flow,
 	}
+}
+
+func sanitizeEvidenceToken(text string) string {
+	cleaned := strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z':
+			return r
+		case r >= 'A' && r <= 'Z':
+			return r + ('a' - 'A')
+		case r >= '0' && r <= '9':
+			return r
+		default:
+			return '-'
+		}
+	}, text)
+	cleaned = strings.Trim(cleaned, "-")
+	if cleaned == "" {
+		return "tool"
+	}
+	return cleaned
 }
 
 func sanitizeTraceSummary(text string) string {

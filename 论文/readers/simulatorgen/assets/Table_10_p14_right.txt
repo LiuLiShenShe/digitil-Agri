@@ -1,0 +1,5 @@
+Table 10　Comparison  of  SimulatorGen  and  STONNE  for
+Simulation EDP and Error Across Different DNN
+models
+表 10   SimulatorGen 与STONNE 在不同DNN 模型上的仿
+真EDP 及其误差对比

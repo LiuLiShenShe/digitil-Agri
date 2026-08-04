@@ -1,0 +1,12 @@
+ 
+ 
+Table 11　Latency
+ and
+ Error
+ Comparison
+ Between
+SimulatorGen and SimulatorCoder
+表 11   SimulatorGen 与SimulatorCoder 的延迟与误差对比
+DNN 模型
+延迟/cycle
+误差/%

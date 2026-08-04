@@ -567,6 +567,8 @@ func (a *SceneBuilderAgent) recordToolCall(state *sceneAgentState, name string, 
 		call.Fallback = state.trace.Fallback
 	}
 	step := buildAgentTraceStep(len(state.trace.Steps)+1, name, call.InputSummary, call.OutputSummary, call.DurationMs, err, call.Fallback)
+	call.CallID = step.CallID
+	call.EvidenceID = step.EvidenceID
 	state.trace.Tools = append(state.trace.Tools, call)
 	state.trace.Steps = append(state.trace.Steps, step)
 	state.toolNames = append(state.toolNames, name)

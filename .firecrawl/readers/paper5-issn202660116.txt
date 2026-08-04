@@ -1,0 +1,1260 @@
+ 计算机研究与发展                                                                                                 https://crad.ict.ac.cn
+ Journal of Computer Research and Development                                                             63（6）：1−17，2026
+
+
+
+
+SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成
+框架
+
+夏雨欢 李 暾 周贤发 赵文博 张瑞瑜 郭 阳
+（国防科技大学计算机学院                      长沙       410073）
+（xiayuhuan@nudt.edu.cn）
+
+
+
+SimulatorGen: An LLM-Based Multi-Agent Framework for Automatic Generation of
+DNN Accelerator Simulators
+
+Xia Yuhuan, Li Tun, Zhou Xianfa, Zhao Wenbo, Zhang Ruiyu, and Guo Yang
+（College of Computer, National University of Defense Technology, Changsha 410073）
+
+
+  Abstract      With the rapid development of deep neural network (DNN) accelerators, building simulators for new
+  architectures is costly and time-consuming. Although advances in large language models (LLMs) have opened
+  possibilities for automated simulator generation, existing approaches suffer from limited generality, inability to
+  construct complete systems, and high construction complexity. To address these challenges, we propose
+  SimulatorGen, a multi-agent framework that generates DNN accelerator simulator code from natural language
+  descriptions. First, we abstract the architecture of DNN accelerator simulators and extract twenty-three component
+  specifications. Based on this abstraction, four collaborative agents are introduced to accomplish generation: the analyst
+  agent retrieves domain knowledge from the simulator library via retrieval-augmented generation (RAG) and
+  constructs structured prompts by leveraging chain-of-thought (CoT) reasoning; the coder agent generates or refines
+  code using prompts and test feedback; the tester agent performs syntax checking, functional testing, and formal
+  verification using the Z3 solver based on properties extracted from specifications; and the assembly agent conducts
+  component integration, automated execution, and metric comparison to enable end-to-end construction. We evaluate
+  SimulatorGen on twenty-three generation tasks covering diverse DNN accelerator modules and architectures.
+  Experimental results show that SimulatorGen built on GPT-4o outperforms LLM baselines, including Claude-Sonnet-
+  4, achieving a Pass@1 score of 82.39%. Furthermore, using the successfully generated components, we construct
+  runnable simulators for tensor processing unit (TPU) and MAERI architectures. Compared with STONNE, the
+  simulators built by SimulatorGen achieve relative errors ranging from 1.31% to 7.34% in energy, latency, and energy-
+  delay product (EDP) across multiple DNN models, while maintaining functional consistency verified through testing
+  and execution, demonstrating faithful modeling of accelerator behavior. In contrast to the single-agent
+  SimulatorCoder, which only supports module replacement, SimulatorGen enables end-to-end generation of complete
+  simulators, further validating the effectiveness of the proposed approach.
+  Key words          DNN accelerator simulator； large language model； multi-agent； code generation； retrieval-augmented
+  generation (RAG)
+
+
+  收稿日期：2026-03-12；修回日期：2026-05-06
+  基金项目：国家自然科学基金项目（92473115）
+             This work was supported by the National Natural Science Foundation of China (92473115).
+  通信作者： 李暾（tunli@nudt.edu.cn）
+ 2                                                                                                计算机研究与发展                      2026，63 （6）
+
+
+ 摘    要   随着深度神经网络（DNN）加速器的快速发展，为新架构构建模拟器的成本高、周期长。尽管大
+ 语言模型（LLM）的进展为模拟器生成带来了新的可能性，但现有方法仍存在通用性不足、难以生成完
+ 整系统以及构建复杂度高等问题。为此，提出 SimulatorGen，一种多智能体框架，其基于自然语言描述生
+ 成 DNN 加速器模拟器代码。首先，对通用 DNN 加速器模拟器架构进行抽象并提取 23 条组件规范；在此
+ 基础上，引入 4 类协同智能体完成生成过程：分析智能体通过检索增强生成（RAG）从模拟器库中检索
+ 领域知识，并结合思维链（CoT）构建结构化提示词；编码智能体根据提示词生成代码，或基于测试反馈
+ 修复错误代码；测试智能体基于从规范中提取的属性，执行语法检查、功能测试以及使用 Z3 求解器的形
+ 式化验证；组装智能体负责组件组装、自动执行与指标比对，实现完整模拟器的自动构建。在覆盖多样化
+ DNN 加速器模块与架构的 23 个生成任务上对 SimulatorGen 进行评估，实验结果表明，基于 GPT-4o 构建
+ 的 SimulatorGen 的表现优于包括 Claude-Sonnet-4 在内的 LLM 基线，Pass@1 达到 82.39%。在成功设计的组
+ 件基础上，进一步使用 SimulatorGen 构建了可运行的张量处理单元（TPU）和 MAERI 架构的模拟器。与
+ STONNE 相比，SimulatorGen 构建的模拟器在多个 DNN 模型上的能量、时延和能量时延乘积（EDP）指标
+ 相对误差范围为 1.31%~7.34%，且功能行为通过测试与执行验证保持一致，表明其具备准确建模加速器行
+ 为的能力。同时，相比于仅支持模块替换的单智能体 SimulatorCoder，SimulatorGen 具备端到端生成完整模
+ 拟器的能力，进一步验证了所提方法的有效性。
+
+ 关键词      DNN 加速器模拟器；大语言模型；多智能体；代码生成；检索增强生成
+
+ 中图法分类号        TP391；TP303
+
+ DOI：10.7544/issn1000-1239.202660116                  CSTR：32373.14.issn1000-1239.202660116
+
+     随着人工智能的快速发展，深度神经网络（deep                                        Table 1        DNN Accelerator Simulators Proposed in Our Work
+
+neural network， DNN）加 速 器 已 广 泛 应 用 于 云 计 算 和                                          表 1 本文提出的 DNN 加速器模拟器
+
+边缘推理等重要而复杂的场景中 。为满足高吞吐、
+                                  [1]                                           模拟器               计算类型                        代码行数
+                                                                                          [6]
+                                                                           STONNE                 乘加计算
+低功耗和高容错的需求，出现了各种面向 DNN 的加                                                                                                       19 383
+                                                                                    [7]
+                                          [2]                                   SIAM              存内计算                          26 797
+速器，如脉动阵列和空间加速器结构 。然而，这些
+                                                                                       [9]
+                                                                            SMAUG                 脉动阵列                          22 851
+加速器的设计空间迅速扩展，涉及计算、存储、调度
+                                                                                       [10]
+                                                                           NoCDAS                 片上网络                          29 747
+和 互 连 等 多 方 面 因 素 。 设 计 过 程 日 益 复 杂， 单 纯 依
+赖人工评估已难以支持快速迭代。                                                   果
+                                                                      [11-12]
+                                                                             。在诸多开发活动中，代码生成因其降低开发
+     随着 DNN 加速器设计复杂度的提升，研究人员                                      成本、缩短迭代周期的潜力而备受关注 。诸如思维
+                                                                                                                         [13]
+
+
+需要能够在开发早期快速而准确地探索设计空间和                                            链（chain-of-thought，CoT）
+                                                                                                    [14]
+                                                                                                           与检索增强生成（retrieval-
+                            [3]
+评估架构改进效果的工具 。当前的加速器评估方                                            augmented generation， RAG）
+                                                                                                           [15]
+                                                                                                                  等 LLM 技 术 已 被 证 明
+                   [4-5]          [6-8]
+法主要基于分析模型                  或模拟器         。分析模型通过                   可以提升生成质量与鲁棒性。随着工具链和实践的
+数 学 公 式 与 简 化 来 快 速 估 计 不 同 配 置 下 的 性 能， 但                        快速演进，LLM 正逐渐成为芯片设计开发流程中的
+往 往 无 法 捕 捉 细 微 的 执 行 行 为， 导 致 在 许 多 场 景 中                        关 键 组 成 部 分 。 基于 LLM 的 智 能 体 逐 渐 在 众 多
+结 果 不 够 准 确 。 随 着 架 构 变 得 更 加 复 杂 和 灵 活， 分                        LLM 技术中脱颖而出。智能体是一个具备环境感知、
+析模型的准确性与可靠性显著下降。为了提供更准                                            决 策 制 定 及 动 作 执 行 能 力 的 自 主 算 法 系 统， 是 可 定
+                                                [6]
+确的评估，周期级模拟器（例如 STONNE ）被视为不                                       制的 LLM 实例，能够在工程工作流中复现并执行面
+可 或 缺 的 工 具 。 但 是 为 每 一 种 新的 DNN 加 速 器 构                          向特定目标的离散任务 。有研究
+                                                                                                    [16]               [17]
+                                                                                                                              探索了利用
+建专用的模拟器既耗时又资源密集，如表 1 所示，广                                         LLM 自动生成与优化 DNN 加速器模拟器的方法，开
+泛 使 用 的 开 源 模 拟 器 往 往 包 含 数 万 行 代 码， 这 在 一                        发 了 单 智 能体 SimulatorCoder， 通 过 引 入 结 合 思 维 链
+定程度上限制了设计空间的高效探索。                                                 推理和多轮反馈机制以提升代码生成的正确性。相
+     大 语 言 模 型（large language model， LLM）的 出 现                    关 工 作 主 要 面 向 二 维 脉 动 阵 列 结 构 开 展 验 证， 且 仅
+为自动化芯片设计带来了新的机遇。已有研究开始                                            进行模块替换。然而，使用单个 LLM 或单智能体的
+探索利用自然语言驱动 AI 芯片设计，并取得了初步成                                        研 究 存 在 显 著 局 限 性， 往 往 难 以 胜 任 复 杂 任 务 。 相
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                                                                           3
+
+
+比 之 下， 多 智 能 体 协 作 通 过 明 确 的 角 色 划 分 与 职 责    比 对， 实 现 从 模 块 生 成 到 完 整 模 拟 器 构 建 与 验 证 的
+边 界， 在 应 对 代 码 生 成 中 的 系 统 性 挑 战 方 面 取 得 了    端到端自动化流程。
+       [18]
+显著进展 。                                                在 23 个 模 拟 器 组 件 设 计 任 务 中 ， 如 图 1 所 示 ，
+   尽管 LLM 在芯片设计任务中前景广阔，但将其                    SimulatorGen 在生成准确率上优于 DeepSeek-V3 等多
+应用于 DNN 加速器模拟器生成仍面临挑战：1）通用                    种 强 基 线 模 型 。 此 外， 将 生 成 的 组 件 进 一 步 组 装 为
+性 不 足 。 据 调 研， 现 有 工 作 尚 缺 少 给 定 任 意 需 求 或    完 整 模 拟 器 后， 其 周 期 数 与 能 量 指 标 均 与 人 工 设 计
+功能描述即可自动生成完整可运行模拟器的能力。                        实 现 的 模 拟 器 高 度 接 近， 表 明 该 方 法 具 有 良 好 的 实
+2）缺 乏 完 整 模 拟 器 生 成 能 力 。 之 前 的 基 于 LLM 进     用性与可迁移性。
+行 DNN 加 速 器 模 拟 器 的 生 成 工 作 是 模 块 级 的 替 换 ，                                     Pass@1            Pass@5                 成功任务数
+                                                             100                                                                             25
+并未实现从自然语言需求到完整模拟器的端到端自
+                                                              80                                                                             20
+动构建。3）构建复杂度高。模拟器需要模拟硬件级
+
+
+
+
+                                                                                                                                                  成功任务数
+                                                              60                                                                             15
+
+
+
+
+                                                    Pass@k
+计算与时序语义方面的细节。然而，不同于 DNN 加
+                                                              40                                                                             10
+速器已有成熟设计工具链，模拟器通常是自建框架，
+验证过程高度依赖人工，从而限制了其开发效率。                                        20                                                                             5
+
+   为此，本文提出一种面向 DNN 加速器模拟器生                                     0                                                                             0
+
+
+
+                                                                        ro
+
+
+
+
+                                                                                                                         o
+
+
+                                                                                                                                        en
+                                                                                                2B
+                                                                                   3
+
+
+
+
+                                                                                                           t-4
+
+
+                                                                                                                     -4
+                                                                                  V
+                                                                    -P
+
+
+
+
+                                                                                                                                       G
+成的多智能体框架，在组件级别分解开发任务，并协
+
+
+
+
+                                                                                                                   PT
+                                                                                            -3
+
+
+                                                                                                         ne
+                                                                                  k-
+
+
+
+
+                                                                                                                                  or
+                                                                   .5
+
+
+
+
+                                                                                           3
+                                                                                ee
+
+
+
+
+                                                                                                       on
+
+
+                                                                                                                 G
+                                                              i-2
+
+
+
+
+                                                                                                                                at
+                                                                                        en
+                                                                           pS
+
+
+
+
+                                                                                                                             ul
+                                                                                                     S
+                                                             in
+
+
+
+
+                                                                                        w
+
+
+                                                                                                  e-
+
+
+
+
+                                                                                                                          m
+调 4 个协同工作的角色：1）分析智能体，负责领域知
+                                                                         ee
+
+
+                                                                                       Q
+                                                        em
+
+
+
+
+                                                                                                   d
+
+
+
+
+                                                                                                                         Si
+                                                                        D
+
+
+
+
+                                                                                                au
+                                                     G
+
+
+
+
+                                                                                            Cl
+识检索，将需求结构化以构建领域提示词；2）编码智
+能体，负责在需求与测试反馈约束下生成代码；3）测                      注：Pass@1 表示单次生成成功率，Pass@5 表示 5 个候选中至少 1 个
+                                              成功的概率。
+试智能体，负责涵盖编译、集成测试与形式化检查的
+多阶段验证；4）组装智能体，负责组件组装、自动执                          Fig. 1       Performance over twenty-three simulator component
+                                                               tasks
+行 与 指 标 比 对， 从 而 自 动 构 建 完 整 模 拟 器 。 该 框 架
+                                                                         图1        23 个模拟器组件任务的性能
+不 仅 支 持 自 动 化 模 拟 器 生 成， 还 通 过 任 务 分 解 与 可
+追踪的验证反馈机制促进对生成系统的程序理解。
+   本文的主要贡献包括 3 个方面：                           1     相关工作
+   1）架 构 抽 象 和 规 范 提 取 。 对 DNN 加 速 器 模 拟
+器 的 通 用 体 系 结 构 进 行 系 统 性 抽 象， 总 结 并 提 取 了    1.1       LLM 代码生成
+模 拟 器 的 自 然 语 言 功 能 规 范， 为 后 续 基 于 自 然 语 言            代码生成（或程序合成）是指通过自动化技术自
+                                                                                                                [13]
+驱动的自动生成奠定了统一描述基础。                             主构建软件或编写代码的过程 。LLM 可以根据自
+   2）整体模拟器生成。本文基于 LLM 提出了一种                   然语言描述生成源代码，这一过程通常被称为“自然
+面 向 整体 DNN 加 速 器 模 拟 器 系 统 的 自 动 生 成 方 法 ，    语言到代码”任务。
+实现了从高层自然语言描述到完整可运行模拟器的                                为提升基于 LLM 的代码生成准确性，已有大量
+                                                                                                                                [15]
+端到端构建。                                        方 法 被 提 出， 包 括 提 示 工 程 、 RAG 、 微 调 （fine-
+                                                             [19]                                                 [20]
+   3）多 智 能 体 生 成 框 架 。 提 出 一 种 无 需 微 调 、 基    tuning） 、程序验证与自我修复                                                       ，以及基于人类反
+于 自 然 语 言 功 能 规 范 的 多 智 能体 LLM 框 架 ， 用 于      馈的强化学习（reinforcement learning from human feed-
+                                                                         [21]
+DNN 加速器模拟器生成。该框架通过定义智能体角                      back，RLHF） 。提示词工程技术包括上下文学习（in-
+                                                                                         [22]            [14]
+色 并 进 行 组 件 级 任 务 分 解， 构 建 模 拟 器 组 件 库 与 任    context learning，ICL） 、CoT                                        等。RAG 是指一种在
+务 基 准； 结 合 CoT 与 RAG 设 计 上 下 文 提 示 模 板 ， 引    响应查询时，首先从文档库中检索相关信息，然后将
+导 LLM 生 成 语 义 正 确 、 结 构 完 整 的 模 块 ； 进 行 迭 代   检索结果与原始查询相结合以提升响应质量和准确
+反馈验证，建立了一种基于反馈的测试机制，将语法                       性的方法，其通过引入外部知识库扩展了传统 LLM
+与编译检查、功能测试以及基于 Z3 的形式化验证相                     的 能 力， 有 助 于 缓 解 模 型 生 成 内 容 中 的 幻 觉 问 题 。
+结 合， 通 过 在 测 试 反 馈 的 驱 动 下 对 代 码 进 行 迭 代 式    同时，微调和 RLHF 等方法通常需要准备专门的数据
+修正，从而显著提升了生成代码的正确性与可靠性；                       集用于训练模型，消耗更多计算资源，且在实践中往
+                                                                                                                         [23]
+同时进行组件代码的系统化组装、自动执行与指标                        往不如性能强大的开源模型有效 。在本工作中，
+ 4                                                                                    计算机研究与发展        2026，63 （6）
+
+
+则利用未经训练的 LLM 自动生成模拟器代码。                                               在 DNN 加速器及其模拟器生成方面，已有一些
+           多智能体系统
+                                                                                           [11]
+1.2                                                        相关研究工作。例如，Fu 等人                        提出了一种对 LLM
+           多 智 能 体 协 作 是 指 在 多 智 能 体 系 统 框 架 下， 多          友好的硬件模板以及一种结合示例增强的提示词生
+个可交互的智能体围绕共同目标进行协调与分工。                                     成 方 法， 用 于 自 动 化 AI 加 速 器 设 计 。 Vungarala 等
+                                                               [12]
+通 过 信 息 交 换 与 联 合 决 策， 它 们 能 够 完 成 单 个 智 能                 人          提出了 TPU-Gen，旨在实现基于 LLM 的 TPU 精
+                                     [24]
+体难以甚至无法完成的复杂任务 。                                           确 与 近 似 生 成 流 程 自 动 化， 重 点 关 注 脉 动 阵 列 的 微
+           单智能体在多次迭代中需要在不同子任务之间                            体系结构设计。文献 [29] 提出了体系结构描述方法，
+切 换 上 下 文， 在 硬 件 设 计 过 程 中 采 用 单 个 智 能 体 处                 以 支 持 基 于 分 析 模 型的 DNN 加 速 器 性 能 建 模 。
+                                                                           [30]
+理 所 有 这 些 任 务 会 导 致 次 优 结 果， 因 为 它 们 必 须 在                 Nayak 等人               提出了 TeAAL，一种用于简洁、精确地
+每 次 交 互 中 处 理 如 此 复 杂 的 上 下 文， 并 通 过 冗 长 的                 规范和评估稀疏张量代数加速器的语言和模拟器生
+对 话 历 史 保 持 一 致 性 。 相 比 之 下， 多 智 能 体 系 统 将                 成器。但其仅支持对稀疏张量代数加速器进行建模
+任 务 分 配 给 具 有 独 立 对 话 历 史 的 智 能 体， 支 持 专 门                 和评估，且使用分析建模。文献 [17] 提出了 Simulator-
+的任务处理和更高的模块化程度。                                            Coder， 说 明 LLM 具 备 生 成 DNN 加 速 器 模 拟 器 函 数
+                     [25]
+           Lin 等人           提出了一种利用多个 LLM 智能体来             级 代 码 的 能 力 。 相 比 之 下， 本 文 进 一 步 关 注 更 复 杂
+模拟软件过程模型的代码生成框架，为 LLM 智能体                                  的 架 构 场 景， 采 用 基 于 LLM 的 多 智 能 体 协 同 框 架 ，
+分配对应日常开发活动的角色，包括需求工程师、架                                    所研究的目标架构涵盖典型的二维脉动阵列加速器
+构师、开发人员等，同时利用 CoT、提示组合和持续                                  以 及 可 重 构 数 据 流 加 速 器 等 体 系 结 构， 且 进 行 整 体
+自 我 优 化 的 方 式 协 同 工 作， 以 提 高 代 码 质 量 。 但 该                 模拟器生成。
+方法仅应用于公开基准（如 HumanEval）测试，尚未涉                                         在微处理器领域，模拟器生成同样受到关注，通
+                                            [26]
+及 完 整 软 件 系 统 的 生 成 。Dong 等 人                      提出了一种   过硬件描述语言或者体系结构描述语言定义语法描
+基于 LLM 的协作式代码生成框架，通过角色分配与                                  述硬件架构，然后由编译器解析描述生成中间表示，
+团队协作显著提升了代码生成的准确性，并为 LLM                                   再编译为可执行文件运行。文献 [31] 使用模拟器生
+在 复 杂 任 务 中 的 应 用 提 供 了 新 的 视 角 。 然 而， 该 框                 成 器， 以 编 写 的 处 理 器 规 格 自 动 生 成 微 处 理 器 模 拟
+架 在 测 试 阶 段 是 通 过 大 模 型 直 接 评 估 生 成 报 告， 而                 器。与上述工作相比，本工作将基于 LLM 的多智能
+非执行真实代码，尽管能够识别大多数逻辑错误，但                                    体框架应用于 DNN 加速器模拟器的生成。
+无法在真实执行过程中对正确性进行充分验证。该
+框架将自我协作代码生成应用于复杂的游戏开发需                                     2      方法概述
+求，并开发了天气预报网站。相比之下，本文的方法
+采用了更为严格、以实际执行为驱动的反馈测试机                                                本 文 提 出 一 种 面向 DNN 加 速 器 模 拟 器 自 动 生
+制，从而更有效地保证了代码的正确性，同时，研究                                    成 的 多 智 能 体 框架 SimulatorGen。 通 过 对 模 拟 器 架
+对时序和功能等模拟正确性要求更高的模拟器代码                                     构 进 行 抽 象 与 规 范 提 取， 将 整 体 模 拟 器 进 行 模 块 分
+生成。                                                        解，将模拟器生成问题转化为一组可验证、可组合的
+1.3        模拟器生成                                           模 块 和 组 件 级 生 成 问 题 。 同 时， 引 入 多 智 能 体 协 作
+           机器学习、大模型等人工智能技术为赋能芯片                            机 制， 在 统 一 的 抽 象 模 型 与 规 范 约 束 下 协 同 完 成 生
+                              [27]
+设计带来了新的机遇 。目前多数工作集中于手动                                     成过程，从而提升生成结果的正确性与可靠性。
+生 成 模 拟 器 或 者 构 建 模 拟 架 构 。Muñoz-Martínez 等                           具体而言，本文的方法主要包括 4 个步骤。
+    [6]
+人 提 出 STONNE， 一 个 具 有 可 重 构 数 据 流 模 式 的                               1）对 DNN 加 速 器 模 拟 器 的 通 用 架 构 进 行 系 统
+DNN 加 速 器 周 期 精 确 模 拟 器 ， 支 持 TPU 等 架 构 。                  性抽象，将模拟器划分为输入、计算、存储、互连和
+               [8]
+Ritik 等 人            提 出 SCALE-Sim， 一 个 周 期 精 确 的 模 拟      输出模块，在此基础上，对各模块组件的功能、输入
+器框架，提供可配置的脉动阵列设计，凭借它用户可                                    输出接口和关键行为特征进行总结，进一步提取自然
+以定义一个配置文件来描述选择的架构。林涵越等                                     语言功能规范，为后续自动生成提供统一描述基础。
+    [28]
+人          提出一种通用网络处理器的结构模拟和性能仿                                       2）基 于 上 述 抽 象 架 构 ， 将 生 成 具 体 和 整 体 模 拟
+真框架 Neptune，采用同步图模拟和混合事件与时间                                器的问题转化为在抽象模型上生成对应模块和组件
+驱动的方法以保障模拟器准确性和高效性。                                        并组装的问题。给定模拟需求，如目标加速器架构、
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                                               5
+
+
+数 据 流 方 式 等， 将 需 求 映 射 到 抽 象 模 拟 器 架 构 中 的                              accumulate，MAC）、数据路由与存储访问等操作时的
+模 块 上， 从 而 明 确 需 要 生 成 的 模 块 和 组 件 集 合 及 其                              行为；时序模拟提供关键架构，设计选择如何影响吞
+功能要求。复杂的端到端模拟器生成过程被分解为                                                  吐与延迟的周期级视角；PPA 估计则对能耗、性能与
+模 块 级 和 组 件 级 生 成 任 务， 最 终 通 过 组 装 构 建 完 整                              面积等关键指标进行量化评估。准确的 PPA 建模需
+模拟器。                                                                    要将微架构参数与组件级能耗模型及缓冲区延迟等
+      3）为 判 断 生 成 组 件 的 正 确 性 ， 本 文 基 于 抽 象 模                           相结合，例如根据存储读写事件、计算周期与片上数
+拟器架构及其功能规范，利用 LLM 提取组件应满足                                               据移动来估算能耗。最终，模拟器输出包括 PPA、总
+的 关 键 属 性 与 约 束 条 件， 并 据 此 构 建 相 应 的 检 查 规                              体 吞 吐 量 等 性 能 指 标 以 及 计 算 结 果（图 2 右 图 ）， 其
+则以提高生成结果的可靠性。                                                           中计算结果用于对功能模拟阶段的执行正确性进行
+      4）在上述模拟器架构抽象和模块组件划分的基                                             验证以及指标计算。
+础 上 引入 LLM， 并 设 计 多 智 能 体 协 作 的 生 成 框 架 。                                    模拟器需要对 DNN 加速器架构进行建模。图 3
+通 过 对 任 务 分 析、 代 码 生 成 、 测 试 反 馈 与 系 统 组 装                              中总结了一种通用的模块化建模框架。这种模块化
+等 职 责 进 行 角 色 分 工， 使 多 个 智 能 体 在 统 一 的 抽 象                              建模方法包括可配置的分发网络、乘法器网络与归约
+模型与规范约束下协同工作，从而实现复杂 DNN 加                                               网络，以及其关联的存储与互连子系统。每个网络由
+速器模拟器的自动化生成。                                                            多 个 交 换 机 组 成， 这 些 交 换 机 可 以 通 过 各 种 拓 扑 结
+                                                                        构 互 连 形 成 不 同 类 型 的 网 络 。 通 过 组 合 不 同 网 络，
+3     模拟器架构抽象和模块组件划分                                                    模 拟 器 可 灵 活 建 模 多种 DNN 加 速 器 架 构 。 图 3（d）
+                                                                                                            [34]       [35]
+                                                                        与 3（e）分别展示了代表性架构 MAERI                     与 TPU 。
+3.1   模拟器架构抽象                                                                从 DNN 加速器架构与执行方式的角度出发，现
+      DNN 加速器模拟器在早期架构探索与设计优化                                            有 模 拟 器 通 常 覆 盖 不 同 类 型 的 计 算 组 织 方 式， 包 括
+中 发 挥 关 键 作 用， 其 通 过 准 确 模 拟 真 实 硬 件 的 功 能                              以乘加运算为核心的执行模型、基于脉动阵列的空
+行为与性能特征来支持评估。与物理硬件实现不同，                                                 间计算架构，以及面向稀疏计算优化的加速器设计。
+模 拟 器 允 许 设 计 人 员 迭 代 和 验 证 不 同 的 架 构 配 置，                              第 1 代 DNN 加速器通常针对单一主流工作负载进行
+而无需承担实际制造的高昂成本。                                                         高度定制，例如 TPU 采用脉动阵列微架构，并在设计
+                           [6-10]
+      基于对现有模拟器                      的系统调研与分析，如图 2                       阶段固化其数据流，以高效支持密集矩阵乘加运算。
+所示，本文对 DNN 加速器模拟器的通用架构进行了                                               随 着 神 经 网 络 模 型 和 工 作 负 载 特 性 的 不 断 演 进， 下
+抽象。如图 2 左图所示，模拟器的输入包括 DNN 模型，                                           一代 DNN 加速器逐渐转向可重构架构，允许通过软
+             [32]                   [33]
+例如 ResNet50         和 VGG16 ；加速器架构参数，用于                                 件 方 式 灵 活 调 整 数 据 流 和 计 算 映 射 策 略， 从 而 在 执
+实例化 DNN 模型中各算子的数值操作，以驱动加速                                               行周期数和能耗等方面获得更优的效率。MAERI 是
+器在功能与时序层面的硬件行为建模。如图 2 中间                                                一种由模块化、可配置构建块组成的 DNN 加速器架
+图 所 示， 模 拟 器 接 收 这 些 输 入 ， 将 DNN 模 型 映 射 到                              构 。 通 过 为 乘 法 器 和 加 法 器 配 备 小 型 开 关， 并 通 过
+PE 阵列上，并执行功能模拟、时序模拟以及功耗、性                                               新 型 可 配 置 互 连 网 络 将 它 们 连 接 起 来， 该 互 连 网 络
+能与面积（power，performance，and area，PPA）估计。                                 支 持 任 意 尺 寸 的 神 经 元， MAERI 能 够 轻 松 支 持 多 种
+      功能模拟刻画加速器在执行乘加计算（multiply-                                        DNN 分区和映射方式。
+            输入 ① DNN模型                                         DNN模型
+                                                                                             输出
+                                                              映射
+
+                                                     PE       PE        PE      PE                ① 吞吐量
+
+                    ② 加速器架构参数                        PE       PE        PE      PE                ② PPA
+
+                    数据流    PE Size                                 存储                        性能    能耗     … 面积
+                    NoC 配置 …
+                                                               模拟引擎
+                      ③ 计算数据                                                                      ③ 计算结果
+                                                    PPA估计      时序模拟          功能模拟
+
+
+                                           Fig. 2    Overview of DNN accelerator simulator
+                                                    图2    DNN 加速器模拟器概览
+ 6                                                                                                          计算机研究与发展   2026，63 （6）
+
+
+                                 归约网络                                前向输入                                   向上输出
+                                                                       输入                                   前向输出
+                                                                                          (b) 加法器
+                             部分和                    处理单元 (PEs)
+                                                                     前向输入                                   前向输出
+                              乘法器网络
+                                                                     数据输入                                   数据输出
+                                                                                          (c) 乘法器
+                          输入权重                                                                      点到点网络
+                             分发网络
+                                                                                                        P
+                       DS DS DS DS DS                DS
+                       DS   DS   DS   DS       DS    DS                                                 P
+
+
+                                                                     DS        DS        DS        DS   P
+                                                                          DS                  DS
+                                 缓冲区                                                                         P    P
+                                                                                    DS
+
+                            (a) DNN加速器架构                                   (d) MAERI                         (e) TPU
+
+                                      Fig. 3    Example for DNN accelerator simulation
+                                                    图3    DNN 加速器模拟实例
+
+3.2   模拟器模块与组件划分                                                          6）Energy Model： 当 组 件 涉 及 能 量 评 估 时 ， 在 规
+      基于抽象的 DNN 加速器模拟器架构，本文对核                                    范 中 给 出 其 能 量 模 型 的 参 数 项， 说 明 能 量 与 哪 些 事
+心 模 块 进 行 自 顶 向 下 的 模 块 化 分 解， 并 为 各 类 模 块                       件或操作相关，例如读写、转发、乘加、累加等。
+构建统一模板的自然语言功能规范。                                                          组件规范模板的设计原则是一方面保证规格描
+      具体而言，将模拟器核心功能划分为存储、计算                                      述 足 够 明 确 以 约 束 代 码 生 成， 另 一 方 面 避 免 引 入 过
+与 互 连 三 大 模 块 。 其 中， 存 储 模 块 模 拟 本 地 与 外 部                       多实现细节以保持跨架构可迁移性。通过模板化规
+存储，同时负责读写和传输操作；计算模块模拟每个                                          范， 后 续 代 码 生 成 过 程 可 以 稳 定 地 对 齐 组 件 接 口 与
+PE 内的乘法与加法等运算；互连模块负责存储与计                                         行 为 语 义 并 支 持 多 模 块 组 装 。 如表 2 所 示 ， 本 文 提
+算模块之间的通信与同步。                                                     取了 23 条 组 件 规 范 ， 给 出 了 每 条 组 件 规 范 的 名 称 、
+      在 每 个 模 块 内 部， 进 一 步 定 义 若 干 组 件 。 组 件                     所属模块类别及其简要描述。
+是 模 拟 器 中 可 独 立 建 模 与 生 成 的 功 能 单 元， 例 如 缓                                在 模 拟 器 架 构 抽 象 与 规 范 提 取 过 程 中， 在 完 成
+冲 结 构、 乘 法 单 元 、 加 法 网 络 或 路 由 节 点 等 。 每 个                       对 模 拟 器 结 构 的 自 顶 向 下 分 解 基 础 上， 进 一 步 体 现
+模 块 通 常 包 含 多 个 组 件， 共 同 完 成 该 模 块 所 承 担 的                       了 该 过 程 带 来 的 可 复 用 性 与 可 参 数 化 优 势 。 首 先，
+功能职责。每个组件均通过结构化字段描述其输入                                           对 模 拟 器 进 行 架 构 抽 象， 提 升 了 跨 架 构 复 用 能 力 。
+输出接口、内部行为逻辑以及与性能与能量相关的                                           本文将 DNN 加速器模拟器统一抽象为存储、互连与
+语义约束，从而在抽象层面刻画其行为特征，为后续                                          计 算 等 功 能 模 块 及 其 交 互 接 口， 明 确 各 模 块 的 职 责
+基于 LLM 的组件自动生成与组合提供了统一、可推                                        边界，使得同类模块能够在不同目标架构间复用，从
+理的功能描述基础。每条组件规范包含以下字段：                                           而 降 低 新 架 构 适 配 时 的 重 复 开 发 成 本 。 其 次， 组 件
+      1）Component Name：组件名称。                                     规范提取可以形成可实例化的参数化模板。本文为
+      2）Description：用自然语言概括组件的核心功能                               每 个 模 块 组 件 提 取 结 构 化 自 然 语 言 规 范， 其 中 关 键
+与 使 用 场 景， 说 明 该 组 件 在 模 拟 器 中 承 担 的 语 义 角                       字 段 以 参 数 的 形 式 保 留， 可 根 据 待 生 成 模 拟 器 的 具
+色，例如作为可传输的数据单元、缓冲结构或算术执                                          体 需 求 填 入 不 同 取 值， 实 现 同 一 规 范 对 不 同 实 例 的
+行单元等。                                                            覆盖。例如，互连组件可通过拓扑类型、端口规模与
+      3）Inputs：说明组件的输入参数或初始化字段，给                                 路 由 模 式 等 参 数 实 例 化； 存 储 组 件 可 通 过 容 量 和 带
+出名称与语义解释。                                                        宽 等 参 数 实 例 化； 计 算 组 件 可 通 过 阵 列 规 模 和 数 据
+      4）Outputs： 说 明 组 件 对 外 提 供 的 可 见 信 息 及 其                   流策略等参数实例化。
+访问方式，明确哪些字段会被外部模块读取，以及这                                                   架构抽象与参数化规范共同将生成完整模拟器
+些信息在路由、调度或处理过程中的用途。                                              的复杂问题转化为在统一抽象上实例化并生成模块
+      5）Functions： 对 外 函 数 接 口 列 表 ， 并 逐 条 描 述 每                 的问题，为后续引入多智能体进行模块生成、接口对
+个函数的职责、触发条件与对状态或输出的影响。                                           接与系统组装奠定基础，增强了方法的扩展性。
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                                                        7
+
+
+                                       Table 2      Overview of Module Component Specifications
+                                                           表 2 模块组件规范概述
+
+    任务 ID                 组件          模块                  描述              任务 ID               组件          模块             描述
+
+      1                DataPackage    存储          可传输的数据单元                     13            ASwitch      计算       部分和累加交换单元
+
+      2                 Connection    互连         组件之间的互连结构                     14        MultiplierOS     计算          乘加运算模块
+
+      3                   FIFO        存储         数据包的 FIFO 缓冲区                 15        TemporalRN       计算        时间维度归约网络
+
+      4           CollectionBusLine   互连           多输入数据仲裁                     16            DSwitch      互连   二叉树结构的数据路由器
+
+      5             CollectionBus     互连            分层数据聚合                     17        DSNetwork        互连        分层数据分发网络
+
+      6            Look-up Table      计算         基于查找表的激活操作                    18        MSNetwork        计算       乘法与转发交换网络
+
+      7                Accumulator    计算         周期精确的部分和累加                    19        ASNetwork        计算   树结构的部分和归约网络
+
+      8       AccumulationBuffer      存储          多累加器协同机制                     20       DSNetworkTop      互连           分发控制器
+
+      9           route_1_1_plus_fw   互连         基于奇偶性的数据路由                    21        FENetwork        计算       灵活的累加交换网络
+
+      10                route_2_1     互连         条件化的部分和归约                     22        SDMemory         存储       片上 Scratchpad 存储器
+
+      11                FEASwitch     互连         灵活的累加与路由机制                    23        OSMeshMN         互连       二维 Mesh 乘法器网络
+
+      12                 MSwitch      计算           乘法与转发单元
+
+
+                                                                         SimulatorGen 的核心框架，包含 4 个关键智能体：
+4     多智能体框架                                                                        1）分 析 智 能 体 （Analyst Agent）。 分 析 任 务 ， 基
+                                                                         于 CoT 分 解 任 务 ， 同 时 基 于 检 索 增 强 构 建 领 域 提
+       设 计 模 拟 器 需 要 解 决 若 干 关 键 挑 战， 例 如 实 现                            示词。
+准确的周期级模拟准确度、高效集成细粒度且可扩                                                              2）编码智能体（Coder Agent）。 根据提示词生成
+展的能量模型，以及在多样化 DNN 工作负载与加速                                                代码或基于测试反馈修复并重新生成代码。
+器 配 置 下 确 保 正 确 性 与 灵 活 性 。SimulatorGen 则 通                                         3）测试智能体（Tester Agent）。 测试代码准确性
+过相关 LLM 代码生成技术来针对性解决这些问题。                                                并提供迭代改进反馈测试报告。
+4.1       框架概述                                                                      4）组 装 智 能 体 （Assembly Agent）。 进 行 组 件 代
+       SimulatorGen 是 一 个 基 于 LLM 的 多 智 能 体 代 码                          码组装，自动执行模拟并完成指标对比，实现完整模
+生 成 框 架， 旨 在 将 自 然 语 言 形 式 表 达 的 功 能 需 求 准                               拟 器 的 构 建 。 智 能 体 相 互 协 作， 整 体 流 程 如 算 法 1
+确 转 换为 DNN 加 速 器 模 拟 器 代 码 。 图 4 展 示 了                                   所示。
+
+      输入          组件任务描述：请生成一个带有计算行为模拟的加法器开关…                                           输入      模拟任务：请生成一个MAERI架构的模拟器…
+
+
+                  分析智能体                    编码智能体                               测试智能体                    组件代码               组装智能体
+                   1
+                                                               不合法          测试           合法             正确组件
+                                                                6           报告           5               代码
+                                       LLM                                                                     9
+            LLM             检索                                             4                            （保留）
+                                                                                       LLM                             组件组装
+      建立一个              模拟器
+                        RAG知                                                   代码测试
+      高层计划                                   7                 +任务
+                         识库                      修复代码                     语法           编译
+                                                                         正确性           测试               错误组件           自动执行
+                                                                                                         代码
+                                             8 超过最大尝试                     功能           测试
+                    2                          次数                                                       （丢弃）
+                                                                         正确性           用例
+                                                                                                                       指标对比
+                                             3                 +任务
+            提示构建                                 生成代码                     形式           属性
+                                                                         化验证           验证
+                                                                                                         属性
+                                                                                                                           10
+
+      输入                               模块和组件规范                                                          不变式    输出       模拟器
+
+
+                                                 Fig. 4   Overview of SimulatorGen framework
+                                                          图4   SimulatorGen 框架概览
+8                                                                                                           计算机研究与发展                  2026，63 （6）
+
+
+    算法 1. 多智能体框架。                                                                    ⑰ while attempts3 小于最大尝试次数 do
+    输 入： 组 件 生 成 任 务 CT ， 整 体 模 拟 器 生 成 任 务                                          ⑱    R4（Assembly）：给定任务 S T ，代码 C ，生成整
+S T ，模拟器 RAG 知识库 S D ，任务属性和不变式 PI ；                                                           体模拟器 S C ，并运行模拟器生成模拟器
+    输出：完整模拟器 S C 。                                                                            指标；
+    ① 使用控制指令为 LLMs 初始化角色集合 {R } ，                               4
+                                                              i i=1                  ⑲    if 模拟器指标在预期内 then
+        初始化嵌入模型 EM ；                                                                 ⑳       返回模拟器代码 S C ；
+    ② while 代码设计任务尚未完成 do                                                            ㉑    else
+    ③   R1（Analyst）：给定任务 ct j ，生成计划 plan j ；                                         ㉒       continue；
+           使用 EM 和点积从 S D 中检索相关数据                                                    ㉓    end if
+           rag j ；并构造提示词 prompt j = ct j + plan j +                                  ㉔ end while
+           rag j ；                                                                   算法 1 中 ， 一 个 任 务 CT 对 应 1 个 或 多 个 代 码 设
+    ④   R2（Coder）：生成代码 C j ；                                               计任务 ct，即 CT = {ct j | j = 1, …} 。
+    ⑤   R3（Tester）：基于 PI j 生成测试报告 T R j ；                                  4.2       模拟器库
+    ⑥   while attempts1 小于最大尝试次数 do                                                  针 对 复 杂 的 模 拟 器 设 计 任 务 T ， LLM 往 往 需 要
+    ⑦     while attempts2 小于最大尝试次数 do                                      获取领域知识。本文构建了一个模拟器 RAG 知识库
+    ⑧         if T R j 的测试代码有效 then                                        并 进 行 相 似 度 检 索， 通 过 嵌 入 索 引 语 料 实 现 高 效 检
+    ⑨             保存模拟器组件代码 C j 到全局组件                                      索 与 排 序， 使 编 码 智 能 体 在 生 成 代 码 前 即 可 获 得 领
+                     代码 C ，保存报告到全局报告 T R ，                                 域 知 识 。 模 拟 器 库 存 储 模 拟 器 的 基 础 组 件 信 息， 每
+                     标记 ct j 完成；                                           个组件条目包括模块类型、功能描述、输入、输出以
+    ⑩         else                                                         及 代 码 。 为 保 证 评 估 公 平 性， 模 拟 器 库 中 的 组 件 与
+    ⑪             R3： T R j ← NewT R j ；/*更新测试报告*/                         评估任务中使用的组件不同。
+    ⑫         end if                                                                 模拟器库的使用流程如图 5 所示。首先，使用嵌
+    ⑬     end while                                                        入模型 EM 对模拟器库中的文本和代码进行编码，构
+    ⑭     R2： C j ← NewC j ；/*更新编码智能体生成                                    建基于 FAISS 的向量库；然后，使用相同的嵌入模型
+              的代码*/                                                        EM 将任务描述编码为查询向量，用于从库中进行相
+                                                                                                                       [36]
+    ⑮   end while                                                          似度检索。本文选择 BGE-M3                                   对模拟器库进行向
+    ⑯ end while                                                            量化处理，因为它在多粒度文本嵌入方面表现出色。
+
+
+              任务描述：
+                                                                                                                                任务+
+              请生成一个带有计算行为
+                                                                                                                                计划+
+              仿真的加法器开关…
+                                                                                                                                检索
+
+
+                       任务                               嵌入模型                                 数据库                               提示词
+
+                                                                                                     嵌入模型
+        模拟库
+         ID            组件              模块类型                       描述                      输入               输出                   编码
+                                                       Executes one simulation                       CollectionBusLine
+                                                                                      collection_                      def cycle(self):
+          1    CollectionBus.cycle    Interconnect     cycle of the interconnect                     sends data via
+                                                                                      bus_lines...                     …
+                                                       bus module…                                   output ports…
+                                                       Performs a 2-input                            returns a new    def
+               ASwitch.perform_                                                       pck_left,
+          2                           Computing        operation on left and right                   DataPackage with perform_operation_
+               operation_2_operands                                                   pck_right…
+                                                       packages based on…                            the sum…         2_operands…
+                                                                                                   assigns each
+                                                       Assigns output memory                                         def
+               AccumulationBuffer.                                                    memory_      accumulator its
+          3                             Storage        connections to each                                           memory_connections
+               memory_connections                                                     connections… output connection
+                                                       accumulator instance…                                         …
+                                                                                                   …
+         …
+
+
+
+
+                       …
+
+
+
+
+                                          …
+
+
+
+
+                                                                  …
+
+
+
+
+                                                                                            …
+
+
+
+
+                                                                                                            …
+
+
+
+
+                                                                                                                                 …
+
+
+
+
+                                          Fig. 5     Simulator library and prompt construction
+                                                       图5     模拟器库和提示构建
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                9
+
+
+例 如， 对 于 一 个 需 要 生 成 具 有 计 算 行 为 模 拟 功 能 的          的步骤①~②所示，分析智能体接收组件任务描述 ct j ，
+加法器开关的任务，BGE-M3 会从库中检索出 2 个语                        利 用 结 构化 CoT 提 示 将 任 务 分 解 为 若 干 子 任 务 ， 形
+义最相似的组件（例如图 5 中箭头所指的 ID=2 的输                        成高层次计划 plan j ，并同时通过 RAG 从模拟器库中
+入加法器开关的组件），并将其信息整合到生成的提                             检索相关信息 rag j （步骤①）；随后，提示词构建器整
+示 词 中 。 此 外， 模 拟 器 库 可 以 通 过 添 加 新 的 通 过 验          合 任 务、 子 任 务 、 计 划 以 及 从 模 拟 器 库 中 检 索 到 的
+证 的 设 计 进 行 不 断 更 新， 使 系 统 能 够 获 取 最 新 的 领          信息，构建全面且富含上下文的提示词 prompt j （步骤
+域知识。                                                ②）， 以 指 导 编 码 器 智 能 体 生 成 代 码 。 此 外 ， 提 示 词
+4.3   分析智能体                                         构 建 器 还 会 标 准 化 用 户 输 入 格 式， 并 传 达 模 拟 器 的
+      分 析 智 能 体 旨 在 通过 CoT 与 RAG 提 升 LLM 对          预 期 功 能、 设 计 意 图 和 架 构 规 范 。 提 示 词 如 图 6 中
+任务的理解能力，从而降低任务分析复杂度。如图 4                            分析智能体部分所示。
+
+              1)分析智能体
+                 你是一名DNN 加速器模拟器专家。以下是一段任务描述：{task_description}。分析指令：① 让我们一步
+              步思考。将需求拆解为若干个更容易解决的子问题，使编码员（Coder）能够更容易实现；② 制定一个高层计
+              划，概述程序实现的主要步骤；③ 注意：该计划应保持高层次，重点在于指导编码员，而不是提供具体实现
+              细节。请使用编号列表等方式，将你的分析写得清晰明了。
+              2)编码智能体
+                 你是一名经验丰富的DNN 加速器模拟器设计专家和Python 语言专家。请以专业风格回答以下问题：基于
+              你此前撰写的内容（以及我已发送给你的材料），请编写一个Python 文件来实现这些功能。代码只需输出1
+              次，且只能输出1次。请注意，你所编写并发送的代码文件与测试文件位于同一目录中。
+              上下文代码：{context_code}
+              任务描述：{task_description}
+
+              3)测试智能体
+                  我希望你在团队中充当Tester 的角色。你将接收由Coder 编写的代码，你的职责包括：① 功能完整性测
+              试：基于需求和代码编写测试用例，用于验证设计是否完整实现了预期功能，不存在功能缺失、冗余代码或
+              占位实现等问题；② 形式化验证：编写验证用例，将Coder 生成的代码转换为符号化路径约束，并基于已发
+              送给你的属性和不变式，使用SMT 求解器Z3 对代码正确性进行验证。
+              输出要求：仅输出以下②个相互独立的代码块：
+              python test # your functional test code here
+              python z3 # your Z3 verification code here
+
+             4)组装智能体
+                请基于这些组件文件，搭建一个Maeri架构的模拟器。请一步步地解决这个问题。模拟器的输入是DNN模
+             型（例如Resnet50.csv）和计算数据，将网络结构表示为卷积（CONV）操作。模拟器的输出是模拟CONV操作
+             映射到PE上运行计算过程所需的周期数和能耗值以及计算结果。片上网络（NoC）包括增强型归约树网络、
+             线性乘法器网络和Benes分布网络。全局缓冲区配置为108 KB，片外存储器由2个512 MB HBM2 DRAM模块
+             组成，每个模块的带宽为256 GB/s。可以分模块逐步构建。
+
+                                      Fig. 6   Prompt design
+                                        图6     提示词设计
+
+4.4   编码智能体                                         容）、依赖组件的源码上下文（DataPackage.py）以及最
+      编码智能体在分析智能体和测试智能体的协助                          近 一 轮 测 试 与 形 式 化 验 证 产 生 的 错 误 日 志， 重 试 时
+与监督下负责编写正确的代码 C j 。如图 4 中的步骤                        只更新错误日志。
+③ 和 步 骤⑦ 所 示， 其 代 码 生 成 过 程 包 含 2 个 关 键 阶           4.5   测试智能体
+段，以迭代循环的方式执行：1）基于分析智能体提供                                  LLM 生成的代码通常包含各类错误。基于相关
+的提示词，生成满足指定功能需求的代码（步骤③）；                            研究，通过错误反馈引导 LLM 修正这些问题至关重
+2）整 合 测 试 智 能 体 报 告 中 的 错 误 反 馈 ， 对 代 码 进 行         要。测试智能体负责测试代码的正确性并生成测试
+优化，修正错误并提升质量（步骤⑦）。LLM 的任务                           报 告 T R j ， 具 体 流 程 如 图 4 中 的 步 骤④ ~⑧ 所 示 。 提
+是 生成 Python 代 码 ， 这 得 益 于 其 在 Python 编 程 方 面        示词如图 6 中测试智能体部分所示。
+                [37]
+已被证实的有效性 。编码器能优先生成可读性强、                                   1）代码评估。测试智能体通过多阶段过程验证
+模 块 化 且 易 于 维 护 的 代 码， 这 类 代 码 需 符 合 模 拟 器          生成代码的正确性（步骤④）。如图 7 所示：①语法正
+架 构 要 求， 并 确 保 功 能 正 确 性 。 提 示 词 如 图 6 中 编          确性检查。通过调用 Python 内置的 compile() 函数对
+码智能体部分所示。编码智能体在每次生成代码时，                             生 成 代 码 进 行 编 译 级 检 查， 以 验 证 其 语 法 正 确 性 。
+其上下文包括任务规范（如 Connection 组件生成规范，                     ② 功 能 正 确 性 测 试 。 基 于 组 件 输 入 输 出 规 范， 调 用
+包 含 基于 CoT 生 成 的 任 务 计 划 ， 以 及 RAG 检 索 内            LLM 自动生成专门用于功能验证的测试用例，以检
+ 10                                                                                  计算机研究与发展        2026，63 （6）
+
+
+      任务描述：                                                     对， 从 而 实 现 完 整 模 拟 器 的 自 动 构 建 与 验 证 。 提 示
+      请生成一个带有计算运算模拟功能的加法器开关…
+                                                                词如图 6 中组装智能体部分所示。
+
+          编码智能体：代码生成或修复代码                         ASwitch.py
+                                                                      如图 4 中的步骤⑨所示，组装智能体负责：1）组
+                                                                件组装。组装智能体接收模拟任务 S T 、由编码智能
+
+           ① 语法正确性
+                                                                体 生 成 的 组 件 代 码 文 件 C ， 调 用 LLM 生 成 完 整 的 模
+              Python语法检查器：使用compile()函数将代码转                     拟器组装代码，包括主入口函数、模块实例化逻辑以
+           换为抽象语法树(AST)以进行语法验证
+              错误示例：ASwitch.py中的SyntaxError (第2行类                及 跨 组 件 接 口 对 接 代 码， 实 现 从 离 散 组 件 到 完 整 系
+           定义后应有缩进块)
+                                                                统结构的转换。2）自动执行。组装智能体将生成的
+           ② 功能正确性                        Python test.py        组 装 代 码 与 组 件 文 件 整 合 为 完 整 工 程 结 构， 并 自 动
+      测       测试用例：test_receive(), test_send(), test_cycle()…
+      试       错误示例：TypeError: DataPackage.__init__()缺少          调用运行脚本执行模拟任务。该过程支持不同网络
+      报    1个必需的位置参数: “source”
+      告                                                         模 型 与 不 同 参 数 配 置 的 批 量 测 试， 实 现 端 到 端 自 动
+           ③ 形式化验证                                              模拟。3）指标比对。组装智能体自动收集模拟器输
+                验证用例：不变式: Python Z3_verification.py
+           ∀iϵ[0, num_inputs): input_connections[i]ϵ ∧          出的关键性能指标（如周期数、能量与计算结果等），
+           accumulated_data=Σi input_connections[i]∧…
+                错误示例：num_inputs==0，但累加和至少需要                     并与预期基准结果进行对比分析。当各项指标在预
+           1个输入，导致不变式无法满足
+                                                                设误差内时，判定系统组装成功；否则将偏差信息反
+                   Fig. 7   Code testing stages                 馈进行修正。本文将生成组装代码的最大尝试次数
+                      图7     代码测试阶段                             设为 20， 即 算 法 1 中 的 attempts3 ⩽ 20 。 最 后 ， 由 组 装
+查是否满足任务需求及功能模拟是否完整。③形式                                          智能体输出任务目标模拟器 S C （步骤⑩）。
+化验证。首先调用 LLM 从任务级自然语言功能规范                                             通 过 组 件 组 装、 自 动 执 行 、 指 标 比 对 的 闭 环 流
+中 自 动 提 取 属 性 约 束 与 不 变 式 条 件， 平 均 每 个 任 务                      程，组装智能体不仅验证组件接口的一致性，还确保
+可 生 成约 5 条 属 性 约 束 和 10 条 不 变 式 ， 提 示 词 是 ：                     整 体 架 构 在 功 能 语 义 与 性 能 指 标 上 的 合 理 性， 使
+“你是一位形式化验证专家，从规范中提取需求和不                                         SimulatorGen 具 备 从 模 块 生 成 到 系 统 级 验 证 的 完 整
+变 量”。 然 后 ， 利 用 LLM 将 编 码 智 能 体 生 成 的 代 码                       自动化能力。
+语义转换为符号路径约束，并将这些约束与属性、不
+变式一同提交至 Z3 求解器
+                                  [38]
+                                         进行验证，从而提高代             5     实     验
+码正确性。
+      测试报告 T R j 记录语法错误信息、功能测试失败                                5.1   实验设计
+案例、违反的属性或不变式条件以及形式化验证结                                                本文通过解决以下研究问题来探索 SimulatorGen
+果 等 内 容 。 值 得 注 意 的 是， 任 务 规 范 说 明 还 包 含 对                      生成 DNN 加速器模拟器代码的能力。
+时 序 模 拟和 PPA 估 计 的 要 求 及 参 考 数 据 ， 这 对 于 确                            RQ1： SimulatorGen 框 架 在 生 成 正 确 且 可 执 行 的
+保生成模拟器的行为和性能准确性至关重要。测试                                          DNN 加速器模拟器代码方面的准确性和通用性如何？
+智 能 体 会 生 成 测 试 代 码， 生 成 成 功 测 试 代 码 的 最 大                            RQ2： 提 示 词 设 计 与 测 试 反 馈 策 略 如 何 影 响 为
+尝试次数为 3，即算法 1 中的 attempts2 ⩽ 3 。                                DNN 加速器生成的模拟器代码的准确性？
+      2）反 馈 自 修 复 。 如 果 评 估 结 果 有 效 （步 骤⑤ ），                          RQ3：基于 SimulatorGen 构建的模拟器性能与人
+则将生成的正确代码作为输出。否则（步骤⑥），LLM                                       工实现相比如何？
+接收测试反馈以优化并重新生成代码（步骤⑦）。如                                               RQ4：与单智能体 SimulatorCoder 相比，Simulator-
+果 LLM 的 代 码 生 成 尝 试 次 数 超 过 允 许 的 最 大 值                         Gen 是否支持端到端系统构建能力？
+（步骤⑧），则终止生成过程，并丢弃错误代码。在本                                              为了研究 RQ1，本文设计了一个自定义基线，在
+文 的 实 验 中， 该 最 大 值 设 定 为 3。 即 算 法 1 中 的                         4 个广泛使用且具有不同参数量和能力的 LLM 上评
+attempts1 ⩽ 3 。                                                 估 SimulatorGen，指标包括在重复独立试验中的单元
+4.6       组装智能体                                                 测试通过率和端到端任务成功率和运行时间。对于
+      在 完 成 各 组 件 代 码 生 成 与 验 证 后， 系 统 仍 需 将                    RQ2，运行提示设计和测试反馈策略的控制变量实验，
+多个独立组件整合为可运行的完整模拟器。本文设                                          并通过代码生成结果分析准确率。对于 RQ3，本文将
+计了组装智能体，负责组件组装、自动执行与指标比                                         SimulatorGen 生 成 的 模 拟 器 与 手 动 实 现 的 模 拟 器 进
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                          11
+
+
+行比较，比较不同工作负载上的能量（energy）和延迟                           等级高的任务依赖于等级低的任务，如 ID 为 18 的任
+（latency）以及它们的乘积（EDP）指标。对于 RQ4，基                      务依赖于 ID 为 1、2、3 和 12 的任务。每个组件均包
+于 SimulatorCoder 的 需 求 ， 调 用 SimulatorGen 的 多 智       含 组 件 名 称、 功 能 描 述 、 输 入 、 输 出 、 函 数 定 义 、 能
+能体框架，查看 SimulatorGen 是否可以生成整体的和                       量模型（如果存在）以及测试用例。为确保评估的公
+SCALE-Sim 等价的完整模拟器。                                   平 性， 任 务 基 准 中 所 使 用 的 组 件 与 模 拟 器 库 使 用 的
+5.2   评估指标                                            组件是相互独立的。
+                                       [39]
+      遵 循 先 前 的 代 码 生 成 研 究 ， 使 用 Pass@k 作 为          5.5   实现细节
+                                                                                                         [6,8]
+评 估 指 标 。 具 体 来 说， 给 定 一 个 需 求 ， 允 许 LLM 生                  模拟器库构建自开源的、周期精确的模拟器                               。
+成 k个 程 序 。 如 果 任 何 生 成 的 程 序 通 过 了 所 有 测 试            具体而言，将这些模拟器拆分为互连、存储和计算 3
+用例，则认为该需求已得到解决。本文进行 n 次试验，                            类模块，从每个模块中提取关键代码，并将其人工提
+                 Å    ã Å ã
+                  n−c    n                            取 为 功 能 描 述 及 其 对 应的 Python 实 现 ， 如 第 4.2 节
+并计算        =   −       /
+                         k ， 其 中 c是 成 功 的 试
+    Pass@k   1
+                   k                                  所示。最终得到的模拟器库包含 23 个条目，总计约
+验次数。在本文中， n = 20 ， k ∈ {1, 2, …, 5} 。成功任务
+                                                      6 097 个 英 文 单 词 和 891 行 代 码 。 实 验 结 果 显 示 ， 在
+费报告有多少个独立任务在至少 1 次试验中获得了
+                                                      算法 1 中将 attempts1 和 attempts2 的取值设置为 3 或 5，
+成功的模拟器组件设计。
+                                                      对 SimulatorGen 的 整 体 Pass@k 性 能 影 响 很 小 ， 因 此 ，
+5.3   基线 LLMs                                                                                        ®
+                                                      最 终 将 二 者 均 设 定为 3。 实 验 配 置 为 Intel CPU、
+      本 文对 LLM 在 DNN 加 速 器 模 拟 器 代 码 生 成 方            32 GB 内 存 ， 并 运 行 64 位 Windows 操 作 系 统 。 实 验
+面进行了全面评估。SimulatorGen 框架的分析、编码                        环境为 Python3.12.4，主要依赖 requests2.32.3、sentence-
+                             [40]
+和测试智能体基于 GPT-4o                     构建，进行组件生成，组       transformers4.1.0、faiss-cpu1.11.0 和 z3-solver4.15.1.0。
+                          [41]
+装智能体则基于 GPT-5.2                  构建，由于其在代码理解
+与生成任务中的出色表现。为评估该方法的相对有                                6     评估结果
+效 性， 选 取 4 种 被 广 泛 认 可 的 LLM 作 为 对 比 基 线 ：
+            [42]                    [43]
+Qwen3-32B 、 Gemini-2.5-Pro 、 Claude-Sonnet-4-5-       6.1   RQ1
+         [44]                [45]
+20250929        和 DeepSeek-V3 。其中，Qwen3 与 Claude            本 文将 SimulatorGen 框 架 分 别 部 署 于 多 种 基 线
+是 具 备 较 强 推 理 能 力 的 指 令 遵 循 模 型； Gemini 是 由           LLMs 之上，以评估其在不同模型下的通用性。同时，
+Google 公司开发的闭源 LLM；而 DeepSeek-V3 在代码                  本 文 还 评 估 了 在 去 除 分 析 与 测 试 反 馈 策 略 后， 仅 使
+合成基准测试中已表现出良好的性能水平。本文通                                用 GPT-4o 模 型 的 性 能 表 现 。 表 3 展 示 了 Simulator-
+过 API 访 问 这 些 模 型 ， 包 括 ： Qwen3-Omni-30B-A3B-         Gen 与所选基线模型在 Pass@k 和成功任务费指标上
+Instruct、 Gemini-2.5-Pro、 Claude-Sonnet-4-20250514、   的对比结果。实验结果表明，SimulatorGen 能够适配
+GPT-4o、 GPT-5.2 和 DeepSeek-V3。 本 文 对 GPT-4o 测         不同 LLMs，并在多种模型上生成可执行的模拟器代
+试了 2 种温度设置（0.2 与 1.0），并基于 3 个代表性的                     码，体现出一定的跨模型适配能力。基于 GPT-4o 构
+模 拟 器 生 成 任 务（任 务 1、 14 和 17）的 Pass@1 表 现 进           建的 SimulatorGen 在 整 体 代 码 生 成 准 确 率 方 面 取 得
+行评估。结果表明，温度设置为 0.2 时可获得最高的                            最 佳 性 能， 在 Pass@1 和 Pass@5 指 标 上 相 较 于 单 独 使
+平 均 Pass@1 分 数 ， 在 最 终 实 验 中 采 用 该 设 置 。 所 有          用 GPT-4o 分别实现了约 49.20% 和 29.96% 的相对提
+其他 LLM 的参数均保持为其默认值。提示词如图 6                            升，成功解决的任务数量增加了 5 个。此外，不同基
+中基线 LLMs 部分所示。                                        线 模 型 之 间 在 模 拟 器 设 计 能 力 上 存 在 差 异 。 例 如，
+5.4   基准任务                                            Claude-Sonnet-4 整体表现优于 Gemini-2.5-Pro 等模型，
+      为 支 持 上 述 评 估， 基 于 提 取 的 模 拟 器 的 自 然 语          但与 GPT-4o 相比仍存在一定差距。
+言功能规范，构建了一个同样包含 23 个任务的综合                                   针对 RQ1 的回答：SimulatorGen 不仅能够生成在
+测 试 基 准 以 支持 TPU 和 MAERI 架 构 。 如 表 2 所 示 ，            功 能 上 正 确 的 模 拟 器 代 码， 而 且 在 整 体 性 能 上 优 于
+23 个任务对应 23 个组件的生成，任务难度依据功能                           4 种基线 LLM，成功解决的任务数量最多，平均运行
+复 杂 性 及 依 赖 关 系 被 划 分为 3 个 等 级 ： 低 难 度 （ID            时 间 最 短 。 尽 管 不 同 基 线 模 型 之 间 存 在 性 能 差 异，
+1~8）、 中 难 度 （ID 9~15）和 高 难 度 （ID 16~23）。 高 难          SimulatorGen 在 多 种 模 型 上 均 能 够 生 成 可 执 行 的 模
+度任务的生成代码行数更多，功能更复杂，同时难度                               拟器代码，并在部分模型（如 GPT-4o）上显著提升性
+ 12                                                                                                                       计算机研究与发展                   2026，63 （6）
+
+
+                           Table 3       Performance of SimulatorGen Framework Across Different Large Language Models
+                                                    表 3 SimulatorGen 框架在不同大语言模型上的性能表现                                                                                     %
+
+                  Gemini-2.5-Pro             DeepSeek-V3               Qwen3-32B                Claude-Sonnet-4             GPT-4o*                SimulatorGen
+ 任务 ID
+                 Pass@1        Pass@5      Pass@1        Pass@5     Pass@1         Pass@5      Pass@1          Pass@5   Pass@1        Pass@5     Pass@1        Pass@5
+
+       1         15.00          60.09       95.00          100.00   85.00          100.00      100.00          100.00   100.00          100.00   100.00          100.00
+
+       2         95.00          100.00      50.00          98.37    95.00          100.00       65.00          99.86    100.00          100.00   100.00          100.00
+
+       3         60.00          99.64       40.00          94.89    45.00          97.02        40.00          94.89    90.00           100.00   100.00          100.00
+
+       4         30.00          87.09       70.00          99.96    60.00          99.64        35.00          91.70    95.00           100.00   95.00           100.00
+
+       5         35.00          91.70       40.00          94.89    50.00          98.37        50.00          98.37     0.00            0.00    100.00          100.00
+
+       6         60.00          99.64       25.00          80.63    70.00          99.96        55.00          99.19    100.00          100.00   100.00          100.00
+
+       7         60.00          99.64       30.00          87.09    30.00          87.09        50.00          98.37    65.00           99.86    85.00           100.00
+
+       8         85.00          100.00      90.00          100.00   80.00          100.00       85.00          100.00   80.00           100.00   100.00          100.00
+
+       9         80.00          100.00      25.00          80.63    95.00          100.00       80.00          100.00   85.00           100.00   100.00          100.00
+
+      10         50.00          98.37       80.00          100.00   70.00          99.96        70.00          99.96    75.00           99.99    100.00          100.00
+
+      11         50.00          98.37       25.00          80.63    75.00          99.99        40.00          94.89    70.00           99.96    100.00          100.00
+
+      12         60.00          99.64       0.00            0.00    60.00          99.64        90.00          100.00   70.00           99.96    90.00           100.00
+
+      13         45.00          97.02       35.00          91.70    80.00          100.00      100.00          100.00   65.00           99.86    100.00          100.00
+
+      14         40.00          94.89       40.00          94.89    55.00          99.19        85.00          100.00   70.00           99.96    80.00           100.00
+
+      15         60.00          99.64      100.00          100.00    0.00           0.00        80.00          100.00   50.00           98.37    80.00           100.00
+
+      16         50.00          98.37       60.00          99.64    50.00          98.37        90.00          100.00    0.00            0.00    90.00           100.00
+
+      17         65.00          99.86       20.00          71.83    45.00          97.02        75.00          99.99    60.00           99.64    85.00           100.00
+
+      18          0.00           0.00       70.00          99.96    60.00          99.64        80.00          100.00   35.00           91.70    75.00           99.99
+
+      19         30.00          87.09       50.00          98.37    30.00          87.09        75.00          99.99    45.00           97.02    55.00           99.19
+
+      20         30.00          87.09       30.00          87.09    40.00          94.89        45.00          97.02     0.00            0.00    55.00           99.19
+
+      21          0.00           0.00       20.00          71.83    25.00          80.63        35.00          91.70    15.00           60.09    45.00           97.02
+
+      22         20.00          71.83       40.00          94.89    25.00          80.63        0.00            0.00     0.00            0.00    30.00           87.09
+
+      23          0.00           0.00       0.00            0.00     0.00           0.00        30.00          87.09     0.00            0.00    30.00           87.09
+
+      Avg        44.35          81.30       45.00          83.80    53.26          87.79        63.26          93.61    55.22           75.93    82.39           98.68
+
+ Succ.No.                 20                        21                       21                         22                       18                       23
+
+  Time                   3.72                       2.91                     5.1                        2.55                     2.90                     2.01
+注：GPT-4o*表示单独使用的 GPT-4o 模型，其余模型均结合 SimulatorGen 框架进行评估， T ime 表示对 n 次实验中成功生成的 23 个组件的平均运行时
+间之和，单位为小时。黑体数值表示最优值。
+
+
+
+能，体现出一定的通用性与适配能力。                                                                               2）SimulatorGen w/o Analyst。 移 除 Analyst 模 块 ，
+6.2        RQ2                                                                              即禁用基于 RAG 的模拟器组件库以及任务分解功能
+       为了探究提示词设计与反馈策略对代码生成准                                                                 后， 性 能 相 较 于 SimulatorGen 明 显 下 降 ： Pass@1 下 降
+确性的影响，本文开展了消融实验，本文评估了 4 种                                                                   10.43 个 百 分 点 ， Pass@5 下 降 2.20 个 百 分 点 ， Analyst
+消融设置，其结果如表 4 所示。                                                                            模块对高难度任务的影响更为显著。这一结果显示
+       1）SimulatorGen w/o Tester。为评估 Tester 模块的                                             结构化 CoT 提示和 RAG 策略的重要性。
+贡献，在 SimulatorGen 中移除了测试反馈模块。如表 4                                                               3）SimulatorGen w/o RAG。在保持其他模块不变
+所示，代码生成准确率出现显著下降，其中 Pass@1 下                                                                的情况下，仅移除 RAG 检索机制，会导致性能相对于
+降了 13.26 个百分点， Pass@5 下降了 12.37 个百分点，                                                       SimulatorGen 下降：Pass@1 降低 8.04 个百分点，Pass@5
+该 模 块 的 作 用 在 高 难 度 任 务 上 更 为 显 著 。 这 表 明，                                                  降低 1.04 个百分点，同时 RAG 模块对中高难度任务
+迭代式测试反馈机制能够有效提升 LLM 的代码生成                                                                   的影响更为显著。这表明基于 RAG 的检索在提升代
+准确性。                                                                                        码 Pass@1 方面有明显优势。
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                                                                          13
+
+
+                                                Table 4    Ablation Study of SimulatorGen
+                                                        表 4 SimulatorGen 的消融实验                                                                             %
+                                         低难度                          中难度                              高难度                                  平均
+               模型
+                                Pass@1         Pass@5        Pass@1         Pass@5         Pass@1             Pass@5             Pass@1          Pass@5
+
+             GPT-4o             78.75          87.48         69.29          99.73           19.38             43.56               55.22          75.93
+
+      SimulatorGen w/o Tester   93.13          100.00        73.57          85.60           41.25             73.25               69.13          86.31
+
+  SimulatorGen w/o Analyst      96.88          100.00        76.43          97.12           43.13             92.39               71.96          96.48
+
+      SimulatorGen w/o RAG      91.25          100.00        85.71          100.00          47.50             93.23               74.35          97.64
+
+           SimulatorGen         97.50          100.00        92.86          100.00          58.13             96.20               82.39          98.68
+
+           相对提升/%               23.81          14.31         34.02           0.27           199.95            120.84              49.20          29.96
+注：最后一行报告 SimulatorGen 相对于 GPT-4o 在各难度级别上的提升百分点。“w/o”表示变量不包含指定模块。
+
+
+        4）GPT-4o。 在 该 实 验 中 ， 移 除 了 上 述 所 有 组 件 ，                       HBM2 DRAM 模块构成，每个模块的带宽为 256 GB/s。
+仅评估 GPT-4o 的原始性能。如表 4 所示，其性能相                                                   此外，为每个组件分配了能量与面积模型，以支
+较于 SimulatorGen 大 幅 下 降 ： Pass@1 下 降 27.17 个 百                          持 精 确的 PPA 评 估 。 鉴 于 模 拟 器 的 面 积 主 要 由 全
+分点，Pass@5 下降 22.75 个百分点，同时该性能差距                                         局 缓 冲 区的 SRAM 结 构 所 主 导 ， 将 模 拟 器 的 面 积 固
+                                                                        定 为 2.4 × 106 μm 。 随 后 ， 在 4 个 具 有 代 表 性 的 模 型
+                                                                                                   2
+在高难度任务中最为显著。这些结果进一步强调了
+各组件在提升代码准确性方面的重要作用。                                                     上， 对 SimulatorGen 构 建 的 模 拟 器 与 STONNE 进 行
+        RQ2 的回答：实验结果表明，将结构化的 CoT 提                                      了 延 迟（latency）、 能 量 （energy）以 及 能 量 -延 迟 乘 积
+                                                                                                                                                         [46]
+示、基于模拟器库的 RAG 策略以及迭代式测试反馈                                               （EDP）的 对 比 分 析 ， 这 4 个 模 型 分 别 为 AlexNet 、
+                                                                                           [47]                 [32]                 [33]
+机制相结合，在提升 SimulatorGen 生成代码的准确性                                         MobileNetV1 、ResNet50                          和 VGG16 。
+方 面 发 挥 了 关 键 作 用 。 随 着 任 务 复 杂 度 的 提 升， 各                                      如表 5 所示，在基于 TPU 和 MAERI 架构分别执
+模 块 的 作 用 愈 发 明 显 。 在 低 难 度 任 务 中， 基 础 模 型                              行 4 层神经网络模拟时，SimulatorGen 生成的模拟器
+                                                                                                               [6]
+已 具 备 一 定 的 生 成 能 力， 各 模 块 带 来 的 增 益 相 对 有                              与基于 RTL 的参考实现 在执行周期数上的误差在
+限；而在中/高难度任务中，结构化提示、外部知识支                                                7% 以 内 ， 整 体 上 表 现 出 较 高 的 一 致 性 。 其 中 M、 N、
+                                                                                                                                     [48]
+持 和 迭 代 反 馈 机 制 共 同 作 用， 提 升 了 代 码 生 成 的 成                              K 值表示矩阵乘（GEMM）的维度参数 。
+功率。                                                                             在延迟方面，如表 6 和表 7 所示，SimulatorGen 构
+6.3     RQ3                                                             建 的 模 拟 器与 STONNE 的 结 果 高 度 一 致 ， TPU 架 构
+        实验表明，直接以端到端方式要求 LLM 生成完                                         和 MAERI 架构模拟器误差在 1%~4%，表明其具有较
+全 可 运 行 的 模 拟 器 具 有 较 高 难 度 。 在 此 基 础 上， 本                              强的准确性与稳定性。在能量方面，如表 8 和表 9 所
+文利用 SimulatorGen 成功生成各个组件，构建组装智                                         示，SimulatorGen 在 4 个模型上的能量结果均略低于
+能体，引导模型对组件进行迭代式互连，在组装过程
+                                                                            Table 5   Latency and Its Errors Comparison Between RTL
+中 逐 步 解 决 接 口 不 匹 配 与 集 成 问 题， 最 终 成 功 构 建                                            and SimulatorGen on TPU and MAERI Layers
+出 完 整 可 运 行的 TPU 和 MAERI 架 构 的 模 拟 器 。 其                                    表 5 比 较 RTL 和 SimulatorGen 在 TPU 和 MAERI 层 上
+中， TPU 架 构 模 拟 器 代 码 规 模 为 2 385 行 ， MAERI 架                                         的模拟延迟与其误差
+
+构模拟器代码规模为 6 207 行。                                                                                                            延迟/cycle
+                                                                             层名称       M          N      K                                        误差/%
+        在 TPU 架 构 模 拟 器 中 ， 采 用 了 weight-stationary                                                                    RTL      SimulatorGen
+
+数据流，并配置了一个 16 × 16 的 PE 阵列。片上网络                                              TPU1      16         16     32            66            68            3.03
+
+（NoC）由 点 到 点 分 发 网 络 、 线 性 乘 法 器 网 络 和 线 性                                   TPU2      16         16     16            50            52            4.00
+
+归 约 网 络 组 成 。在 MAERI 架 构 模 拟 器 中 ， PE 配 置                                    TPU3      32         32     16            200           208           4.00
+
+为 256 个并行计算单元，由 256 个乘法器与 256 个加法                                            TPU4      64         64     32          1 056          1 008          4.55
+
+                                                                            MAERI1     6          25     54          1 338          1 356          1.35
+器组成，片上网络由增强型归约树网络、线性乘法器
+                                                                            MAERI2     20         25    180          16 120        15 006          6.91
+网 络 以 及 采用 Benes 拓 扑 的 分 发 网 络 组 成 。 全
+                                                                            MAERI3     6          400    54          26 178        25 923          0.97
+局缓冲区配置为 108 KB，片外存储由 2 个 512 MB 的
+ 14                                                                                                     计算机研究与发展                      2026，63 （6）
+
+
+STONNE，TPU 架构模拟器误差为 1%~3%，MAERI 架                                     失 败 的 原 因 进 行 了 分 类， 集 成 的 主 要 挑 战 来 源 于 跨
+构模拟器误差在 1%~6%，说明在保持延迟精度的同                                             组 件 交 互 问 题， 包 括 接 口 不 匹 配 、 数 据 格 式 不 一 致 、
+时，其能量估计与参考结果仍然较为接近。                                                   执 行 流 程 错 误 以 及 性 能 指 标 汇 总 不 完 整 等 。 其 中，
+                                                                      接口不匹配主要表现为函数签名不一致、字段命名
+ Table 6    Latency and Its Errors Comparison Between
+                                                                      差 异， 以 及 时 序 模 型 不 统 一 等 情 况 。 这 些 问 题 通 常
+            SimulatorGen and STONNE on TPU Architecture
+                                                                      需要通过多轮迭代对组件接口与执行逻辑进行对齐
+ 表 6 SimulatorGen 与 STONNE 在 TPU 架构上的延迟与其
+        误差对比                                                          与修正。
+
+                                   延迟/cycle                            Table 9       Energy and Its Errors Comparison Between
+      DNN 模型                                                  误差/%
+                     SimulatorGen             STONNE                                 SimulatorGen        and      STONNE             on       MAERI
+      AlexNet         6.23E+06                6.43E+06         3.18                  Architecture
+  MobileNetV1         6.15E+06                6.23E+06         1.32    表 9 SimulatorGen 与 STONNE 在 MAERI 架构上的能量
+      ResNet50        1.75E+07                1.79E+07         2.26            与其误差对比
+
+      VGG16           6.74E+07                6.99E+07         3.50                                           能量/PJ
+                                                                            DNN 模型                                                            误差/%
+                                                                                                 SimulatorGen          STONNE
+
+ Table 7    Latency and Its Errors Comparison Between                       AlexNet                 112.69                116.88                   3.58
+            SimulatorGen       and      STONNE           on   MAERI      MobileNetV1                112.75                119.81                   5.89
+            Architecture                                                    ResNet50                788.73                797.65                   1.12
+ 表 7 SimulatorGen 与 STONNE 在 MAERI 架构上的延迟                                   VGG16                  3 142.70               3 194.09                 1.61
+        与其误差对比
+
+                                   延迟/cycle                            Table 10        Comparison of SimulatorGen and STONNE for
+      DNN 模型                                                  误差/%
+                     SimulatorGen             STONNE                                   Simulation EDP and Error Across Different DNN
+      AlexNet         3.54E+06                3.69E+06         3.89                    models
+
+  MobileNetV1         2.73E+06                2.70E+06         1.09    表 10 SimulatorGen 与 STONNE 在不同 DNN 模型上的仿
+                                                                                    真 EDP 及其误差对比
+      ResNet50        1.59E+07                1.64E+07         3.14
+
+      VGG16           6.14E+07                6.12E+07         0.30                                EDP/（PJ·cycle）
+                                                                                                                                              误差/%
+                                                                       DNN 模型            SimulatorGen               STONNE
+
+ Table 8    Energy and Its Errors Comparison Between                                     TPU      MAERI          TPU        MAERI           TPU MAERI
+
+            SimulatorGen and STONNE on TPU Architecture                 AlexNet        6.38E+8    3.99E+8       6.70E+8     4.31E+8         4.69     7.34
+ 表 8 SimulatorGen 与 STONNE 在 TPU 架构上的能量与其                             MobileNetV1 4.75E+8         3.07E+8       4.94E+8     3.23E+8         3.68     4.87
+        误差对比                                                            ResNet50       8.86E+9 1.26E+10         9.19E+9 1.31E+10            3.60     4.23
+                                    能量/PJ                               VGG16          1.36E+11 1.93E+11 1.44E+11 1.95E+11                  5.43     1.31
+      DNN 模型                                                  误差/%
+                     SimulatorGen             STONNE
+
+      AlexNet           102.49                 104.11          1.56
+                                                                            RQ3 的回答：由 SimulatorGen 生成的 TPU 和 MAERI
+
+  MobileNetV1              77.34               79.24           2.40
+                                                                      架 构 模 拟 器 在 精 度 上 接 近 人 工 实 现： 在 AlexNet、
+      ResNet50          507.22                 514.24          1.37   MobileNetV1、 ResNet50 和 VGG16 四 个 模 型 上 ， 其 延
+      VGG16            2 022.81               2 064.09         2.00   迟 误 差 控 制在 7% 以 内 ， 能 量 误 差 在 6% 以 内 ， EDP
+                                                                      相对误差为 1.31%~7.34%。结果表明 SimulatorGen 生
+      如表 10 所 示 ， 当 将 能 量 与 延 迟 结 合 为 EDP，                            成的模拟器具备准确建模真实加速器行为的潜力。
+SimulatorGen 在不同模型上的 EDP 结果均低于 STO-                                   6.4    RQ4
+NNE， 相 对 误 差 范 围 为 1.31%~7.34%。 总 体 而 言 ，                                   首 先 以 自 然 语 言 方 式对 SCALE-Sim 的 模 块 连
+                                                                                                                                      [8]
+
+
+SimulatorGen 构建的模拟器在延迟和能量 2 个维度上                                      接 关 系 进 行 系 统 性 抽 象 与 总 结， 同 时 将 Simulator-
+均与 STONNE 保持高度一致，在 EDP 上接近，体现良                                        Coder
+                                                                             [17]
+                                                                                    中 归 纳 的 138 个 函 数 级 需 求 以 及 DNN 加 速
+好的跨模型泛化和准确的评估能力。                                                      器架构规格说明作为 SimulatorGen 的任务。
+      在 系 统 级 组 装 过 程 中， 组 装 智 能 体 最 大 尝 试 次                                实 验 结 果 表 明， SimulatorGen 能 够 自 动 构 建 与
+数设为 20，实际平均尝试次数约为 16。本文对组装                                            SCALE-Sim 在功能与时序行为上等价的完整模拟器。
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                                                              15
+
+
+如表 11 所 示 ， 在 SimulatorCoder 原 实 验 所 采 用 的                              词模板以降低方差。其次，LLM 的能力发展迅速，本
+ResNet50、 Faster R-CNN、 Transformer 等 8 个 代 表 性                         文报告的结果仅反映了特定时间点下模型的性能。
+模 型 上， SimulatorGen 与 SCALE-Sim 的 延 迟 误 差 均                             同 时， 对 生 成 代 码 进 行 形 式 化 验 证 仍 然 具 有 较 大 挑
+为 0%； 而 SimulatorCoder 与 SCALE-Sim 的 延 迟 误 差                            战 性 。 验 证 机 制 主 要 用 于 提 供 反 馈， 从 而 提 升 代 码
+为 0~1%。该结果表明，多智能体框架在系统级一致                                               正确性，并辅以对 LLM 生成代码的人工审查作为保
+性与周期级精度方面具备更强的稳定性。                                                      障。本文工作鼓励未来工作更加关注生成程序的语
+                                                                        义正确性，并探索更系统、更全面的形式化验证方法。
+    Table 11     Latency    and      Error    Comparison      Between
+                 SimulatorGen and SimulatorCoder
+    表 11 SimulatorGen 与 SimulatorCoder 的延迟与误差对比
+                                                                        8   结          论
+                                       延迟/cycle
+     DNN 模型                                                    误差/%          本 文 提 出了 SimulatorGen， 一 种 面 向 DNN 加 速
+                       SimulatorCoder         SimulatorGen
+                                                                        器模拟器开发的多智能体、LLM 驱动框架。Simulator-
+        NCF                552 624                552 616      <0.01
+
+    AlphaGoZero            416 502                416 494      <0.01
+                                                                        Gen 协 同 分 析 、 编 码 、 测 试 和 组 装 4 类 智 能 体 ， 并 利
+
+     MobileNet             1 333 481              1 338 519     0.38
+                                                                        用精心构建的模拟器库实现了检索增强的知识对齐、
+
+    DeepSpeech2            2 198 754              2 200 287     0.07
+                                                                        领 域 引 导的 CoT 提 示 构 建 。 结 合 单 元 测 试 与 Z3 属
+    Faster R-CNN           4 329 971              4 367 574     0.86    性检查的反馈驱动测试闭环以及面向系统级模拟执
+      YOLOv2               2 556 983              2 556 974    <0.01    行的自动组件组装，在保持工程可行性的同时，持续
+      ResNet50             4 396 573              4 434 168     0.85    提升生成代码的语义正确性。在包含 23 个生成任务
+     Transformer           4 871 474              4 870 117     0.03    的基准评测中，SimulatorGen 取得了 Pass@1 = 82.39%
+                                                                        的 成 绩， 成 功 解 决 的 任 务 数 量 最 多 ， SimulatorGen 构
+       RQ4 的 回 答 ： 单 智 能 体 方 法 SimulatorCoder 主 要                       建了 TPU 架构和 MAERI 架构的模拟器，在 4 个网络
+面向模块级替换，而多智能体框架 SimulatorGen 能够                                         上的实验结果表明，其周期级行为、能量和延迟指标
+在 统 一 抽 象 架 构 下 完 成 系 统 级 组 装， 具 备 完 整 模 拟                              与人工构建的实现高度一致。相比于进行模块替换
+器的自动生成能力。从定量结果来看，SimulatorGen                                           的单智能体方法 SimulatorCoder，SimulatorGen 具备完
+的 延 迟 误 差 低于 SimulatorCoder， 进 一 步 验 证 了 多 智                            整模拟器的自动生成能力。
+能体协同机制在处理复杂系统构建任务时的优势。
+
+                                                                             作者贡献声明：夏雨欢负责方案整体设计并撰
+7     讨            论
+                                                                        写 论 文； 李 暾 提 出 指 导 意 见 和 整 体 思 路 ； 周 贤 发 、 赵
+                                                                        文博负责部分实验；张瑞瑜修改论文；郭阳提出指导
+       1） 通用性。本文的框架在一定程度上具有通用
+                                                                        意见。
+性，其通过抽象系统架构、模块组件划分和提取规范
+功 能 描 述， 并 借 助 多 智 能 体 协 同 完 成 组 件 生 成 与 系
+                                                                                                参      考      文      献
+统 组 装 。 基 于 该 方 法 论， 可 进 一 步 扩 展 至 更 广 泛 的
+应用场景，包括支持多种异构加速器架构（如 Chiplet                                            ［1］ Wang Haozhao, Qu Zhihao, Zhou Qihua, et al. A comprehensive
+架 构、 SIGMA 等 灵 活 可 重 构 架 构 ）以 及 更 加 多 样 化                                     survey on training acceleration for large machine learning models in
+
+的算子类型（如稀疏矩阵乘、非规则计算等），从而在                                                      IoT[J]. IEEE Internet of Things Journal, 2022, 9(2): 939−963
+                                                                        ［2］ Genc H N, Kim H, Ganesh P, et al. Stellar: An automated design
+多 架 构、 多 算 子 条 件 下 验 证 其 有 效 性 与 泛 化 能 力 。
+                                                                              framework for dense and sparse spatial accelerators[C]//Proc of the
+本 文 方 法 可 扩 展 至 其 他 领 域 的 特 定 开 发 任 务， 但 其
+                                                                              57th IEEE/ACM Int Symp on Microarchitecture. Piscataway, NJ:
+可迁移性的实际程度最终取决于开发者在实现层面                                                        IEEE, 2024: 409−422
+的选择。                                                                    ［3］ Sun Mijing, Xu Li, Li Zhenmin, et al. Simulators for deep neural
+                                                                              network accelerator design and analysis: A brief review[C]//Proc of
+       2）有效性威胁。实验同样面临潜在的有效性威
+                                                                              the 15th IEEE Int Conf on Anti-counterfeiting, Security, and
+胁。首先，LLM 的输出具有随机性，并且对检索到的
+                                                                              Identification. Piscataway, NJ: IEEE, 2021: 36−42
+知 识 以 及 提 示 词 较 为 敏 感 。 为 缓 解 这 一 问 题， 对 每                              ［4］ Wu Y N, Emer J S, Sze V. Accelergy: An architecture-level energy
+个任务进行 20 次独立生成，并采用部分固定的提示                                                     estimation methodology for accelerator designs[C]//Proc of the
+  16                                                                                                              计算机研究与发展                       2026，63 （6）
+
+
+        IEEE/ACM Int Conf on Computer-Aided Design. Piscataway, NJ:            ［19］ Wang Chong, Zhang Jian, Feng Yebo, et al. Teaching code LLMs to
+        IEEE, 2019: 1−8                                                                use autocompletion tools in repository-level code generation[J]. ACM
+ ［5］ Parashar A, Raina P, Shao Y S, et al. Timeloop: A systematic                      Transactions on Software Engineering and Methodology, 2025, 34(7):
+        approach to DNN accelerator evaluation[C]//Proc of the IEEE Int                1−27
+        Symp on Performance Analysis of Systems and Software. Piscataway,      ［20］ Zhang Huan, Cheng Wei, Wu Yuhan, et al. A pair programming
+        NJ: IEEE, 2019: 304−315                                                        framework for code generation via multi-plan exploration and
+ ［6］ Muñoz-Martínez F, Abellán J L, Acacio M E, et al. STONNE:                         feedback-driven refinement[C]//Proc of the 39th IEEE/ACM Int Conf
+        Enabling cycle-level microarchitectural simulation for DNN inference           on Automated Software Engineering. New York: ACM, 2024:
+        accelerators[C]//Proc of the IEEE Int Symp on Workload Characteri-             1319−1331
+        zation. Piscataway, NJ: IEEE, 2021: 201−213                            ［21］ Chang Kaiyan, Zhu Wenlong, Wang Kun, et al. A data-centric chip
+ ［7］ Krishnan G, Mandal S K, Pannala M, et al. SIAM: Chiplet-based                     design agent framework for verilog code generation[J]. ACM
+        scalable in-memory acceleration with mesh for deep neural                      Transactions on Design Automation of Electronic Systems, 2025,
+        networks[J]. ACM Transactions on Embedded Computing Systems,                   30(6): 1−26
+        2021, 20(5s): 1−24                                                     ［22］ Li Jia, Tao Chongyang, Li Jia, et al. Large language model-aware in-
+ ［8］ Raj R, Banerjee S, Chandra N, et al. SCALE-Sim V3: A modular                      context learning for code generation[J]. ACM Transactions on
+        cycle-accurate systolic accelerator simulator for end-to-end system            Software Engineering and Methodology, 2025, 34(7): 1−33
+        analysis[C]//Proc of the IEEE Int Symp on Performance Analysis of      ［23］ Lai Yao, Lee S, Chen Guojin, et al. AnalogCoder: Analog circuit
+        Systems and Software. Piscataway, NJ: IEEE, 2025: 186−200                      design via training-free code generation[C]//Proc of the 39th AAAI
+ ［9］ Xi S, Yao Yuan, Bhardwaj K, et al. SMAUG: End-to-end full-stack                   Conf on Artificial Intelligence. Palo Alto, CA: AAAI, 2025: 379−387
+        simulation infrastructure for deep learning workloads[J]. ACM          ［24］ He Junda, Treude C, Lo D. LLM-based multi-agent systems for
+        Transactions on Architecture and Code Optimization, 2020, 17(4):               software engineering: Literature review, vision, and the road
+        1−26                                                                           ahead[J].     ACM     Transactions    on   Software      Engineering   and
+［10］ Zhu Wenyao, Chen Yizhi, Lu Zhonghai. NoCDAS: A cycle-accurate                     Methodology, 2025, 34(5): 1−30
+        NoC-based deep neural network accelerator simulator[J]. ACM            ［25］ Lin Feng, Kim D J, Chen T-H. SOEN−101: Code generation by
+        Transactions on Modeling and Computer Simulation, 2025, 35(4):                 emulating software process models using large language model
+        1−24                                                                           agents[C]//Proc of the 47th IEEE/ACM Int Conf on Software
+［11］ Fu Yonggan, Zhang Yongan, Yu Zhongzhi, et al. GPT4AIGChip:                        Engineering. Piscataway, NJ: IEEE, 2025: 1527−1539
+        Towards next-generation AI accelerator design automation via large     ［26］ Dong Yihong, Jiang Xue, Jin Zhi, et al. Self-collaboration code
+        language models[C]//Proc of the IEEE/ACM Int Conf on Computer-                 generation via ChatGPT[J]. ACM Transactions on Software
+        Aided Design. Piscataway, NJ: IEEE, 2023: 1−9                                  Engineering and Methodology, 2024, 33(7): 1−38
+［12］ Vungarala D, Elbtity M E, Pandit K, et al. TPU-Gen: LLM-driven            ［27］ Zhai Jianwang, Ling Zichao, Bai Chen, et al. Machine learning for
+        custom tensor processing unit generator[C]//Proc of the IEEE Int               microarchitecture power modeling and design space exploration: A
+        Conf on LLM-Aided Design. Piscataway, NJ: IEEE, 2025: 1−8                      survey[J]. Journal of Computer Research and Development, 2024,
+［13］ Jiang Juyong, Wang Fan, Shen Jiasi, et al. A survey on large language             61(6): 1351−1369
+        models for code generation[J]. arXiv preprint, arXiv: 2406.00515,              （翟建旺，凌梓超，白晨，等. 机器学习辅助微架构功耗建模和设计
+        2024                                                                           空间探索综述[J]. 计算机研究与发展，2024，61（6）：1351−1369）
+［14］ Li Jia, Li Ge, Li Yongmin, et al. Structured chain-of-thought             ［28］ Lin Hanyue, Wu Jingya, Lu Wenyan, et al. Neptune: A framework for
+        prompting for code generation[J]. ACM Transactions on Software                 generic     network   processor      microarchitecture     modeling    and
+        Engineering and Methodology, 2025, 34(2): 1−23                                 performance simulation[J]. Journal of Computer Research and
+［15］ Yang Zezhou, Chen Sirong, Gao Cuiyun, et al. An empirical study of                Development, 2025, 62(5): 1091−1107
+        retrieval-augmented code generation: Challenges and opportuni-                 （林涵越，吴婧雅，卢文岩，等. Neptune：一种通用网络处理器微结构
+        ties[J]. ACM Transactions on Software Engineering and Methodo-                 模 拟 和 性 能 仿 真 框 架[J]. 计 算 机 研 究 与 发 展 ， 2025， 62（5）：
+        logy, 2025, 34(7): 1−28                                                        1091−1107）
+［16］ Li Guopeng, Wu Ruiqi, Tan Haisheng, et al. A plan reuse mechanism         ［29］ Lübeck K, Jung A L F, Wedlich F, et al. Automatic generation of fast
+        for large language model-driven agent[J]. Journal of Computer                  and accurate performance models for deep neural network
+        Research and Development, 2024, 61(11): 2706−2720 (in Chinese)                 accelerators[J]. ACM Transactions on Embedded Computing
+        （李国鹏，吴瑞骐，谈海生，等. 面向大语言模型驱动的智能体的计                                                Systems, 2025, 24(2): 1−32
+        划复用机制[J]. 计算机研究与发展，2024，61（11）：2706−2720）                              ［30］ Nayak N, Odemuyiwa T O, Ugare S, et al. TeAAL: A declarative
+［17］ Xia Yuhuan, Li Tun, Zhou Hongji, et al. SimulatorCoder: DNN                       framework for modeling sparse tensor accelerators (abstract)[C]//Proc
+        accelerator simulator code generation and optimization via large               of the 2024 ACM Workshop on Highlights of Parallel Computing.
+        language models[J]. arXiv preprint, arXiv: 2602.17169, 2026                    New York: ACM, 2024: 39−40
+［18］ Qian Chen, Xie Zihao, Wang Yifei, et al. Scaling large language           ［31］ Mhatre S C, Chandran P. Automatic generation of simulators for
+        model-based multi-agent collaboration[J]. arXiv preprint, arXiv:               processors enhanced for security in virtualization[J]. IEEE Access,
+        2406.07155, 2024                                                               2025, 13: 11930−11943
+夏雨欢等：SimulatorGen：基于大语言模型多智能体的 DNN 加速器模拟器自动生成框架                                                                                                  17
+
+［32］ He Kaiming, Zhang Xiangyu, Ren Shaoqing, et al. Deep residual                  Automatically generating high-performance matrix multiplication
+        learning for image recognition[J]. arXiv preprint, arXiv: 1512.03385,       code by exploiting large language models[C]//Proc of the 39th AAAI
+        2015                                                                        Conf on Artificial Intelligence. Palo Alto, CA: AAAI, 2025: 22982−
+［33］ Simonyan K, Zisserman A. Very deep convolutional networks for                  22990
+        large-scale image recognition[J]. arXiv preprint arXiv: 1409.1556,
+        2015                                                                                   Xia Yuhuan, born in 2000. PhD candidate. Her
+［34］ Kwon H, Samajdar A, Krishna T. MAERI: Enabling flexible dataflow                          main research interest includes DNN accelerator
+        mapping over DNN accelerators via reconfigurable interconn-
+                                                                                               simulators.
+        ects[C]//Proc of the 23rd Int Conf on Architectural Support for
+                                                                                               夏 雨 欢, 2000 年 生 。 博 士 研 究 生 。 主 要 研 究
+        Programming Languages and Operating Systems. New York: ACM,
+        2018: 461−475                                                                          方向为 DNN 加速器模拟器。
+［35］ Jouppi N P, Young C, Patil N, et al. In-datacenter performance
+        analysis of a tensor processing unit[C]//Proc of the 44th Annual Int                   Li Tun, born in 1974. Professor, PhD supervisor.
+        Symp on Computer Architecture. New York: ACM, 2017: 1−12                               Senior member of CCF. His main research interest
+［36］ Chen Jianlv, Xiao Shitao, Zhang Peitian, et al. M3-Embedding: Multi-
+                                                                                               includes electronic design automation.
+        linguality, multi-functionality, multi-granularity text embeddings
+                                                                                               李     暾, 1974 年 生 。 教 授 ， 博 士 生 导 师 。 CCF
+        through   self-knowledge    distillation[J].    arXiv   preprint   arXiv:
+        2402.03216, 2025                                                                       高级会员。主要研究方向为电子设计自动
+［37］ Liu Y, Le-Cong T, Widyasari R, et al. Refining ChatGPT-generated                          化。
+        code: Characterizing and mitigating code quality issues[J]. ACM
+        Transactions on Software Engineering and Methodology, 2024, 33(5):                     Zhou Xianfa, born in 2001. Master candidate. His
+        1−26                                                                                   main research interest includes the mapping of
+［38］ de Moura L, Bjørner N. Z3: An efficient SMT solver[C]//Proc of the
+                                                                                               neural networks on in-memory accelerators.
+        14th Int Conf on Tools and Algorithms for the Construction and
+                                                                                               周 贤 发, 2001 年 生 。 硕 士 研 究 生 。 主 要 研 究
+        Analysis of Systems. Berlin: Springer, 2008: 337−340
+［39］ Li Jia, Li Yongmin, Li Ge, et al. SKCODER: A sketch-based approach
+                                                                                               方向为神经网络在存内加速器上的映射。
+        for automatic code generation[C]//Proc of the 45th Int Conf on
+        Software Engineering. Piscataway, NJ: IEEE, 2023: 2124−2135                            Zhao Wenbo, born in 1999. PhD candidate. His
+［40］ OpenAI, Hurst A, Lerer A, et al. GPT-4o system card[J]. arXiv                             main research interest includes fuzz testing in
+        preprint, arXiv: 2410.21276, 2024                                                      hardware development.
+［41］ OpenAI. Introducing GPT-5.2[EB/OL]. (2025-12-11) [2025-12-20]
+                                                                                               赵 文 博, 1999 年 生 。 博 士 研 究 生 。 主 要 研 究
+        https://openai.com/ index/introducing-gpt-5-2
+                                                                                               方向为硬件开发的模糊测试。
+［42］ Yang An, Li Anfeng, Yang Baosong, et al. Qwen3 technical report[J].
+        arXiv preprint, arXiv: 2505.09388, 2025
+［43］ Comanici G, Bieber E, Schaekermann M, et al. Gemini 2.5: Pushing                          Zhang Ruiyu, born in 2000. PhD candidate. Her
+        the frontier with advanced reasoning, multimodality, long context, and                 main research interest includes electronic design
+        next generation agentic capabilities[J]. arXiv preprint, arXiv:                        automation.
+        2507.06261, 2025
+                                                                                               张 瑞 瑜, 2000 年 生 。 博 士 研 究 生 。 主 要 研 究
+［44］ Anthropic. Claude-Sonnet-4[EB/OL]. (2025-9-29) [2025-12-29]
+                                                                                               方向为电子设计自动化。
+        https://www.anthropic.com/claude/sonnet
+［45］ Liu Aixin, Feng Bei, Xue Bing, et al. DeepSeek-V3 technical
+        report[J]. arXiv preprint arXiv: 2412.19437, 2024                                      Guo Yang, born in 1971. Professor, PhD
+［46］ Krizhevsky A, Sutskever I, Hinton G E. ImageNet classification with                       supervisor. Senior member of CCF. His main
+        deep convolutional neural networks[J]. Communications of the ACM,                      research      interests   include     very-large-scale
+        2017, 60(6): 84−90
+                                                                                               integration (VLSI) and processor architecture.
+［47］ Howard A G, Zhu Menglong, Chen Bo, et al. MobileNets: Efficient
+                                                                                               郭     阳, 1971 年 生 。 研 究 员 ， 博 士 生 导 师 。
+        convolutional neural networks for mobile vision applications[J].
+        arXiv preprint, arXiv: 1704.04861
+                                                                                               CCF 高级会员。主要研究方向为超大规模集
+［48］ Zhou Qirui, Wen Yuanbo, Chen Ruizhi, et al. QiMeng-GEMM:                                  成电路、处理器体系结构。
+

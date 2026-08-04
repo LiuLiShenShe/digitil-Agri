@@ -304,6 +304,8 @@ func (s *SemanticService) callSemanticLLM(req vo.SemanticBuildRequest, context v
 	}
 	if isDeepSeekLLM() {
 		payload["thinking"] = map[string]string{"type": "disabled"}
+	} else if isStepFunLLM() {
+		payload["reasoning_effort"] = "low"
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -327,8 +329,10 @@ func (s *SemanticService) callSemanticLLM(req vo.SemanticBuildRequest, context v
 	var result struct {
 		Choices []struct {
 			Message struct {
-				Content string `json:"content"`
+				Content   string `json:"content"`
+				Reasoning string `json:"reasoning"`
 			} `json:"message"`
+			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
 		Error *struct {
 			Message string `json:"message"`
@@ -344,6 +348,13 @@ func (s *SemanticService) callSemanticLLM(req vo.SemanticBuildRequest, context v
 		return "", fmt.Errorf("LLM error status: %d", resp.StatusCode)
 	}
 	if len(result.Choices) == 0 || strings.TrimSpace(result.Choices[0].Message.Content) == "" {
+		if len(result.Choices) > 0 {
+			return "", fmt.Errorf(
+				"LLM content 为空，finish_reason=%s, reasoning_chars=%d",
+				result.Choices[0].FinishReason,
+				len(result.Choices[0].Message.Reasoning),
+			)
+		}
 		return "", fmt.Errorf("LLM 返回为空")
 	}
 	return strings.TrimSpace(result.Choices[0].Message.Content), nil
@@ -370,6 +381,14 @@ func isDeepSeekLLM() bool {
 		return false
 	}
 	return strings.Contains(strings.ToLower(config.AppConfig.LLM.BaseURL), "deepseek")
+}
+
+func isStepFunLLM() bool {
+	if config.AppConfig == nil {
+		return false
+	}
+	text := strings.ToLower(config.AppConfig.LLM.BaseURL + " " + config.AppConfig.LLM.Model)
+	return strings.Contains(text, "stepfun") || strings.HasPrefix(strings.ToLower(config.AppConfig.LLM.Model), "step-")
 }
 
 func isLLMTimeoutError(err error) bool {

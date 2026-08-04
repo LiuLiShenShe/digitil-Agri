@@ -98,6 +98,10 @@ func (m *einoOpenAIChatModel) Generate(ctx context.Context, input []*schema.Mess
 		MaxTokens:   common.MaxTokens,
 		Stream:      false,
 	}
+	if isStepFunLLM() && payload.MaxTokens != nil && *payload.MaxTokens < 8192 {
+		payload.MaxTokens = nil
+		payload.Thinking = map[string]string{"type": "low"}
+	}
 	if common.ToolChoice != nil {
 		payload.ToolChoice = toOpenAIToolChoice(*common.ToolChoice)
 	} else if len(payload.Tools) > 0 {
@@ -105,6 +109,8 @@ func (m *einoOpenAIChatModel) Generate(ctx context.Context, input []*schema.Mess
 	}
 	if isDeepSeekLLM() {
 		payload.Thinking = map[string]string{"type": "disabled"}
+	} else if isStepFunLLM() {
+		payload.Thinking = map[string]string{"type": "low"}
 	}
 
 	body, err := json.Marshal(payload)
@@ -153,6 +159,9 @@ func (m *einoOpenAIChatModel) Generate(ctx context.Context, input []*schema.Mess
 	}
 
 	choice := result.Choices[0]
+	if strings.TrimSpace(derefString(choice.Message.Content)) == "" {
+		return nil, fmt.Errorf("LLM content 为空，finish_reason=%s", choice.FinishReason)
+	}
 	msg := fromOpenAIMessage(choice.Message)
 	msg.ResponseMeta = &schema.ResponseMeta{FinishReason: choice.FinishReason}
 	if result.Usage != nil {
@@ -178,6 +187,13 @@ func newEinoRunContext(timeout time.Duration) (context.Context, context.CancelFu
 		timeout = 30 * time.Second
 	}
 	return context.WithTimeout(context.Background(), timeout)
+}
+
+func derefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func toOpenAIMessages(input []*schema.Message) []openAIChatMessage {

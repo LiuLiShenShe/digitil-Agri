@@ -1,0 +1,12 @@
+ 
+ 
+Table 8　Energy  and  Its  Errors  Comparison  Between
+SimulatorGen and STONNE on TPU Architecture
+表 8   SimulatorGen 与STONNE 在TPU 架构上的能量与其
+误差对比
+DNN 模型
+能量/PJ
+误差/%
+SimulatorGen
+STONNE
+ 

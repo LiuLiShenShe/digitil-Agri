@@ -1,0 +1,28 @@
+ID,组件,模块类型,描述,输入,输出,编码
+1,CollectionBus.cycle,Interconnect,"Executes one simulation
+cycle of the interconnect
+bus module…","collection_
+bus_lines...","CollectionBusLine
+sends data via
+output ports…","def cycle(self):
+…"
+2,"ASwitch.perform_
+operation_2_operands",Computing,"Performs a 2-input
+operation on left and right
+packages based on…","pck_left,
+pck_right…","returns a new
+DataPackage with
+the sum…","def
+perform_operation_
+2_operands…"
+3,"AccumulationBuffer.
+memory_connections",Storage,"Assigns output memory
+connections to each
+accumulator instance…","memory_
+connections…","assigns each
+accumulator its
+output connection
+…","def
+memory_connections
+…"
+…,…,…,…,…,…,…

@@ -1,0 +1,195 @@
+{
+  "version": "v2",
+  "type": "object",
+  "required": [
+    "taskId",
+    "method",
+    "success",
+    "objects",
+    "relations",
+    "bindings",
+    "checkedRules",
+    "violatedRules",
+    "traceSteps",
+    "toolEvidence",
+    "elapsedMs",
+    "notes"
+  ],
+  "properties": {
+    "taskId": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "success": {
+      "type": "boolean"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "area": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "subject",
+          "predicate",
+          "object"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "subject",
+          "target",
+          "type"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "checkedRules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "violatedRules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "traceSteps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "traceType",
+          "agent",
+          "tool",
+          "inputSummary",
+          "outputSummary",
+          "status"
+        ],
+        "properties": {
+          "traceType": {
+            "type": "string",
+            "enum": [
+              "declared",
+              "executed"
+            ]
+          },
+          "agent": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string"
+          },
+          "inputSummary": {
+            "type": "string"
+          },
+          "outputSummary": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "evidenceId": {
+            "type": "string"
+          },
+          "callId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "toolEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidenceId": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string"
+          },
+          "traceType": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "elapsedMs": {
+      "type": "integer"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

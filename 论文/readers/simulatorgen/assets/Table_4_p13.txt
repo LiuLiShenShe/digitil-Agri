@@ -1,0 +1,35 @@
+ 
+Table 4　Ablation S
+ 
+表 4   Simulator
+模型
+低难度
+中
+Pass@1
+Pass@5
+Pass@1
+GPT-4o
+78.75
+87.48
+69.29
+SimulatorGen w/o Tester
+93.13
+100.00
+73.57
+SimulatorGen w/o Analyst
+96.88
+100.00
+76.43
+SimulatorGen w/o RAG
+91.25
+100.00
+85.71
+SimulatorGen
+97.50
+100.00
+92.86
+相对提升/%
+23.81
+14.31
+34.02
+注：最后一行报告SimulatorGen 相对于GPT-4o 在各难度级别上的提升百分
