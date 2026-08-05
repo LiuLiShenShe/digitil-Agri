@@ -32,3 +32,8 @@ Thumbs.db
 
 # Test artifacts
 test-results/
+
+# Secrets — never commit real values
+.env
+.env.*
+!.env.example

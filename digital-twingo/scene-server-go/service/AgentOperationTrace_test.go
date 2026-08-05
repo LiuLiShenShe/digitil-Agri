@@ -151,6 +151,12 @@ func TestAgentOperationTraceExpandedSchemaDisplayCoverageAndFallback(t *testing.
 	if !traceHasFallbackStep(trace) {
 		t.Fatalf("expected at least one fallback step in %#v", trace.Steps)
 	}
+	// When the LLM is unconfigured in the test env, tryRunDeepAgents returns (false, nil):
+	// no agent failure, just a clean deterministic fallback. AgentFailed is reserved for
+	// a CONFIGURED LLM whose DeepAgents call errors (asserted in the Eino model test).
+	if trace.AgentFailed {
+		t.Fatalf("LLM unconfigured -> expected agentFailed=false, got %#v", trace)
+	}
 }
 
 func TestAgentOperationTraceSanitizesSensitivePayloads(t *testing.T) {

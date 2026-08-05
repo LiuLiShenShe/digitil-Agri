@@ -1,0 +1,147 @@
+{
+  "task_id": "T29-reg",
+  "task_type": "memory_query",
+  "difficulty": "medium",
+  "prompt": "查询摄像头 C02 的观测覆盖对象、最近一次巡检事件和是否覆盖第 3 行番茄。",
+  "annotation_version": "v2",
+  "review_status": "pending",
+  "initial_state": {
+    "objects": [
+      {
+        "id": "C02",
+        "type": "Camera",
+        "observes": [
+          "Row3",
+          "Row4"
+        ],
+        "fov": {
+          "degrees": 45.0
+        },
+        "pose": {
+          "position": [
+            1.0,
+            2.5,
+            3.0
+          ]
+        }
+      },
+      {
+        "id": "cropRow_03",
+        "type": "CropRow",
+        "label": "Row 3",
+        "tomato_variety": "Tomato-Gin",
+        "plant_count": 3
+      },
+      {
+        "id": "cropRow_04",
+        "type": "CropRow",
+        "label": "Row 4",
+        "tomato_variety": "Tomato-Gin",
+        "plant_count": 3
+      }
+    ],
+    "events": [
+      {
+        "event_id": "evt-C02-inspect-07",
+        "object_id": "C02",
+        "event_type": "inspection",
+        "timestamp": "2026-07-06T11:00:00+08:00",
+        "payload": {
+          "coverage": [
+            "Row3",
+            "Row4"
+          ],
+          "plants_detected": 6
+        }
+      }
+    ],
+    "timeseries_records": [],
+    "daily_reports": []
+  },
+  "query_spec": {
+    "target_object_ids": [
+      "C02"
+    ],
+    "metrics": [],
+    "start_time": "2026-07-01T00:00:00+08:00",
+    "end_time": "2026-07-07T23:59:59+08:00",
+    "aggregations": [
+      "latest"
+    ],
+    "required_units": {}
+  },
+  "expected_answer": {
+    "normalized_values": {},
+    "events": [
+      {
+        "event_id": "evt-C02-inspect-07",
+        "object_id": "C02",
+        "event_type": "inspection",
+        "timestamp": "2026-07-06T11:00:00+08:00",
+        "payload": {
+          "coverage": [
+            "Row3",
+            "Row4"
+          ],
+          "plants_detected": 6
+        }
+      }
+    ],
+    "summary_facts": [
+      "observes=Row3,Row4",
+      "covers_row3=true",
+      "covers_row4=true",
+      "last_inspection=evt-C02-inspect-07"
+    ]
+  },
+  "expected_evidence": {
+    "record_ids": [],
+    "event_ids": [
+      "evt-C02-inspect-07"
+    ]
+  },
+  "expected_outcome": {
+    "answer": {
+      "normalized_values": {},
+      "events": [
+        {
+          "event_id": "evt-C02-inspect-07",
+          "object_id": "C02",
+          "event_type": "inspection",
+          "timestamp": "2026-07-06T11:00:00+08:00",
+          "payload": {
+            "coverage": [
+              "Row3",
+              "Row4"
+            ],
+            "plants_detected": 6
+          }
+        }
+      ],
+      "summary_facts": [
+        "1 alert events in window [2026-07-01T00:00:00+08:00, 2026-07-07T23:59:59+08:00]"
+      ]
+    },
+    "evidence": {
+      "record_ids": [],
+      "event_ids": [
+        "evt-C02-inspect-07"
+      ]
+    }
+  },
+  "fatal_constraints": [],
+  "allowed_side_effects": [],
+  "forbidden_side_effects": [
+    "create_scene",
+    "add_object",
+    "delete_object",
+    "modify_timeseries",
+    "invent_record"
+  ],
+  "critical_objects": [],
+  "required_nodes": [],
+  "required_edges": [],
+  "required_bindings": [],
+  "equivalence_groups": [],
+  "allowed_variants": []
+}

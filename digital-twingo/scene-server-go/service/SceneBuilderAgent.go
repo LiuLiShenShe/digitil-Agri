@@ -163,9 +163,32 @@ func (a *SceneBuilderAgent) Build(req sceneAgentRequest) sceneAgentResult {
 	a.recordTraceStep(state, "scene.current", sceneCurrentToolInput{IncludeObjects: true}, state.request.Context, nil, nil)
 	a.recordPromptedPolicyViolations(state)
 
+	// Repair tasks (T19-T24) seed a REAL faulty scene from initial_state. The plan is
+	// constructed FROM these objects so the agent must actually modify the specified
+	// objects (never the gold). If the LLM produces nothing, the initial objects remain
+	// the baseline that later repair steps act on.
+	if initState := state.request.Context.InitialState; initState != nil && len(initState.Objects) > 0 {
+		if len(state.plan.Objects) == 0 {
+			for _, o := range initState.Objects {
+				state.plan.Objects = append(state.plan.Objects, vo.ScenePlanObject{
+					ID:       o.ID,
+					AssetKey: firstNonEmpty(o.AssetKey, firstNonEmpty(o.Type, o.ID)),
+					Label:    o.ID,
+					Count:    1,
+				})
+			}
+			state.source = vo.SemanticPlanSource{Mode: "repair-initial-state", Provider: "initial_state", Reason: "seeded from initial_state for repair task"}
+		}
+	}
+
 	usedDeepAgents, err := a.tryRunDeepAgents(state)
 	if err != nil {
 		trace.Error = sanitizeTraceSummary(err.Error())
+		// Explicit agent_failed marker: LLM/DeepAgents failed. The deterministic
+		// pipeline below is a SEPARATE fallback path and must not be confused with
+		// a successful LLM/multi-agent run (fairness contract S5.1/S5.2).
+		trace.AgentFailed = true
+		trace.AgentFailedReason = sanitizeTraceSummary(err.Error())
 		state.warnings = append(state.warnings, "Eino DeepAgents 调用失败，已切换为白名单工具流水线。")
 		state.warnings = append(state.warnings, err.Error())
 	} else if usedDeepAgents {

@@ -20,6 +20,8 @@ iot:
 
 llm:
   enabled: true
+  # API key is read from the environment (LLM_API_KEY / AGNES_API_KEY / STEP_API_KEY / DEEPSEEK_API_KEY),
+  # never from this file. Base URL and model may also be overridden via LLM_BASE_URL / AGNES_BASE_URL / LLM_MODEL / AGNES_MODEL.
   base-url: "https://api.stepfun.com/v1"
   api-key: ""
   model: "step-3.5-flash"

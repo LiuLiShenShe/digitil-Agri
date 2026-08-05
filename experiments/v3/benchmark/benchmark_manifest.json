@@ -1,0 +1,52 @@
+{
+  "benchmark_version": "v2-candidate",
+  "created": "2026-08-04",
+  "splits": {
+    "train": {
+      "file": "train.jsonl",
+      "tasks": 18,
+      "sha256": "bd64cb77807c38f96345fd86daf6f8bda46a877ecbed71cca9bb5ec3b656a6c9"
+    },
+    "dev": {
+      "file": "dev.jsonl",
+      "tasks": 8,
+      "sha256": "71a7b577274d397c7f34d737d1a9cf1000716446454088a8ed6f7faaacc3efa8"
+    },
+    "test_public_inputs": {
+      "file": "test_public_inputs.jsonl",
+      "tasks": 9,
+      "sha256": "27902c0c32f141e9da8e4bd296c0bcb54a49570d1c3463ed7191f2d7c4cb1cc1"
+    },
+    "test_gold_sealed": {
+      "file": "test_gold.sealed.jsonl",
+      "tasks": 9,
+      "sha256": "b41069c6d07990f49cdc50e10322b80d8cf3f717467905f732fba508397c4f4e"
+    },
+    "test_v2_public_inputs": {
+      "file": "test_v2/test_v2_public_inputs.jsonl",
+      "tasks": 20,
+      "sha256": "b4ef71192c117e3581127929a81d353cc7dd649a59a36634738bbeaebfa3b7d9"
+    },
+    "test_v2_gold": {
+      "file": "test_v2/test_v2_gold.jsonl",
+      "tasks": 20,
+      "sha256": "eb38e89ee1c4e1d559ba120928f23835950bd8446c9f0b11d0c5aea8e9eb3517"
+    }
+  },
+  "invalidations": {
+    "test_v1": {
+      "status": "INVALID",
+      "reason": "F-007: memory_query tasks T27-T30 Prompt-Gold contradiction (retrieval prompts vs scene-build required_nodes)",
+      "invalidated_date": "2026-08-05",
+      "archive_path": "benchmark/archive/test_v1_invalid/",
+      "report": "benchmark/archive/test_v1_invalid/INVALIDATION_REPORT.md",
+      "affected_tasks": [
+        "T27",
+        "T28",
+        "T29",
+        "T30"
+      ]
+    }
+  },
+  "note": "test_v1 invalidated (F-007); test_v2 candidate created (F-014), pending human approval + freeze commit."
+}

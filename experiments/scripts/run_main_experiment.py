@@ -117,13 +117,23 @@ def load_llm_config() -> LLMConfig:
     enabled = parse_bool(os.getenv("LLM_ENABLED"), bool(llm.get("enabled", False)))
     base_url = first_nonempty(
         os.getenv("LLM_BASE_URL"),
+        os.getenv("AGNES_BASE_URL"),
         os.getenv("STEP_BASE_URL"),
         os.getenv("DEEPSEEK_BASE_URL"),
         llm.get("base-url"),
         "https://api.stepfun.com/v1",
     )
-    api_key = first_nonempty(os.getenv("LLM_API_KEY"), os.getenv("STEP_API_KEY"), os.getenv("DEEPSEEK_API_KEY"), llm.get("api-key"))
-    model = first_nonempty(os.getenv("LLM_MODEL"), os.getenv("STEP_MODEL"), os.getenv("DEEPSEEK_MODEL"), llm.get("model"), "step-3.5-flash")
+    api_key = first_nonempty(
+        os.getenv("LLM_API_KEY"), os.getenv("AGNES_API_KEY"), os.getenv("STEP_API_KEY"), os.getenv("DEEPSEEK_API_KEY"), llm.get("api-key")
+    )
+    model = first_nonempty(
+        os.getenv("LLM_MODEL"),
+        os.getenv("AGNES_MODEL"),
+        os.getenv("STEP_MODEL"),
+        os.getenv("DEEPSEEK_MODEL"),
+        llm.get("model"),
+        "step-3.5-flash",
+    )
     timeout_seconds = parse_int(first_nonempty(os.getenv("LLM_TIMEOUT_SECONDS"), llm.get("timeout-seconds")), 180)
     return LLMConfig(enabled=enabled, base_url=base_url, api_key=api_key, model=model, timeout_seconds=timeout_seconds)
 

@@ -1,0 +1,201 @@
+{
+  "task_id": "T034",
+  "task_type": "memory_query",
+  "difficulty": "medium",
+  "prompt": "查询番茄温室最近 3 天 CO2 浓度趋势，返回传感器、日均值、异常事件与关联作物行。",
+  "annotation_version": "v2",
+  "review_status": "PENDING_HUMAN_REVIEW",
+  "initial_state": {
+    "objects": [
+      {
+        "id": "greenhouse_01",
+        "type": "Greenhouse"
+      },
+      {
+        "id": "co2_sensor_01",
+        "type": "Sensor",
+        "monitoring_target": "greenhouse_01",
+        "metric": "co2",
+        "unit": "ppm"
+      },
+      {
+        "id": "cropRow_01",
+        "type": "CropRow",
+        "label": "Row 1"
+      },
+      {
+        "id": "cropRow_02",
+        "type": "CropRow",
+        "label": "Row 2"
+      },
+      {
+        "id": "cropRow_03",
+        "type": "CropRow",
+        "label": "Row 3"
+      }
+    ],
+    "timeseries_records": [
+      {
+        "record_id": "rec-co2-20260705",
+        "sensor_id": "co2_sensor_01",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-05T00:00:00+08:00",
+        "value": 418.0
+      },
+      {
+        "record_id": "rec-co2-20260706",
+        "sensor_id": "co2_sensor_01",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-06T00:00:00+08:00",
+        "value": 432.0
+      },
+      {
+        "record_id": "rec-co2-20260707",
+        "sensor_id": "co2_sensor_01",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-07T00:00:00+08:00",
+        "value": 425.0
+      }
+    ],
+    "events": [
+      {
+        "event_id": "evt-co2-high-1",
+        "object_id": "greenhouse_01",
+        "event_type": "co2_high",
+        "timestamp": "2026-07-06T03:00:00+08:00",
+        "payload": {
+          "metric": "co2",
+          "value": 880,
+          "threshold": 800
+        }
+      }
+    ],
+    "daily_reports": []
+  },
+  "query_spec": {
+    "target_object_ids": [
+      "greenhouse_01",
+      "co2_sensor_01"
+    ],
+    "metrics": [
+      "co2"
+    ],
+    "start_time": "2026-07-05T00:00:00+08:00",
+    "end_time": "2026-07-07T23:59:59+08:00",
+    "aggregations": [
+      "mean",
+      "latest",
+      "trend"
+    ],
+    "required_units": {
+      "co2": "ppm"
+    }
+  },
+  "expected_answer": {
+    "normalized_values": {
+      "co2": {
+        "daily_means": [
+          418.0,
+          432.0,
+          425.0
+        ],
+        "latest": 425.0,
+        "mean": 425.0,
+        "unit": "ppm"
+      }
+    },
+    "events": [
+      {
+        "event_id": "evt-co2-high-1",
+        "object_id": "greenhouse_01",
+        "event_type": "co2_high",
+        "timestamp": "2026-07-06T03:00:00+08:00",
+        "payload": {
+          "metric": "co2",
+          "value": 880,
+          "threshold": 800
+        }
+      }
+    ],
+    "summary_facts": [
+      "sensor=co2_sensor_01",
+      "associated_rows=Row1,Row2,Row3",
+      "daily_means=[418.0, 432.0, 425.0]",
+      "trend=up_then_drop",
+      "1 high alarm events"
+    ]
+  },
+  "expected_evidence": {
+    "record_ids": [
+      "rec-co2-20260705",
+      "rec-co2-20260706",
+      "rec-co2-20260707"
+    ],
+    "event_ids": [
+      "evt-co2-high-1"
+    ]
+  },
+  "expected_outcome": {
+    "answer": {
+      "normalized_values": {
+        "co2": {
+          "mean": 425.0,
+          "min": 418.0,
+          "max": 432.0,
+          "latest": 425.0,
+          "unit": "ppm"
+        }
+      },
+      "events": [
+        {
+          "event_id": "evt-co2-high-1",
+          "object_id": "greenhouse_01",
+          "event_type": "co2_high",
+          "timestamp": "2026-07-06T03:00:00+08:00",
+          "payload": {
+            "metric": "co2",
+            "value": 880,
+            "threshold": 800
+          }
+        }
+      ],
+      "summary_facts": [
+        "1 alert events in window [2026-07-05T00:00:00+08:00, 2026-07-07T23:59:59+08:00]"
+      ]
+    },
+    "evidence": {
+      "record_ids": [
+        "rec-co2-20260705",
+        "rec-co2-20260706",
+        "rec-co2-20260707"
+      ],
+      "event_ids": [
+        "evt-co2-high-1"
+      ]
+    }
+  },
+  "fatal_constraints": [],
+  "allowed_side_effects": [],
+  "forbidden_side_effects": [
+    "create_scene",
+    "add_object",
+    "delete_object",
+    "modify_timeseries",
+    "invent_record"
+  ],
+  "critical_objects": [],
+  "required_nodes": [],
+  "required_edges": [],
+  "required_bindings": [],
+  "equivalence_groups": [],
+  "allowed_variants": [],
+  "rationale": "memory_query: agent retrieves/aggregates CO2 trend from pre-existing timeseries; NO scene building. Target objects + records pre-exist.",
+  "review_items": [
+    "Confirm daily_means (418/432/425) derived from fixture records",
+    "Confirm CO2 high alarm event evt-co2-high-1 in expected",
+    "Confirm no add_object/create_scene required (Query-Gold, not scene count)"
+  ]
+}

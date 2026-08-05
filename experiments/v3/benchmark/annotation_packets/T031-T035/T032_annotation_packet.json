@@ -1,0 +1,138 @@
+{
+  "task_id": "T032",
+  "task_type": "data_binding",
+  "difficulty": "medium",
+  "annotation_version": "v2",
+  "review_status": "PENDING_HUMAN_REVIEW",
+  "prompt": "将温室内 2 个光照传感器绑定到对应作物行，并为每株关键番茄绑定叶面积指数(LI)与采收日期事件，含单位与时间戳。",
+  "gold": {
+    "required_nodes": [
+      {
+        "id": "gh_bind_root",
+        "type": "Greenhouse",
+        "role": "root",
+        "count": 1
+      },
+      {
+        "id": "crop_row_a",
+        "type": "CropRow",
+        "role": "entity",
+        "count": 1,
+        "parent": "gh_bind_root"
+      },
+      {
+        "id": "crop_row_b",
+        "type": "CropRow",
+        "role": "entity",
+        "count": 1,
+        "parent": "gh_bind_root"
+      },
+      {
+        "id": "light_sensor_1",
+        "type": "Sensor",
+        "role": "entity",
+        "count": 1,
+        "parent": "crop_row_a",
+        "key_attrs": {
+          "monitoring_target": "crop_row_a"
+        }
+      },
+      {
+        "id": "light_sensor_2",
+        "type": "Sensor",
+        "role": "entity",
+        "count": 1,
+        "parent": "crop_row_b",
+        "key_attrs": {
+          "monitoring_target": "crop_row_b"
+        }
+      },
+      {
+        "id": "tomato_k1",
+        "type": "Plant",
+        "role": "entity",
+        "count": 1,
+        "parent": "crop_row_a",
+        "key_attrs": {
+          "belongs_to": "crop_row_a"
+        }
+      }
+    ],
+    "required_edges": [
+      {
+        "subject": "gh_bind_root",
+        "predicate": "contains",
+        "object": "crop_row_a"
+      },
+      {
+        "subject": "gh_bind_root",
+        "predicate": "contains",
+        "object": "crop_row_b"
+      },
+      {
+        "subject": "crop_row_a",
+        "predicate": "contains",
+        "object": "light_sensor_1"
+      },
+      {
+        "subject": "crop_row_b",
+        "predicate": "contains",
+        "object": "light_sensor_2"
+      },
+      {
+        "subject": "crop_row_a",
+        "predicate": "contains",
+        "object": "tomato_k1"
+      }
+    ],
+    "required_bindings": [
+      {
+        "subject": "light_sensor_1",
+        "target": "crop_row_a",
+        "type": "sensor_bind",
+        "metadata": {
+          "metrics": [
+            "light"
+          ],
+          "unit": "klux"
+        }
+      },
+      {
+        "subject": "light_sensor_2",
+        "target": "crop_row_b",
+        "type": "sensor_bind",
+        "metadata": {
+          "metrics": [
+            "light"
+          ],
+          "unit": "klux"
+        }
+      },
+      {
+        "subject": "tomato_k1",
+        "target": "tomato_k1",
+        "type": "trait_bind",
+        "metadata": {
+          "trait": "leaf_area_index",
+          "unit": "m2/m2",
+          "subject_event": "harvest_date",
+          "timestamp": "2026-09-01T00:00:00+08:00"
+        }
+      }
+    ],
+    "critical_objects": [],
+    "initial_state": {},
+    "goal_state": {}
+  },
+  "rationale": "data_binding: 2 light sensors bind to their crop row (sensor_bind, unit klux); key tomato binds LI trait + harvest-date event with units/timestamps.",
+  "review_items": [
+    "Confirm each light sensor's monitoring_target matches the bound row",
+    "Confirm LI trait unit (m2/m2) + harvest timestamp present on tomato bind",
+    "Confirm 2 sensors map to 2 distinct rows"
+  ],
+  "forbidden_side_effects": [
+    "missing_unit",
+    "missing_timestamp",
+    "wrong_monitoring_target"
+  ]
+}

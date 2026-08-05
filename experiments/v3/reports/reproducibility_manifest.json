@@ -1,0 +1,18 @@
+{
+  "benchmark_version": "v1",
+  "created": "2026-08-04",
+  "base_model": "deepseek-ai/DeepSeek-V4-Flash",
+  "provider_base_url": "https://api.siliconflow.cn/v1",
+  "repeats_per_task_method": 5,
+  "splits": {
+    "train": {"file": "train.jsonl", "tasks": [], "sha256": ""},
+    "dev": {"file": "dev.jsonl", "tasks": [], "sha256": ""},
+    "test_public_inputs": {"file": "test_public_inputs.jsonl", "tasks": [], "sha256": ""},
+    "test_gold_sealed": {"file": "test_gold.sealed.jsonl", "tasks": [], "sha256": ""}
+  },
+  "scorer_version": "v3-evaluator-1.0",
+  "sealing_script": "scripts/benchmark/expand_legacy_tasks.py + seal.py",
+  "reproduce_command": "make benchmark-validate && make run-test && make statistical-report && make sota-gate",
+  "legacy_tables_marked": "experiments/legacy/README.md",
+  "status": "IN_PROGRESS"
+}

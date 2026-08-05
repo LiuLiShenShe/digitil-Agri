@@ -254,6 +254,8 @@ type SceneAgentTraceVo struct {
 	Tools           []SceneAgentToolCallVo `json:"tools"`
 	Steps           []SceneAgentStepVo     `json:"steps"`
 	Fallback        *SceneAgentFallbackVo  `json:"fallback,omitempty"`
+	AgentFailed     bool                   `json:"agentFailed,omitempty"`   // explicit LLM/DeepAgents failure marker
+	AgentFailedReason string               `json:"agentFailedReason,omitempty"`
 	FinalSummary    string                 `json:"finalSummary"`
 	Error           string                 `json:"error,omitempty"`
 }
@@ -303,6 +305,32 @@ type SemanticBuildContext struct {
 	SelectedObject  *SemanticObjectSummary  `json:"selectedObject,omitempty"`
 	SelectedObjects []SemanticObjectSummary `json:"selectedObjects,omitempty"`
 	ExistingObjects []SemanticObjectSummary `json:"existingObjects,omitempty"`
+	// InitialState carries a real faulty scene for repair tasks (T19-T24). The agent
+	// must actually modify the specified objects; it is never the gold.
+	InitialState *SemanticSceneState `json:"initialState,omitempty"`
+}
+
+// SemanticSceneState is a minimal, method-independent faulty-scene snapshot that a
+// repair task seeds into the builder. Only used for repair evaluation, never scored.
+type SemanticSceneState struct {
+	Objects  []SemanticSceneObject `json:"objects,omitempty"`
+	Bindings []SemanticBindingVO   `json:"bindings,omitempty"`
+}
+
+type SemanticSceneObject struct {
+	ID               string `json:"id,omitempty"`
+	Type             string `json:"type,omitempty"`
+	MonitoringTarget string `json:"monitoringTarget,omitempty"`
+	BelongsTo        string `json:"belongsTo,omitempty"`
+	Observes         string `json:"observes,omitempty"`
+	AssetKey         string `json:"assetKey,omitempty"`
+	AssetPolicy      string `json:"assetPolicy,omitempty"`
+}
+
+type SemanticBindingVO struct {
+	Subject string `json:"subject,omitempty"`
+	Target  string `json:"target,omitempty"`
+	Type    string `json:"type,omitempty"`
 }
 
 type SemanticSceneSummary struct {

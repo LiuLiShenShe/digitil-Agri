@@ -1,0 +1,118 @@
+{
+  "task_id": "T031",
+  "task_type": "scene_construction",
+  "difficulty": "medium",
+  "annotation_version": "v2",
+  "review_status": "PENDING_HUMAN_REVIEW",
+  "prompt": "构建一个 20m x 6m 的黄瓜温室，包含 3 行作物、18 株黄瓜、1 个气象站、1 套滴灌设备和 1 个摄像头。",
+  "gold": {
+    "required_nodes": [
+      {
+        "id": "cucumber_greenhouse_root",
+        "type": "Greenhouse",
+        "role": "root",
+        "count": 1,
+        "key_attrs": {
+          "location": {
+            "x": 0,
+            "z": 0
+          },
+          "size": "20x6m"
+        }
+      },
+      {
+        "id": "crop_row_01",
+        "type": "CropRow",
+        "role": "entity",
+        "count": 3,
+        "parent": "cucumber_greenhouse_root"
+      },
+      {
+        "id": "cucumber_01",
+        "type": "Plant",
+        "role": "entity",
+        "count": 18,
+        "parent": "crop_row_01",
+        "key_attrs": {
+          "belongs_to": "crop_row_01"
+        }
+      },
+      {
+        "id": "ws_01",
+        "type": "WeatherStation",
+        "role": "entity",
+        "count": 1,
+        "parent": "cucumber_greenhouse_root"
+      },
+      {
+        "id": "drip_01",
+        "type": "Irrigation",
+        "role": "entity",
+        "count": 1,
+        "parent": "cucumber_greenhouse_root"
+      },
+      {
+        "id": "cam_01",
+        "type": "Camera",
+        "role": "entity",
+        "count": 1,
+        "parent": "cucumber_greenhouse_root",
+        "key_attrs": {
+          "observes": "crop_row_01"
+        }
+      }
+    ],
+    "required_edges": [
+      {
+        "subject": "cucumber_greenhouse_root",
+        "predicate": "contains",
+        "object": "crop_row_01"
+      },
+      {
+        "subject": "crop_row_01",
+        "predicate": "contains",
+        "object": "cucumber_01"
+      },
+      {
+        "subject": "cucumber_greenhouse_root",
+        "predicate": "contains",
+        "object": "ws_01"
+      },
+      {
+        "subject": "cucumber_greenhouse_root",
+        "predicate": "contains",
+        "object": "drip_01"
+      },
+      {
+        "subject": "cucumber_greenhouse_root",
+        "predicate": "contains",
+        "object": "cam_01"
+      }
+    ],
+    "required_bindings": [
+      {
+        "subject": "ws_01",
+        "target": "cucumber_greenhouse_root",
+        "type": "asset"
+      },
+      {
+        "subject": "drip_01",
+        "target": "cucumber_greenhouse_root",
+        "type": "asset"
+      }
+    ],
+    "critical_objects": [],
+    "initial_state": {},
+    "goal_state": {}
+  },
+  "rationale": "scene_construction: complete greenhouse with 3 crop rows, 18 cucumber plants, WS, drip, camera. Graph objective judged by node/edge/binding match.",
+  "review_items": [
+    "Confirm 18 plants as Plant.type with belongs_to crop row",
+    "Confirm WeatherStation/Drip/Camera presence and parent containment",
+    "Confirm no location required on non-greenhouse (R3 warning ok)"
+  ],
+  "forbidden_side_effects": [
+    "omit_required_plant",
+    "wrong_parent"
+  ]
+}

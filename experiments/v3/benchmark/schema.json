@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KAFarmTwin v2 Benchmark Task Schema",
+  "description": "Multi-task-type gold schema. Every task declares a task_type; gold blocks are type-specific. No single object-graph CVSR is used across all types.",
+  "type": "object",
+  "required": [
+    "task_id", "task_type", "prompt", "initial_state",
+    "expected_outcome", "fatal_constraints", "allowed_side_effects",
+    "forbidden_side_effects", "annotation_version", "review_status"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "task_id": {"type": "string", "pattern": "^T[0-9]{2,3}$"},
+    "task_type": {
+      "type": "string",
+      "enum": ["scene_construction", "asset_routing", "data_binding", "rule_repair", "memory_query"]
+    },
+    "difficulty": {"enum": ["easy", "medium", "hard"]},
+    "prompt": {"type": "string", "minLength": 1},
+    "annotation_version": {"type": "string", "const": "v2"},
+    "review_status": {"type": "string", "enum": ["pending", "reviewed", "approved", "rejected"]},
+
+    "initial_state": {
+      "type": "object",
+      "description": "State that exists BEFORE the task runs. For memory_query this holds objects, timeseries, events, daily_reports to query over.",
+      "properties": {
+        "objects": {"type": "array", "items": {"type": "object"}},
+        "timeseries_records": {"type": "array", "items": {"type": "object"}},
+        "events": {"type": "array", "items": {"type": "object"}},
+        "daily_reports": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+
+    "expected_outcome": {"type": "object", "description": "Type-specific gold outcome. See *-outcome sub-schemas below."},
+
+    "fatal_constraints": {"type": "array", "items": {"type": "string"}},
+    "allowed_side_effects": {"type": "array", "items": {"type": "string"}},
+    "forbidden_side_effects": {"type": "array", "items": {"type": "string"}},
+
+    "equivalence_groups": {"type": "array", "items": {"type": "string"}},
+
+    "graph_outcome": {
+      "description": "For scene_construction / asset_routing / data_binding / rule_repair: the object-graph gold.",
+      "type": "object",
+      "properties": {
+        "required_nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type"],
+            "properties": {
+              "id": {"type": "string"},
+              "type": {"type": "string"},
+              "role": {"type": "string"},
+              "count": {"type": "integer", "minimum": 1},
+              "parent": {"type": "string"},
+              "key_attrs": {"type": "object"},
+              "asset_policy": {"type": "string"}
+            }
+          }
+        },
+        "optional_nodes": {"type": "array", "items": {"type": "object"}},
+        "forbidden_nodes": {"type": "array", "items": {"type": "object"}},
+        "required_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["subject", "predicate", "object"],
+            "properties": {
+              "subject": {"type": "string"},
+              "predicate": {"type": "string"},
+              "object": {"type": "string"}
+            }
+          }
+        },
+        "required_bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["subject", "target", "type"],
+            "properties": {
+              "subject": {"type": "string"},
+              "target": {"type": "string"},
+              "type": {"type": "string"},
+              "metadata": {"type": "object"}
+            }
+          }
+        },
+        "critical_objects": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "query_spec": {
+      "description": "For memory_query: the retrieval/aggregation specification.",
+      "type": "object",
+      "properties": {
+        "target_object_ids": {"type": "array", "items": {"type": "string"}},
+        "metrics": {"type": "array", "items": {"type": "string"}},
+        "start_time": {"type": "string"},
+        "end_time": {"type": "string"},
+        "aggregations": {"type": "array", "items": {"type": "string"}},
+        "required_units": {"type": "object"}
+      }
+    },
+
+    "expected_answer": {
+      "description": "For memory_query: the oracle-computed correct answer.",
+      "type": "object",
+      "properties": {
+        "normalized_values": {"type": "object"},
+        "events": {"type": "array", "items": {"type": "object"}},
+        "summary_facts": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "expected_evidence": {
+      "description": "For memory_query: the real record/event IDs the answer must be grounded on.",
+      "type": "object",
+      "properties": {
+        "record_ids": {"type": "array", "items": {"type": "string"}},
+        "event_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "allowed_variants": {"type": "array", "items": {"type": "string"}},
+    "constraints": {"type": "array", "items": {"type": "string"}},
+    "goal_state": {"type": "object"}
+  }
+}

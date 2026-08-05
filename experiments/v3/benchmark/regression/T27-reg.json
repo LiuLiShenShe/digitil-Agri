@@ -1,0 +1,625 @@
+{
+  "task_id": "T27-reg",
+  "task_type": "memory_query",
+  "difficulty": "easy",
+  "prompt": "查询番茄温室最近 7 天环境状态，汇总温度、湿度、CO2、光照、土壤水分和告警次数。",
+  "annotation_version": "v2",
+  "review_status": "pending",
+  "initial_state": {
+    "objects": [
+      {
+        "id": "greenhouse_01",
+        "type": "Greenhouse",
+        "location": {
+          "x": 0,
+          "z": 0
+        },
+        "area_m2": 1200
+      },
+      {
+        "id": "env_sensor_01",
+        "type": "Sensor",
+        "monitoring_target": "greenhouse_01",
+        "metric": "temperature",
+        "unit": "°C"
+      },
+      {
+        "id": "env_sensor_02",
+        "type": "Sensor",
+        "monitoring_target": "greenhouse_01",
+        "metric": "humidity",
+        "unit": "%"
+      },
+      {
+        "id": "env_sensor_03",
+        "type": "Sensor",
+        "monitoring_target": "greenhouse_01",
+        "metric": "co2",
+        "unit": "ppm"
+      },
+      {
+        "id": "env_sensor_04",
+        "type": "Sensor",
+        "monitoring_target": "greenhouse_01",
+        "metric": "light",
+        "unit": "klux"
+      },
+      {
+        "id": "env_sensor_05",
+        "type": "Sensor",
+        "monitoring_target": "greenhouse_01",
+        "metric": "soil_moisture",
+        "unit": "%"
+      }
+    ],
+    "timeseries_records": [
+      {
+        "record_id": "rec-env-temperature-20260701",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-01T00:00:00+08:00",
+        "value": 22.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260701",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-01T00:00:00+08:00",
+        "value": 65.0
+      },
+      {
+        "record_id": "rec-env-co2-20260701",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-01T00:00:00+08:00",
+        "value": 420.0
+      },
+      {
+        "record_id": "rec-env-light-20260701",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-01T00:00:00+08:00",
+        "value": 38.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260701",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-01T00:00:00+08:00",
+        "value": 58.0
+      },
+      {
+        "record_id": "rec-env-temperature-20260702",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-02T00:00:00+08:00",
+        "value": 23.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260702",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-02T00:00:00+08:00",
+        "value": 66.0
+      },
+      {
+        "record_id": "rec-env-co2-20260702",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-02T00:00:00+08:00",
+        "value": 415.0
+      },
+      {
+        "record_id": "rec-env-light-20260702",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-02T00:00:00+08:00",
+        "value": 41.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260702",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-02T00:00:00+08:00",
+        "value": 57.0
+      },
+      {
+        "record_id": "rec-env-temperature-20260703",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-03T00:00:00+08:00",
+        "value": 21.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260703",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-03T00:00:00+08:00",
+        "value": 63.0
+      },
+      {
+        "record_id": "rec-env-co2-20260703",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-03T00:00:00+08:00",
+        "value": 430.0
+      },
+      {
+        "record_id": "rec-env-light-20260703",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-03T00:00:00+08:00",
+        "value": 35.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260703",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-03T00:00:00+08:00",
+        "value": 60.0
+      },
+      {
+        "record_id": "rec-env-temperature-20260704",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-04T00:00:00+08:00",
+        "value": 24.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260704",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-04T00:00:00+08:00",
+        "value": 67.0
+      },
+      {
+        "record_id": "rec-env-co2-20260704",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-04T00:00:00+08:00",
+        "value": 425.0
+      },
+      {
+        "record_id": "rec-env-light-20260704",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-04T00:00:00+08:00",
+        "value": 44.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260704",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-04T00:00:00+08:00",
+        "value": 55.0
+      },
+      {
+        "record_id": "rec-env-temperature-20260705",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-05T00:00:00+08:00",
+        "value": 22.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260705",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-05T00:00:00+08:00",
+        "value": 64.0
+      },
+      {
+        "record_id": "rec-env-co2-20260705",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-05T00:00:00+08:00",
+        "value": 418.0
+      },
+      {
+        "record_id": "rec-env-light-20260705",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-05T00:00:00+08:00",
+        "value": 39.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260705",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-05T00:00:00+08:00",
+        "value": 59.0
+      },
+      {
+        "record_id": "rec-env-temperature-20260706",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-06T00:00:00+08:00",
+        "value": 20.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260706",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-06T00:00:00+08:00",
+        "value": 62.0
+      },
+      {
+        "record_id": "rec-env-co2-20260706",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-06T00:00:00+08:00",
+        "value": 432.0
+      },
+      {
+        "record_id": "rec-env-light-20260706",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-06T00:00:00+08:00",
+        "value": 33.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260706",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-06T00:00:00+08:00",
+        "value": 61.0
+      },
+      {
+        "record_id": "rec-env-temperature-20260707",
+        "sensor_id": "env_sensor_01",
+        "metric": "temperature",
+        "unit": "°C",
+        "timestamp": "2026-07-07T00:00:00+08:00",
+        "value": 23.0
+      },
+      {
+        "record_id": "rec-env-humidity-20260707",
+        "sensor_id": "env_sensor_02",
+        "metric": "humidity",
+        "unit": "%",
+        "timestamp": "2026-07-07T00:00:00+08:00",
+        "value": 66.0
+      },
+      {
+        "record_id": "rec-env-co2-20260707",
+        "sensor_id": "env_sensor_03",
+        "metric": "co2",
+        "unit": "ppm",
+        "timestamp": "2026-07-07T00:00:00+08:00",
+        "value": 428.0
+      },
+      {
+        "record_id": "rec-env-light-20260707",
+        "sensor_id": "env_sensor_04",
+        "metric": "light",
+        "unit": "klux",
+        "timestamp": "2026-07-07T00:00:00+08:00",
+        "value": 42.0
+      },
+      {
+        "record_id": "rec-env-soil_moisture-20260707",
+        "sensor_id": "env_sensor_05",
+        "metric": "soil_moisture",
+        "unit": "%",
+        "timestamp": "2026-07-07T00:00:00+08:00",
+        "value": 56.0
+      }
+    ],
+    "events": [
+      {
+        "event_id": "evt-alert-01",
+        "object_id": "greenhouse_01",
+        "event_type": "temp_high",
+        "timestamp": "2026-07-03T14:00:00+08:00",
+        "payload": {
+          "metric": "temperature",
+          "value": 33.5,
+          "threshold": 30
+        }
+      },
+      {
+        "event_id": "evt-alert-02",
+        "object_id": "greenhouse_01",
+        "event_type": "co2_high",
+        "timestamp": "2026-07-06T03:00:00+08:00",
+        "payload": {
+          "metric": "co2",
+          "value": 902,
+          "threshold": 800
+        }
+      }
+    ],
+    "daily_reports": []
+  },
+  "query_spec": {
+    "target_object_ids": [
+      "greenhouse_01"
+    ],
+    "metrics": [
+      "temperature",
+      "humidity",
+      "co2",
+      "light",
+      "soil_moisture"
+    ],
+    "start_time": "2026-07-01T00:00:00+08:00",
+    "end_time": "2026-07-07T23:59:59+08:00",
+    "aggregations": [
+      "mean",
+      "min",
+      "max",
+      "latest"
+    ],
+    "required_units": {
+      "temperature": "°C",
+      "humidity": "%",
+      "co2": "ppm",
+      "light": "klux",
+      "soil_moisture": "%"
+    }
+  },
+  "expected_answer": {
+    "normalized_values": {
+      "temperature": {
+        "mean": 22.14,
+        "min": 20.0,
+        "max": 24.0,
+        "latest": 23.0,
+        "unit": "°C"
+      },
+      "humidity": {
+        "mean": 64.71,
+        "min": 62.0,
+        "max": 67.0,
+        "latest": 66.0,
+        "unit": "%"
+      },
+      "co2": {
+        "mean": 424.0,
+        "min": 415.0,
+        "max": 432.0,
+        "latest": 428.0,
+        "unit": "ppm"
+      },
+      "light": {
+        "mean": 38.86,
+        "min": 33.0,
+        "max": 44.0,
+        "latest": 42.0,
+        "unit": "klux"
+      },
+      "soil_moisture": {
+        "mean": 58.0,
+        "min": 55.0,
+        "max": 61.0,
+        "latest": 56.0,
+        "unit": "%"
+      }
+    },
+    "events": [
+      {
+        "event_id": "evt-alert-01",
+        "object_id": "greenhouse_01",
+        "event_type": "temp_high",
+        "timestamp": "2026-07-03T14:00:00+08:00",
+        "payload": {
+          "metric": "temperature",
+          "value": 33.5,
+          "threshold": 30
+        }
+      },
+      {
+        "event_id": "evt-alert-02",
+        "object_id": "greenhouse_01",
+        "event_type": "co2_high",
+        "timestamp": "2026-07-06T03:00:00+08:00",
+        "payload": {
+          "metric": "co2",
+          "value": 902,
+          "threshold": 800
+        }
+      }
+    ],
+    "summary_facts": [
+      "2 alert events in window [2026-07-01T00:00:00+08:00, 2026-07-07T23:59:59+08:00]"
+    ]
+  },
+  "expected_evidence": {
+    "record_ids": [
+      "rec-env-temperature-20260701",
+      "rec-env-humidity-20260701",
+      "rec-env-co2-20260701",
+      "rec-env-light-20260701",
+      "rec-env-soil_moisture-20260701",
+      "rec-env-temperature-20260702",
+      "rec-env-humidity-20260702",
+      "rec-env-co2-20260702",
+      "rec-env-light-20260702",
+      "rec-env-soil_moisture-20260702",
+      "rec-env-temperature-20260703",
+      "rec-env-humidity-20260703",
+      "rec-env-co2-20260703",
+      "rec-env-light-20260703",
+      "rec-env-soil_moisture-20260703",
+      "rec-env-temperature-20260704",
+      "rec-env-humidity-20260704",
+      "rec-env-co2-20260704",
+      "rec-env-light-20260704",
+      "rec-env-soil_moisture-20260704",
+      "rec-env-temperature-20260705",
+      "rec-env-humidity-20260705",
+      "rec-env-co2-20260705",
+      "rec-env-light-20260705",
+      "rec-env-soil_moisture-20260705",
+      "rec-env-temperature-20260706",
+      "rec-env-humidity-20260706",
+      "rec-env-co2-20260706",
+      "rec-env-light-20260706",
+      "rec-env-soil_moisture-20260706",
+      "rec-env-temperature-20260707",
+      "rec-env-humidity-20260707",
+      "rec-env-co2-20260707",
+      "rec-env-light-20260707",
+      "rec-env-soil_moisture-20260707"
+    ],
+    "event_ids": [
+      "evt-alert-01",
+      "evt-alert-02"
+    ]
+  },
+  "expected_outcome": {
+    "answer": {
+      "normalized_values": {
+        "temperature": {
+          "mean": 22.14,
+          "min": 20.0,
+          "max": 24.0,
+          "latest": 23.0,
+          "unit": "°C"
+        },
+        "humidity": {
+          "mean": 64.71,
+          "min": 62.0,
+          "max": 67.0,
+          "latest": 66.0,
+          "unit": "%"
+        },
+        "co2": {
+          "mean": 424.0,
+          "min": 415.0,
+          "max": 432.0,
+          "latest": 428.0,
+          "unit": "ppm"
+        },
+        "light": {
+          "mean": 38.86,
+          "min": 33.0,
+          "max": 44.0,
+          "latest": 42.0,
+          "unit": "klux"
+        },
+        "soil_moisture": {
+          "mean": 58.0,
+          "min": 55.0,
+          "max": 61.0,
+          "latest": 56.0,
+          "unit": "%"
+        }
+      },
+      "events": [
+        {
+          "event_id": "evt-alert-01",
+          "object_id": "greenhouse_01",
+          "event_type": "temp_high",
+          "timestamp": "2026-07-03T14:00:00+08:00",
+          "payload": {
+            "metric": "temperature",
+            "value": 33.5,
+            "threshold": 30
+          }
+        },
+        {
+          "event_id": "evt-alert-02",
+          "object_id": "greenhouse_01",
+          "event_type": "co2_high",
+          "timestamp": "2026-07-06T03:00:00+08:00",
+          "payload": {
+            "metric": "co2",
+            "value": 902,
+            "threshold": 800
+          }
+        }
+      ],
+      "summary_facts": [
+        "2 alert events in window [2026-07-01T00:00:00+08:00, 2026-07-07T23:59:59+08:00]"
+      ]
+    },
+    "evidence": {
+      "record_ids": [
+        "rec-env-temperature-20260701",
+        "rec-env-humidity-20260701",
+        "rec-env-co2-20260701",
+        "rec-env-light-20260701",
+        "rec-env-soil_moisture-20260701",
+        "rec-env-temperature-20260702",
+        "rec-env-humidity-20260702",
+        "rec-env-co2-20260702",
+        "rec-env-light-20260702",
+        "rec-env-soil_moisture-20260702",
+        "rec-env-temperature-20260703",
+        "rec-env-humidity-20260703",
+        "rec-env-co2-20260703",
+        "rec-env-light-20260703",
+        "rec-env-soil_moisture-20260703",
+        "rec-env-temperature-20260704",
+        "rec-env-humidity-20260704",
+        "rec-env-co2-20260704",
+        "rec-env-light-20260704",
+        "rec-env-soil_moisture-20260704",
+        "rec-env-temperature-20260705",
+        "rec-env-humidity-20260705",
+        "rec-env-co2-20260705",
+        "rec-env-light-20260705",
+        "rec-env-soil_moisture-20260705",
+        "rec-env-temperature-20260706",
+        "rec-env-humidity-20260706",
+        "rec-env-co2-20260706",
+        "rec-env-light-20260706",
+        "rec-env-soil_moisture-20260706",
+        "rec-env-temperature-20260707",
+        "rec-env-humidity-20260707",
+        "rec-env-co2-20260707",
+        "rec-env-light-20260707",
+        "rec-env-soil_moisture-20260707"
+      ],
+      "event_ids": [
+        "evt-alert-01",
+        "evt-alert-02"
+      ]
+    }
+  },
+  "fatal_constraints": [],
+  "allowed_side_effects": [],
+  "forbidden_side_effects": [
+    "create_scene",
+    "add_object",
+    "delete_object",
+    "modify_timeseries",
+    "invent_record"
+  ],
+  "critical_objects": [],
+  "required_nodes": [],
+  "required_edges": [],
+  "required_bindings": [],
+  "equivalence_groups": [],
+  "allowed_variants": []
+}

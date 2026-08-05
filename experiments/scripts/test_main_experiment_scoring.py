@@ -77,6 +77,14 @@ class MainExperimentScoringTest(unittest.TestCase):
         self.assertEqual(scored["generated_objects"], 0)
 
     def test_score_caps_objects_relations_and_bindings(self) -> None:
+        """[SUPERSEDED by experiments/v3/tests/test_anti_cheat.py]
+
+        This test documents the old legacy scoring behavior where correct_objects =
+        min(generated_objects, required_objects). The v3 evaluator does NOT use this
+        formula — it uses Hungarian-optimal matching and never rewards mere count. This
+        test is kept for backward-compatibility documentation only; it does not apply
+        to the v3 experiment suite and must not be cited as evidence of fairness.
+        """
         task = {
             "task_id": "TXX",
             "category": "unit",

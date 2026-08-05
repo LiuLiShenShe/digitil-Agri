@@ -1,0 +1,109 @@
+{
+  "task_id": "T30-reg",
+  "task_type": "memory_query",
+  "difficulty": "easy",
+  "prompt": "查询番茄温室今日生产日报，返回环境摘要、设备状态、灌溉记录、告警记录和 Agent 管理建议。",
+  "annotation_version": "v2",
+  "review_status": "pending",
+  "initial_state": {
+    "objects": [
+      {
+        "id": "greenhouse_01",
+        "type": "Greenhouse"
+      },
+      {
+        "id": "irrigation_01",
+        "type": "Irrigation",
+        "status": "active"
+      },
+      {
+        "id": "pump_01",
+        "type": "Pump",
+        "status": "normal"
+      }
+    ],
+    "daily_reports": [
+      {
+        "report_id": "rep-2026-07-07",
+        "date": "2026-07-07",
+        "environment_summary": "temp 22-24C, humidity 65%, co2 425ppm",
+        "device_status": {
+          "irrigation_01": "active",
+          "pump_01": "normal"
+        },
+        "irrigation_records": [
+          {
+            "time": "06:00",
+            "volume_ml": 2500
+          },
+          {
+            "time": "18:00",
+            "volume_ml": 2500
+          }
+        ],
+        "alerts": 0,
+        "agent_advice": "maintain watering; watch co2 overnight"
+      }
+    ],
+    "timeseries_records": [],
+    "events": []
+  },
+  "query_spec": {
+    "target_object_ids": [
+      "greenhouse_01"
+    ],
+    "metrics": [],
+    "start_time": "2026-07-07T00:00:00+08:00",
+    "end_time": "2026-07-07T23:59:59+08:00",
+    "aggregations": [
+      "latest"
+    ],
+    "required_units": {}
+  },
+  "expected_answer": {
+    "normalized_values": {},
+    "events": [],
+    "summary_facts": [
+      "env=temp 22-24C, humidity 65%, co2 425ppm",
+      "irrigation_01=active",
+      "pump_01=normal",
+      "irrigations=2",
+      "alerts=0",
+      "advice=maintain watering; watch co2 overnight"
+    ]
+  },
+  "expected_evidence": {
+    "record_ids": [
+      "rep-2026-07-07"
+    ],
+    "event_ids": []
+  },
+  "expected_outcome": {
+    "answer": {
+      "normalized_values": {},
+      "events": [],
+      "summary_facts": [
+        "0 alert events in window [2026-07-07T00:00:00+08:00, 2026-07-07T23:59:59+08:00]"
+      ]
+    },
+    "evidence": {
+      "record_ids": [],
+      "event_ids": []
+    }
+  },
+  "fatal_constraints": [],
+  "allowed_side_effects": [],
+  "forbidden_side_effects": [
+    "create_scene",
+    "add_object",
+    "delete_object",
+    "modify_timeseries",
+    "invent_record"
+  ],
+  "critical_objects": [],
+  "required_nodes": [],
+  "required_edges": [],
+  "required_bindings": [],
+  "equivalence_groups": [],
+  "allowed_variants": []
+}

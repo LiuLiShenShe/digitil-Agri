@@ -102,13 +102,13 @@ func applyEnvOverrides() {
 			AppConfig.LLM.Enabled = enabled
 		}
 	}
-	if value := firstEnv("LLM_BASE_URL", "STEP_BASE_URL", "DEEPSEEK_BASE_URL"); value != "" {
+	if value := firstEnv("LLM_BASE_URL", "AGNES_BASE_URL", "STEP_BASE_URL", "DEEPSEEK_BASE_URL"); value != "" {
 		AppConfig.LLM.BaseURL = value
 	}
-	if value := firstEnv("LLM_API_KEY", "STEP_API_KEY", "DEEPSEEK_API_KEY"); value != "" {
+	if value := firstEnv("LLM_API_KEY", "AGNES_API_KEY", "STEP_API_KEY", "DEEPSEEK_API_KEY"); value != "" {
 		AppConfig.LLM.APIKey = value
 	}
-	if value := firstEnv("LLM_MODEL", "STEP_MODEL", "DEEPSEEK_MODEL"); value != "" {
+	if value := firstEnv("LLM_MODEL", "AGNES_MODEL", "STEP_MODEL", "DEEPSEEK_MODEL"); value != "" {
 		AppConfig.LLM.Model = value
 	}
 	if value := firstEnv("LLM_TIMEOUT_SECONDS"); value != "" {

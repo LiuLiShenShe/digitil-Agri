@@ -1,0 +1,25 @@
+{
+  "KAFarmTwin-TypedRepair": {
+    "n_runs": 8,
+    "mean_cvsr": 0.0,
+    "cvsr_std": 0.0,
+    "pass1": 0.0,
+    "pass3": 0.0,
+    "pass5": 0.0,
+    "object_f1": 0.75,
+    "object_precision": 0.75,
+    "object_recall": 0.75,
+    "critical_recall": 0.875,
+    "relation_f1": 0.0,
+    "binding_f1": 0.0,
+    "fatal_violation_rate": 0.375,
+    "evidence_precision": 1.0,
+    "replay_success": 0.75,
+    "llm_calls_mean": 2.5,
+    "tool_calls_mean": 2.38,
+    "repair_rounds_mean": 2.25,
+    "cost_mean": 0.0,
+    "latency_p50_ms": 0.0,
+    "latency_p95_ms": 0.0
+  }
+}

@@ -159,11 +159,26 @@ func (m *einoOpenAIChatModel) Generate(ctx context.Context, input []*schema.Mess
 	}
 
 	choice := result.Choices[0]
-	if strings.TrimSpace(derefString(choice.Message.Content)) == "" {
-		return nil, fmt.Errorf("LLM content 为空，finish_reason=%s", choice.FinishReason)
-	}
+	finishReason := choice.FinishReason
 	msg := fromOpenAIMessage(choice.Message)
-	msg.ResponseMeta = &schema.ResponseMeta{FinishReason: choice.FinishReason}
+	msg.ResponseMeta = &schema.ResponseMeta{FinishReason: finishReason}
+
+	// FINISH_REASON=tool_calls: model requests a tool call -> empty content is EXPECTED,
+	// the message carries ToolCalls and this is NOT a failure. Roll up tool_calls into
+	// content so downstream DeepAgents/normalization can route them.
+	if strings.EqualFold(finishReason, "tool_calls") {
+		if len(msg.ToolCalls) == 0 {
+			// Model said tool_calls but produced none -> real failure, do NOT fall back silently.
+			return nil, fmt.Errorf("agent_failed: finish_reason=tool_calls with no tool_calls in message (%s)",
+				config.AppConfig.LLM.Model)
+		}
+		msg.Content = fmt.Sprintf("%s %s", derefString(choice.Message.Content), toolCallsSummary(msg.ToolCalls))
+	} else if strings.TrimSpace(derefString(choice.Message.Content)) == "" {
+		// Any other finish_reason with empty content is a genuine LLM failure that MUST be
+		// surfaced (the caller will mark agent_failed), NOT silently replaced by rule fallback.
+		return nil, fmt.Errorf("agent_failed: LLM content empty, finish_reason=%s", finishReason)
+	}
+
 	if result.Usage != nil {
 		msg.ResponseMeta.Usage = &schema.TokenUsage{
 			PromptTokens:     result.Usage.PromptTokens,
@@ -172,6 +187,16 @@ func (m *einoOpenAIChatModel) Generate(ctx context.Context, input []*schema.Mess
 		}
 	}
 	return msg, nil
+}
+
+// toolCallsSummary flattens tool-call names into a single string so the tool-loop
+// can route them downstream (mirrors how Python harness extracts tool_calls).
+func toolCallsSummary(calls []schema.ToolCall) string {
+	names := make([]string, 0, len(calls))
+	for _, c := range calls {
+		names = append(names, c.Function.Name)
+	}
+	return fmt.Sprintf("tool_calls=[%s]", strings.Join(names, ", "))
 }
 
 func (m *einoOpenAIChatModel) Stream(ctx context.Context, input []*schema.Message, opts ...model.Option) (*schema.StreamReader[*schema.Message], error) {
