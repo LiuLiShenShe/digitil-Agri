@@ -1,0 +1,3 @@
+method,n_runs,mean_cvsr,pass1,pass3,pass5,object_f1,critical_recall,relation_f1,binding_f1,fatal_violation_rate,evidence_precision,replay_success,llm_calls_mean,cost_mean
+SingleAgent-AllTools,100,0.2,0.2,0.2353,0.2,0.4811,0.41,0.2413,0.0,0.14,1.0,0.5821,1.8,0.0
+KAFarmTwin-TypedRepair,100,0.22,0.22,0.2647,0.25,0.5732,0.6,0.1878,0.0,0.21,1.0,0.8,3.04,0.0

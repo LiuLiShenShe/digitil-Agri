@@ -3,8 +3,8 @@
   "task_type": "data_binding",
   "difficulty": "medium",
   "annotation_version": "v2",
-  "review_status": "PENDING_HUMAN_REVIEW",
-  "prompt": "将温室内 2 个光照传感器绑定到对应作物行，并为每株关键番茄绑定叶面积指数(LI)与采收日期事件，含单位与时间戳。",
+  "review_status": "approved",
+  "prompt": "将温室内 2 个光照传感器绑定到对应作物行，并为 1 株关键番茄绑定叶面积指数(LI=leaf_area_index, 单位 m2/m2)与采收日期事件（时间戳 2026-09-01T00:00:00+08:00）。",
   "gold": {
     "required_nodes": [
       {
@@ -94,7 +94,8 @@
           "metrics": [
             "light"
           ],
-          "unit": "klux"
+          "unit": "klux",
+          "timestamp": "2026-09-01T00:00:00+08:00"
         }
       },
       {
@@ -105,7 +106,8 @@
           "metrics": [
             "light"
           ],
-          "unit": "klux"
+          "unit": "klux",
+          "timestamp": "2026-09-01T00:00:00+08:00"
         }
       },
       {
@@ -115,24 +117,64 @@
         "metadata": {
           "trait": "leaf_area_index",
           "unit": "m2/m2",
-          "subject_event": "harvest_date",
           "timestamp": "2026-09-01T00:00:00+08:00"
         }
       }
     ],
     "critical_objects": [],
     "initial_state": {},
-    "goal_state": {}
+    "goal_state": {
+      "objects": [],
+      "events": [
+        {
+          "event_id": "evt-tomato_k1-harvest",
+          "object_id": "tomato_k1",
+          "event_type": "harvest_date",
+          "timestamp": "2026-09-01T00:00:00+08:00"
+        }
+      ]
+    },
+    "event_bind": [
+      {
+        "event_id": "evt-tomato_k1-harvest",
+        "object_id": "tomato_k1",
+        "event_type": "harvest_date",
+        "timestamp": "2026-09-01T00:00:00+08:00"
+      }
+    ]
   },
-  "rationale": "data_binding: 2 light sensors bind to their crop row (sensor_bind, unit klux); key tomato binds LI trait + harvest-date event with units/timestamps.",
+  "rationale": "data_binding: 2 light sensors -> rows (sensor_bind, unit klux, timestamp); 1 key tomato binds LI trait + a distinct harvest_date event (timestamp from task).",
   "review_items": [
-    "Confirm each light sensor's monitoring_target matches the bound row",
-    "Confirm LI trait unit (m2/m2) + harvest timestamp present on tomato bind",
-    "Confirm 2 sensors map to 2 distinct rows"
+    "Confirm 1 key tomato (explicit in prompt), not arbitrary count",
+    "Confirm LI = leaf_area_index (consistent term), unit m2/m2",
+    "Confirm harvest_date is a distinct event binding, not nested in trait metadata",
+    "Confirm timestamp {ts} in prompt/input"
   ],
   "forbidden_side_effects": [
     "missing_unit",
     "missing_timestamp",
-    "wrong_monitoring_target"
+    "wrong_monitoring_target",
+    "invent_trait",
+    "harvest_not_separate_event"
+  ],
+  "equivalence_groups": [
+    {
+      "group_id": "light_sensors",
+      "match_on": "type",
+      "members": [
+        "light_sensor_1",
+        "light_sensor_2"
+      ],
+      "expected_count": 2
+    },
+    {
+      "group_id": "keys",
+      "match_on": "id",
+      "members": [
+        "tomato_k1",
+        "gh_bind_root"
+      ],
+      "expected_count": 1
+    }
   ]
 }

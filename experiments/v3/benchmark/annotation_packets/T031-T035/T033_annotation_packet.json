@@ -3,7 +3,7 @@
   "task_type": "rule_repair",
   "difficulty": "hard",
   "annotation_version": "v2",
-  "review_status": "PENDING_HUMAN_REVIEW",
+  "review_status": "approved",
   "prompt": "输入一个水泵 WaterPump_B 错误关联到生菜植物的场景，系统需要识别资产类型不匹配并改为灌溉设备资产或占位任务。",
   "gold": {
     "required_nodes": [
@@ -20,7 +20,7 @@
         "count": 1,
         "parent": "lettuce_gh_root",
         "key_attrs": {
-          "asset_key": "lettuce"
+          "asset_key": "irrigation"
         }
       },
       {
@@ -43,7 +43,17 @@
         "object": "WaterPump_B"
       }
     ],
-    "required_bindings": [],
+    "required_bindings": [
+      {
+        "subject": "WaterPump_B",
+        "target": "WaterPump_B",
+        "type": "asset",
+        "metadata": {
+          "asset_key": "irrigation",
+          "fixed": true
+        }
+      }
+    ],
     "critical_objects": [
       "WaterPump_B"
     ],
@@ -56,7 +66,11 @@
         {
           "id": "WaterPump_B",
           "type": "Pump",
-          "asset_key": "lettuce"
+          "asset_key": "lettuce",
+          "asset_binding": {
+            "type": "asset",
+            "asset_key": "lettuce"
+          }
         },
         {
           "id": "lettuce_row",
@@ -73,23 +87,43 @@
         {
           "id": "WaterPump_B",
           "type": "Pump",
-          "asset_key": "irrigation"
+          "asset_key": "irrigation",
+          "asset_binding": {
+            "type": "asset",
+            "asset_key": "irrigation"
+          }
         },
         {
           "id": "lettuce_row",
           "type": "CropRow"
         }
       ]
-    }
+    },
+    "event_bind": []
   },
-  "rationale": "rule_repair: WaterPump_B has wrong asset_key 'lettuce'; must be corrected to 'irrigation' (irrigation/pump asset), or a placeholder job. Critical object is WaterPump_B (must be actually modified).",
+  "rationale": "rule_repair: WaterPump_B.asset_key lettuce->irrigation (device asset, crop-independent); required_nodes encode the CORRECTED state; required_bindings distinguish success from no-op.",
   "review_items": [
-    "Confirm WaterPump_B.asset_key must change lettuce->irrigation (or placeholder)",
-    "Confirm it is the asset_type_mismatch conflict (R4/R7 class)",
-    "Confirm critical object = WaterPump_B genuinely modified, not no-op"
+    "Confirm required_nodes now carry asset_key=irrigation (corrected), NOT lettuce",
+    "Confirm replace_asset AND set_placeholder both valid variants",
+    "Confirm critical WaterPump_B must be actually modified (evidence)"
   ],
   "forbidden_side_effects": [
     "noop_repair",
-    "keep_asset_mismatch"
+    "keep_asset_mismatch",
+    "regenerate_whole_scene"
+  ],
+  "allowed_side_effects": [
+    "replace_asset",
+    "set_placeholder"
+  ],
+  "allowed_variants": [
+    {
+      "path": "replace_asset",
+      "detail": "set WaterPump_B.asset_key to irrigation"
+    },
+    {
+      "path": "set_placeholder",
+      "detail": "keep mismatch + create placeholder asset_job"
+    }
   ]
 }

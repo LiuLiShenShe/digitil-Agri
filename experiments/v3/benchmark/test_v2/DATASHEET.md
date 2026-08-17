@@ -3,8 +3,8 @@
 **Benchmark version**: test_v2 (candidate, awaiting human approval + freeze)
 **Created**: 2026-08-05
 **Generator**: `benchmark/test_v2_tasks.py`
-**Status**: CANDIDATE — passes static Gold audit (0 errors); all tasks
-`PENDING_HUMAN_REVIEW` until the user (annotator 2) approves.
+**Status**: CANDIDATE — passes static Gold audit (0 errors) AND JSON Schema
+validation (0 errors); all tasks `pending` until the user (annotator 2) approves.
 
 ## Motivation & composition
 test_v2 replaces invalidated test_v1 (Prompt-Gold contradiction, see
@@ -44,8 +44,8 @@ Routing via `evaluators/task_types.py`: memory_query -> Query-CVSR
 (`query_cvsr.py`); graph types -> object-graph CVSR.
 
 ## Files
-- `test_v2_public_inputs.jsonl` sha256 `b4ef71192c117e3581127929a81d353cc7dd649a59a36634738bbeaebfa3b7d9`
-- `test_v2_gold.jsonl`         sha256 `eb38e89ee1c4e1d559ba120928f23835950bd8446c9f0b11d0c5aea8e9eb3517`
+- `test_v2_public_inputs.jsonl` sha256 `8321ed3dddaff902277f565c5dfa30d8652a929b9fa10b45516d10ba4fee6c9c`
+- `test_v2_gold.jsonl`         sha256 `01d4eb6903809f1fc6bed3259aa11bdf86198e76f9254e0c96b7d7cd0dadf306`
 
 See `MANIFEST.sha256` for the authoritative set.
 
@@ -54,5 +54,7 @@ See `MANIFEST.sha256` for the authoritative set.
   (not committed). Per spec, `EVALUATOR_FREEZE_COMMIT` and `METHOD_FREEZE_COMMIT`
   must be recorded at HEAD once the evaluator and methods are committed.
 - **Base HEAD**: `0055d5cbbe8a80ac836eabbf27b018ec43fceb13`
-- **test_v2 freeze**: BLOCKED until (1) evaluator/method committed +
-  freeze commits recorded, and (2) annotator 2 approves all 20 task golds.
+- **test_v2 freeze**: BLOCKED — round 2 of Annotator 2 review. Round-1 issues
+  (P0-1..P0-4, P1-1..P1-3) and packet revisions (P1-4) applied; hash sync (P1-5)
+  in progress. Still `pending`; gate stays `BLOCKED_ANNOTATION_REVIEW` until the
+  second review approves and the freeze commits are recorded.

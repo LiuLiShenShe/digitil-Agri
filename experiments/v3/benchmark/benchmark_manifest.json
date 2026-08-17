@@ -1,5 +1,5 @@
 {
-  "benchmark_version": "v2-candidate",
+  "benchmark_version": "v2-sealed",
   "created": "2026-08-04",
   "splits": {
     "train": {
@@ -25,12 +25,12 @@
     "test_v2_public_inputs": {
       "file": "test_v2/test_v2_public_inputs.jsonl",
       "tasks": 20,
-      "sha256": "b4ef71192c117e3581127929a81d353cc7dd649a59a36634738bbeaebfa3b7d9"
+      "sha256": "8321ed3dddaff902277f565c5dfa30d8652a929b9fa10b45516d10ba4fee6c9c"
     },
     "test_v2_gold": {
       "file": "test_v2/test_v2_gold.jsonl",
       "tasks": 20,
-      "sha256": "eb38e89ee1c4e1d559ba120928f23835950bd8446c9f0b11d0c5aea8e9eb3517"
+      "sha256": "61a48f610e051df8042c905229eb84409af4800268d652d90c93f02b193b4c61"
     }
   },
   "invalidations": {
@@ -48,5 +48,5 @@
       ]
     }
   },
-  "note": "test_v1 invalidated (F-007); test_v2 candidate created (F-014), pending human approval + freeze commit."
+  "note": "test_v2 approved by Annotator 2 (2026-08-07) and frozen. All tasks `approved`; freeze is a one-way door -- future edits require a version bump + full re-run."
 }

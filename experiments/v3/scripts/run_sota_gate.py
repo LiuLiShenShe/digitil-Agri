@@ -52,11 +52,12 @@ def load_runs() -> list[dict]:
     return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-# Test-split tasks as defined by test_public_inputs.jsonl. The SOTA gate is defined
-# on the FROZEN TEST SET (specs/sota-gate/spec.md line 15), never the dev split.
+# Test-split tasks as defined by the FROZEN test_v2 public inputs. The SOTA gate is
+# defined on the FROZEN TEST SET (specs/sota-gate/spec.md line 15), never the dev
+# split. test_v1 (test_public_inputs.jsonl) was invalidated under F-007.
 # Runs that only cover dev tasks (T19-T26) do not constitute gate evidence.
 def test_split_task_ids() -> set[str]:
-    p = BENCH_DIR / "test_public_inputs.jsonl"
+    p = BENCH_DIR / "test_v2" / "test_v2_public_inputs.jsonl"
     if not p.exists():
         return set()
     tids = set()
@@ -109,8 +110,8 @@ def check_conditions(summary: dict[str, dict], runs: list[dict]) -> list[dict[st
     manifest_path = BENCH_DIR / "benchmark_manifest.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        sealed_hash = manifest.get("splits", {}).get("test_gold_sealed", {}).get("sha256")
-        actual_hash = sha256_of(BENCH_DIR / "test_gold.sealed.jsonl") if (BENCH_DIR / "test_gold.sealed.jsonl").exists() else None
+        sealed_hash = manifest.get("splits", {}).get("test_v2_gold", {}).get("sha256")
+        actual_hash = sha256_of(BENCH_DIR / "test_v2" / "test_v2_gold.jsonl") if (BENCH_DIR / "test_v2" / "test_v2_gold.jsonl").exists() else None
         if sealed_hash and actual_hash and sealed_hash != actual_hash:
             violations.append({"condition": "gold_hash_match", "status": "FAIL",
                                "detail": f"manifest sha256 {sealed_hash} != actual {actual_hash}"})
@@ -194,7 +195,7 @@ def main() -> int:
     manifest_path = BENCH_DIR / "benchmark_manifest.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        manifest_hash = manifest.get("splits", {}).get("test_gold_sealed", {}).get("sha256", "")
+        manifest_hash = manifest.get("splits", {}).get("test_v2_gold", {}).get("sha256", "")
     print("SOTA_GATE=PASS")
     print(f"baseline={best_baseline[0]}")
     print(f"delta_cvsr={delta:+.4f}")

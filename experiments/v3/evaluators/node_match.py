@@ -64,13 +64,46 @@ def _attr_cost(gen: dict[str, Any], req: dict[str, Any], equivalence_groups: lis
     if req_parent and gen_parent and gen_parent != req_parent:
         cost += 0.4
 
-    # equivalence groups: if the required id is in a group, allow matching any member
-    eq_groups = [g for g in (equivalence_groups or []) if "|" in g]
-    req_in_group = any(req.get("id") in g.split("|") for g in eq_groups)
+    # equivalence groups: if the required id is in any group, the object is
+    # interchangeable with the other members -> relax mismatch costs.
+    req_in_group = _in_any_group(_norm(req.get("id") or ""), equivalence_groups)
     if req_in_group:
         cost = max(0.0, cost - 0.5)  # relax mismatches for interchangeable objects
 
     return cost
+
+
+def _in_any_group(rid: str, equivalence_groups) -> bool:
+    """True if the (lowercased) required id is named by any equivalence group.
+
+    Groups may be either the legacy 'a|b|c' string form or the v2 object form
+    {group_id, members, members_pattern, match_on, expected_count}.
+    """
+    if not equivalence_groups:
+        return False
+    for g in equivalence_groups:
+        if isinstance(g, str):
+            if rid in g.split("|"):
+                return True
+            continue
+        if not isinstance(g, dict):
+            continue
+        members = [str(m).strip().lower() for m in (g.get("members") or [])]
+        pat = g.get("members_pattern")
+        if rid in members:
+            return True
+        if pat and re_search(pat, rid):
+            return True
+    return False
+
+
+def re_search(pattern: str, s: str) -> bool:
+    """Thin wrapper so tests can import it; regex is anchored as a prefix match."""
+    import re
+    try:
+        return re.match(pattern, s) is not None
+    except re.error:
+        return False
 
 
 def _expand_count(n: dict[str, Any]) -> list[dict[str, Any]]:
@@ -165,10 +198,11 @@ def match_nodes(*, required: list[dict[str, Any]], generated: list[dict[str, Any
     gen = _expand_generated(generated or [])
     if not req_expanded:
         return {"matched": 0, "unmatched_required": [], "unmatched_generated": list(gen),
-                "assignments": [], "all_matched": False}
+                "assignments": [], "req_expanded_ids": [], "all_matched": False}
     if not gen:
         return {"matched": 0, "unmatched_required": req_expanded, "unmatched_generated": [],
-                "assignments": [], "all_matched": False}
+                "assignments": [], "req_expanded_ids": [str(r.get("id") or "") for r in req_expanded],
+                "all_matched": False}
 
     cost = []
     for g in gen:
@@ -199,8 +233,49 @@ def match_nodes(*, required: list[dict[str, Any]], generated: list[dict[str, Any
         "unmatched_required": unmatched_required,
         "unmatched_generated": unmatched_generated,
         "assignments": [(gi, ri) for gi, ri in assignments],
+        "req_expanded_ids": [str(r.get("id") or "") for r in req_expanded],
         "all_matched": matched == len(req_expanded),
     }
+
+
+def id_correspondence(assignments: list[tuple[int, int]],
+                      generated: list[dict[str, Any]],
+                      req_expanded_ids: list[str]) -> dict[str, str]:
+    """Map each matched generated node's id → the required node id it was matched to.
+
+    This is the identity proof the node matcher already established: it knows the
+    generated greenhouse IS the required N02_strawberry_gh because type/role/attrs
+    align. Edges and bindings reference these same object ids, so the scorer must
+    reuse this correspondence when matching relations/bindings — otherwise gold ids
+    (which methods legitimately never see) could never align with the generated ids,
+    forcing relation_f1/binding_f1 to 0 even when the scene graph is correct.
+
+    Only *matched* nodes (cost below the CVSR threshold) are carried over, so no
+    unmatched/fabricated node leaks a false identity. This is pure reasoning over
+    the correspondence already proven for nodes — it supplements nothing.
+    """
+    corr: dict[str, str] = {}
+    for gi, ri in assignments:
+        g = generated[gi] if gi < len(generated) else None
+        if g is None:
+            continue
+        gid = _norm(str(g.get("id") or ""))
+        rid = _norm(str(req_expanded_ids[ri] if ri < len(req_expanded_ids) else ""))
+        if not gid or not rid:
+            continue
+        # Expanded required instances carry a `-<i>` suffix (e.g. row-2) but the
+        # id referenced by required_edges/required_bindings is the base id (the row).
+        # Strip that numeric instance suffix so edges/bindings can align to the base.
+        import re as _re
+        base_rid = _re.sub(r"-\d+$", "", rid)
+        # Methods also author repeated objects as one node with count=N; the
+        # canonicalizer expands it into suffixed instances (plant_1-1..plant_1-12),
+        # but relations reference the base id (plant_1). Register BOTH the full
+        # generated id and its base so edge/binding remapping aligns.
+        base_gid = _re.sub(r"-\d+$", "", gid)
+        corr.setdefault(gid, base_rid)
+        corr.setdefault(base_gid, base_rid)
+    return corr
 
 
 def object_precision_recall(match: dict[str, Any], *, n_required: int, n_generated: int) -> dict[str, float]:

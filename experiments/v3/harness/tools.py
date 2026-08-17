@@ -92,14 +92,95 @@ def tool_object_bind(ctx: dict[str, Any], request: dict[str, Any]) -> dict[str, 
     return {"binding": binding}
 
 
+def _memory_records(ctx: dict[str, Any]) -> list[dict[str, Any]]:
+    """Timeseries records from the seeded memory state (memory_query tasks)."""
+    return ctx.get("memory_state") and (ctx.get("memory_state").get("timeseries_records") or []) or []
+
+
+def _memory_events(ctx: dict[str, Any]) -> list[dict[str, Any]]:
+    return ctx.get("memory_state") and (ctx.get("memory_state").get("events") or []) or []
+
+
+def _iso_in_range(ts_iso: str, start_iso: str | None, end_iso: str | None) -> bool:
+    if start_iso and ts_iso < start_iso:
+        return False
+    if end_iso and ts_iso > end_iso:
+        return False
+    return True
+
+
 def tool_timeseries_query(ctx: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
-    return {"objectId": request.get("objectId"), "metric": request.get("metric"),
-            "range": request.get("range"), "points": []}
+    """Read-only retrieval over the seeded memory timeseries.
+
+    Filters by metric / objectId / (start,end) range and returns the matching
+    points plus deterministic aggregates (mean/min/max/latest) over that window.
+    The aggregation mirrors the memory Oracle so a method that retrieves the
+    correct window reproduces the gold's expected_answer exactly.
+    """
+    metric = request.get("metric")
+    obj = request.get("objectId") or request.get("object_id")
+    start = request.get("start") or request.get("start_time")
+    end = request.get("end") or request.get("end_time")
+    records = _memory_records(ctx)
+    matches = []
+    for r in records:
+        if metric and r.get("metric") != metric:
+            continue
+        if obj and not (r.get("object_id") == obj or r.get("sensor_id") == obj or r.get("target_id") == obj):
+            continue
+        ts = str(r.get("timestamp") or "")
+        if not _iso_in_range(ts, start, end):
+            continue
+        matches.append(r)
+    matches.sort(key=lambda r: str(r.get("timestamp") or ""))
+    values = [float(r["value"]) for r in matches if r.get("value") is not None]
+    aggs: dict[str, float | str] = {}
+    if values:
+        aggs = {
+            "mean": round(sum(values) / len(values), 2),
+            "min": round(min(values), 2),
+            "max": round(max(values), 2),
+            "latest": round(values[-1], 2),
+        }
+    unit = ""
+    if matches:
+        unit = matches[-1].get("unit") or ""
+    return {
+        "objectId": request.get("objectId"),
+        "metric": metric,
+        "range": {"start": start, "end": end},
+        "points": matches,
+        "count": len(matches),
+        "aggregates": aggs,
+        "unit": unit,
+    }
 
 
 def tool_event_query(ctx: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
-    return {"objectId": request.get("objectId"), "eventType": request.get("eventType"),
-            "range": request.get("range"), "events": []}
+    """Read-only retrieval over the seeded memory events (memory_query tasks)."""
+    etype = request.get("eventType") or request.get("event_type")
+    obj = request.get("objectId") or request.get("object_id")
+    start = request.get("start") or request.get("start_time")
+    end = request.get("end") or request.get("end_time")
+    events = _memory_events(ctx)
+    matches = []
+    for e in events:
+        if etype and e.get("event_type") != etype:
+            continue
+        if obj and not (e.get("object_id") == obj or e.get("target_id") == obj):
+            continue
+        ts = str(e.get("timestamp") or "")
+        if not _iso_in_range(ts, start, end):
+            continue
+        matches.append(e)
+    matches.sort(key=lambda e: str(e.get("timestamp") or ""))
+    return {
+        "objectId": request.get("objectId"),
+        "eventType": etype,
+        "range": {"start": start, "end": end},
+        "events": matches,
+        "count": len(matches),
+    }
 
 
 def tool_rule_check(ctx: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:

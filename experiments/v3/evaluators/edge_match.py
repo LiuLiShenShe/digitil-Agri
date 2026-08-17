@@ -15,9 +15,30 @@ def _norm(s: str) -> str:
     return (s or "").strip().lower()
 
 
+def remap_ids(ref: str, id_map: dict[str, str] | None) -> str:
+    """Map a generated object id to the required id it was matched to, if any.
+
+    `id_map` is the node-matching correspondence (generated_id → required_id). When
+    present, a generated relation endpoint is rewritten to its matched required id
+    before literal matching, so relations can align even though methods legitimately
+    invent their own ids (gold ids are never shown to them). If the id is unmapped
+    (a fabricated/extra node), it is left as-is and won't match anything — no
+    over-credit. Applies uniformly to every method.
+    """
+    n = _norm(ref)
+    return id_map.get(n, n) if id_map else n
+
+
 def match_edges(*, required: list[dict[str, Any]], generated: list[dict[str, Any]],
-                equivalence_groups: list[str] | None = None) -> dict[str, Any]:
-    """Return matching report for required vs generated edges."""
+                equivalence_groups: list[str] | None = None,
+                id_map: dict[str, str] | None = None) -> dict[str, Any]:
+    """Return matching report for required vs generated edges.
+
+    id_map: generated_id → required_id correspondence from node matching. When given,
+    generated edge endpoints are first rewritten through it so a generated node id
+    (e.g. greenhouse_1) is compared using the required id it was matched to
+    (e.g. N02_strawberry_gh). Applied to ALL methods identically.
+    """
     # Build a lookup: (subject, predicate, object) normalized -> edge
     req_by_key: dict[tuple[str, str, str], dict[str, Any]] = {}
     for e in required or []:
@@ -30,7 +51,8 @@ def match_edges(*, required: list[dict[str, Any]], generated: list[dict[str, Any
     swapped_errors: list[dict[str, Any]] = []
 
     for e in generated or []:
-        s, p, o = _norm(e.get("subject")), _norm(e.get("predicate")), _norm(e.get("object"))
+        s = remap_ids(e.get("subject"), id_map)
+        p, o = _norm(e.get("predicate")), remap_ids(e.get("object"), id_map)
         key = (s, p, o)
         if key in req_by_key and key not in matched_req_keys:
             matched += 1

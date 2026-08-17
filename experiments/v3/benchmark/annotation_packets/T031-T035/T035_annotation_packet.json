@@ -3,7 +3,7 @@
   "task_type": "asset_routing",
   "difficulty": "medium",
   "annotation_version": "v2",
-  "review_status": "PENDING_HUMAN_REVIEW",
+  "review_status": "approved",
   "prompt": "构建辣椒温室，6 株重点辣椒使用高保真资产，14 株背景辣椒使用轻量 GLB，缺失补光设备生成占位任务。",
   "gold": {
     "required_nodes": [
@@ -39,6 +39,17 @@
         "key_attrs": {
           "asset_policy": "lightweight_glb"
         }
+      },
+      {
+        "id": "pepper_light_dev",
+        "type": "Device",
+        "role": "entity",
+        "count": 1,
+        "parent": "pepper_gh_root",
+        "key_attrs": {
+          "device_type": "supplemental_light",
+          "asset_state": "placeholder"
+        }
       }
     ],
     "required_edges": [
@@ -56,12 +67,17 @@
         "subject": "pepper_row",
         "predicate": "contains",
         "object": "pepper_bg_01"
+      },
+      {
+        "subject": "pepper_gh_root",
+        "predicate": "contains",
+        "object": "pepper_light_dev"
       }
     ],
     "required_bindings": [
       {
         "subject": "pepper_focus_01",
-        "target": "pepper_gh_root",
+        "target": "pepper_focus_asset",
         "type": "asset",
         "metadata": {
           "asset_key": "pepper_focus",
@@ -70,26 +86,47 @@
       },
       {
         "subject": "pepper_bg_01",
-        "target": "pepper_gh_root",
+        "target": "pepper_bg_asset",
         "type": "asset",
         "metadata": {
           "asset_key": "pepper_bg",
           "policy": "lightweight_glb"
         }
+      },
+      {
+        "subject": "pepper_light_dev",
+        "target": "pepper_light_job",
+        "type": "asset_job",
+        "metadata": {
+          "job_type": "placeholder",
+          "policy": "procedural_model",
+          "reason": "missing_supplemental_light"
+        }
       }
     ],
-    "critical_objects": [],
+    "critical_objects": [
+      "pepper_light_dev"
+    ],
     "initial_state": {},
-    "goal_state": {}
+    "goal_state": {},
+    "event_bind": []
   },
-  "rationale": "asset_routing: 6 focus peppers at high-fidelity asset, 14 background at lightweight GLB; missing light-fill device triggers a placeholder generation job.",
+  "rationale": "asset_routing: 6 hi-fi focus peppers + 14 lightweight bg peppers; missing supplemental-light generates a placeholder asset_job (gradable).",
   "review_items": [
     "Confirm 6 hi-fi vs 14 lightweight split",
     "Confirm missing light-fill spawns asset.job.create placeholder (not silent skip)",
-    "Confirm asset_key/policy on each asset bind"
+    "Confirm asset_key/policy on each asset bind; placeholder job on light device"
   ],
   "forbidden_side_effects": [
     "all_low_fidelity",
-    "skip_placeholder_for_missing_light"
+    "skip_placeholder_for_missing_light",
+    "silent_omit_supplemental_light"
+  ],
+  "fatal_constraints": [
+    "missing_supplemental_light_must_generate_placeholder"
+  ],
+  "allowed_side_effects": [
+    "set_placeholder",
+    "create_asset_job"
   ]
 }

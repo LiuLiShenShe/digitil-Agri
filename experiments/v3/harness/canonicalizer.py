@@ -81,7 +81,12 @@ def canonicalize_output(raw: dict[str, Any]) -> dict[str, Any]:
 
     edges = [canonicalize_edge(e) for e in edges_raw]
     bindings = [canonicalize_binding(b) for b in bindings_raw]
-    return {"nodes": nodes, "edges": edges, "bindings": bindings, "trace": trace}
+    result = {"nodes": nodes, "edges": edges, "bindings": bindings, "trace": trace}
+    # memory_query tasks produce a structured retrieval `answer`; preserve it so
+    # the runner threads it into Query-CVSR. Not a graph artifact.
+    if "answer" in raw:
+        result["answer"] = raw["answer"]
+    return result
 
 
 def merge_layout_into_nodes(nodes: list[dict[str, Any]], layout: list[dict[str, Any]]) -> list[dict[str, Any]]:

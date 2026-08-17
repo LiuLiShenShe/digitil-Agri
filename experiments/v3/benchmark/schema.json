@@ -1,16 +1,87 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "KAFarmTwin v2 Benchmark Task Schema",
-  "description": "Multi-task-type gold schema. Every task declares a task_type; gold blocks are type-specific. No single object-graph CVSR is used across all types.",
+  "description": "Multi-task-type gold schema. Every task declares a task_type; gold blocks are type-specific. No single object-graph CVSR is used across all types. Review-status values are unified to {pending, needs_revision, approved, rejected}. Task ids are 'T<NN>-v2-<type>' slugs.",
   "type": "object",
   "required": [
     "task_id", "task_type", "prompt", "initial_state",
     "expected_outcome", "fatal_constraints", "allowed_side_effects",
     "forbidden_side_effects", "annotation_version", "review_status"
   ],
-  "additionalProperties": true,
+  "definitions": {
+    "node": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"type": "string"},
+        "role": {"type": "string", "enum": ["root", "entity"]},
+        "count": {"type": "integer", "minimum": 1},
+        "parent": {"type": "string"},
+        "key_attrs": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["subject", "predicate", "object"],
+      "properties": {
+        "subject": {"type": "string"},
+        "predicate": {"type": "string"},
+        "object": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "binding": {
+      "type": "object",
+      "required": ["subject", "target", "type"],
+      "properties": {
+        "subject": {"type": "string"},
+        "target": {"type": "string"},
+        "type": {"type": "string"},
+        "metadata": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "event_binding": {
+      "type": "object",
+      "required": ["object_id", "event_type", "timestamp"],
+      "properties": {
+        "event_id": {"type": "string"},
+        "object_id": {"type": "string"},
+        "event_type": {"type": "string"},
+        "timestamp": {"type": "string"},
+        "payload": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "equivalence_group": {
+      "type": "object",
+      "required": ["group_id", "match_on"],
+      "properties": {
+        "group_id": {"type": "string"},
+        "match_on": {"type": "string", "enum": ["id", "type", "role", "key_attrs"]},
+        "members_pattern": {"type": "string"},
+        "members": {"type": "array", "items": {"type": "string"}},
+        "expected_count": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    },
+    "variant": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {"type": "string"},
+        "detail": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  },
   "properties": {
-    "task_id": {"type": "string", "pattern": "^T[0-9]{2,3}$"},
+    "task_id": {
+      "type": "string",
+      "pattern": "^TN[0-9]{2}-v2-(scene|asset|bind|repair|mem)$"
+    },
     "task_type": {
       "type": "string",
       "enum": ["scene_construction", "asset_routing", "data_binding", "rule_repair", "memory_query"]
@@ -18,81 +89,71 @@
     "difficulty": {"enum": ["easy", "medium", "hard"]},
     "prompt": {"type": "string", "minLength": 1},
     "annotation_version": {"type": "string", "const": "v2"},
-    "review_status": {"type": "string", "enum": ["pending", "reviewed", "approved", "rejected"]},
+    "review_status": {"type": "string", "enum": ["pending", "needs_revision", "approved", "rejected"]},
+
+    "policy_ref": {"type": "string"},
 
     "initial_state": {
-      "type": "object",
-      "description": "State that exists BEFORE the task runs. For memory_query this holds objects, timeseries, events, daily_reports to query over.",
+      "type": ["object", "null"],
+      "description": "State that exists BEFORE the task runs. For memory_query and repair/binding this holds the input objects/relations/timeseries/events to query over or transform.",
       "properties": {
-        "objects": {"type": "array", "items": {"type": "object"}},
+        "objects": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+        "relations": {"type": "array", "items": {"$ref": "#/definitions/edge"}},
         "timeseries_records": {"type": "array", "items": {"type": "object"}},
         "events": {"type": "array", "items": {"type": "object"}},
         "daily_reports": {"type": "array", "items": {"type": "object"}}
-      }
+      },
+      "additionalProperties": true
     },
 
-    "expected_outcome": {"type": "object", "description": "Type-specific gold outcome. See *-outcome sub-schemas below."},
+    "goal_state": {
+      "type": ["object", "null"],
+      "description": "For rule_repair / data_binding: the expected final state (disjunctive goals encoded in required_bindings and allowed_variants).",
+      "properties": {
+        "objects": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+        "events": {"type": "array", "items": {"$ref": "#/definitions/event_binding"}}
+      },
+      "additionalProperties": true
+    },
+
+    "required_nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+    "optional_nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+    "forbidden_nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+    "required_edges": {"type": "array", "items": {"$ref": "#/definitions/edge"}},
+    "required_bindings": {"type": "array", "items": {"$ref": "#/definitions/binding"}},
+    "critical_objects": {"type": "array", "items": {"type": "string"}},
+
+    "equivalence_groups": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/equivalence_group"}
+    },
 
     "fatal_constraints": {"type": "array", "items": {"type": "string"}},
     "allowed_side_effects": {"type": "array", "items": {"type": "string"}},
     "forbidden_side_effects": {"type": "array", "items": {"type": "string"}},
-
-    "equivalence_groups": {"type": "array", "items": {"type": "string"}},
+    "allowed_variants": {"type": "array", "items": {"$ref": "#/definitions/variant"}},
+    "constraints": {"type": "array", "items": {"type": "string"}},
+    "required_events": {"type": "array", "items": {"$ref": "#/definitions/event_binding"}},
+    "event_bind": {"type": "array", "items": {"$ref": "#/definitions/event_binding"}},
 
     "graph_outcome": {
       "description": "For scene_construction / asset_routing / data_binding / rule_repair: the object-graph gold.",
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
-        "required_nodes": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["id", "type"],
-            "properties": {
-              "id": {"type": "string"},
-              "type": {"type": "string"},
-              "role": {"type": "string"},
-              "count": {"type": "integer", "minimum": 1},
-              "parent": {"type": "string"},
-              "key_attrs": {"type": "object"},
-              "asset_policy": {"type": "string"}
-            }
-          }
-        },
-        "optional_nodes": {"type": "array", "items": {"type": "object"}},
-        "forbidden_nodes": {"type": "array", "items": {"type": "object"}},
-        "required_edges": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["subject", "predicate", "object"],
-            "properties": {
-              "subject": {"type": "string"},
-              "predicate": {"type": "string"},
-              "object": {"type": "string"}
-            }
-          }
-        },
-        "required_bindings": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["subject", "target", "type"],
-            "properties": {
-              "subject": {"type": "string"},
-              "target": {"type": "string"},
-              "type": {"type": "string"},
-              "metadata": {"type": "object"}
-            }
-          }
-        },
+        "required_nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+        "optional_nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+        "forbidden_nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+        "required_edges": {"type": "array", "items": {"$ref": "#/definitions/edge"}},
+        "required_bindings": {"type": "array", "items": {"$ref": "#/definitions/binding"}},
+        "required_events": {"type": "array", "items": {"$ref": "#/definitions/event_binding"}},
         "critical_objects": {"type": "array", "items": {"type": "string"}}
-      }
+      },
+      "additionalProperties": true
     },
 
     "query_spec": {
       "description": "For memory_query: the retrieval/aggregation specification.",
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "target_object_ids": {"type": "array", "items": {"type": "string"}},
         "metrics": {"type": "array", "items": {"type": "string"}},
@@ -100,30 +161,33 @@
         "end_time": {"type": "string"},
         "aggregations": {"type": "array", "items": {"type": "string"}},
         "required_units": {"type": "object"}
-      }
+      },
+      "additionalProperties": true
     },
 
     "expected_answer": {
       "description": "For memory_query: the oracle-computed correct answer.",
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "normalized_values": {"type": "object"},
+        "trend": {"type": "object"},
         "events": {"type": "array", "items": {"type": "object"}},
         "summary_facts": {"type": "array", "items": {"type": "string"}}
-      }
+      },
+      "additionalProperties": true
     },
 
     "expected_evidence": {
       "description": "For memory_query: the real record/event IDs the answer must be grounded on.",
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "record_ids": {"type": "array", "items": {"type": "string"}},
         "event_ids": {"type": "array", "items": {"type": "string"}}
-      }
+      },
+      "additionalProperties": true
     },
 
-    "allowed_variants": {"type": "array", "items": {"type": "string"}},
-    "constraints": {"type": "array", "items": {"type": "string"}},
-    "goal_state": {"type": "object"}
-  }
+    "expected_outcome": {"type": "object", "description": "Type-specific gold outcome. See *-outcome sub-schemas below."}
+  },
+  "additionalProperties": true
 }

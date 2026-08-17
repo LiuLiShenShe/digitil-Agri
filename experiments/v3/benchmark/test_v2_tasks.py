@@ -36,26 +36,33 @@ OUT = BASE / "test_v2"
 def _scene_task(n: str) -> dict[str, Any]:
     # A different greenhouse crop per task to vary gold.
     crops = {
-        "N01": {"crop": "Lettuce", "rows": 2, "plants": 12, "giant": False},
-        "N02": {"crop": "Strawberry", "rows": 3, "plants": 24, "giant": False},
-        "N03": {"crop": "Bell-Pepper", "rows": 3, "plants": 21, "giant": False},
-        "N04": {"crop": "Eggplant", "rows": 2, "plants": 10, "giant": False},
+        "N01": {"crop": "Lettuce", "rows": 2, "plants": 12},
+        "N02": {"crop": "Strawberry", "rows": 3, "plants": 24},
+        "N03": {"crop": "Bell-Pepper", "rows": 3, "plants": 21},
+        "N04": {"crop": "Eggplant", "rows": 2, "plants": 10},
     }[n]
     name = crops["crop"].replace("-", "_").lower()
     root = f"{n}_{name}_gh"
     row = f"{n}_{name}_row"
     plant = f"{n}_{name}_plant"
+    ws = f"{n}_{name}_ws"
+    cam1 = f"{n}_{name}_cam1"
+    cam2 = f"{n}_{name}_cam2"
     return {
         "task_id": f"T{n}-v2-scene",
         "task_type": "scene_construction",
         "difficulty": "medium",
-        "prompt": f"构建一个 {name} 温室，包含 {crops['rows']} 行作物、{crops['plants']} 株{name}、1 个气象站和 2 个摄像头。",
+        "prompt": (f"构建一个 {name} 温室，包含 {crops['rows']} 行作物、{crops['plants']} 株{name}、"
+                   f"1 个气象站和 2 个摄像头，气象站和摄像头必须位于温室内部。"),
         "annotation_version": "v2",
-        "review_status": "PENDING_HUMAN_REVIEW",
+        "review_status": "pending",
         "initial_state": {},
         "query_spec": None,
         "expected_answer": None,
         "expected_evidence": None,
+        # REQUIRED_NODES = full set: Greenhouse + rows + plants + WS + 2 cameras.
+        # Rows/plants are repeated instances -> equivalence groups make them
+        # semantically matchable (count/type based), not exact-ID matched.
         "expected_outcome": {"graph": {"required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1,
              "key_attrs": {"size": "20x6m", "location": {"x": 0, "z": 0}}},
@@ -63,27 +70,57 @@ def _scene_task(n: str) -> dict[str, Any]:
              "parent": root, "key_attrs": {"location": {"x": 2, "z": 1}}},
             {"id": plant, "type": "Plant", "role": "entity", "count": crops["plants"],
              "parent": row, "key_attrs": {"belongs_to": row, "location": {"x": 3, "z": 2}}},
+            {"id": ws, "type": "WeatherStation", "role": "entity", "count": 1,
+             "parent": root, "key_attrs": {"location": {"x": 1, "z": 1}}},
+            {"id": cam1, "type": "Camera", "role": "entity", "count": 1,
+             "parent": root, "key_attrs": {"observes": row, "location": {"x": 1, "z": 2}}},
+            {"id": cam2, "type": "Camera", "role": "entity", "count": 1,
+             "parent": root, "key_attrs": {"observes": row, "location": {"x": 5, "z": 2}}},
         ]}},
         "graph_outcome": {"required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
             {"id": row, "type": "CropRow", "role": "entity", "count": crops["rows"], "parent": root},
             {"id": plant, "type": "Plant", "role": "entity", "count": crops["plants"], "parent": row},
+            {"id": ws, "type": "WeatherStation", "role": "entity", "count": 1, "parent": root},
+            {"id": cam1, "type": "Camera", "role": "entity", "count": 1, "parent": root,
+             "key_attrs": {"observes": row}},
+            {"id": cam2, "type": "Camera", "role": "entity", "count": 1, "parent": root,
+             "key_attrs": {"observes": row}},
         ]},
         "required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
             {"id": row, "type": "CropRow", "role": "entity", "count": crops["rows"], "parent": root},
             {"id": plant, "type": "Plant", "role": "entity", "count": crops["plants"], "parent": row},
+            {"id": ws, "type": "WeatherStation", "role": "entity", "count": 1, "parent": root},
+            {"id": cam1, "type": "Camera", "role": "entity", "count": 1, "parent": root,
+             "key_attrs": {"observes": row}},
+            {"id": cam2, "type": "Camera", "role": "entity", "count": 1, "parent": root,
+             "key_attrs": {"observes": row}},
         ],
         "required_edges": [
             {"subject": root, "predicate": "contains", "object": row},
             {"subject": row, "predicate": "contains", "object": plant},
+            {"subject": root, "predicate": "contains", "object": ws},
+            {"subject": root, "predicate": "contains", "object": cam1},
+            {"subject": root, "predicate": "contains", "object": cam2},
         ],
         "required_bindings": [],
         "critical_objects": [],
-        "forbidden_side_effects": ["omit_required_plant", "wrong_parent"],
-        "fatal_constraints": [],
+        "forbidden_side_effects": ["omit_required_plant", "wrong_parent",
+                                   "omit_weather_station", "omit_camera"],
+        "fatal_constraints": [
+            "weather_station_and_cameras_must_be_present",
+            "camera_must_have_observes_target",
+        ],
         "allowed_side_effects": [],
-        "equivalence_groups": [],
+        "equivalence_groups": [
+            {"group_id": f"{n}_rows", "match_on": "type", "members_pattern": f"^{row}",
+             "members": [row], "expected_count": crops["rows"]},
+            {"group_id": f"{n}_plants", "match_on": "type", "members_pattern": f"^{plant}",
+             "members": [plant], "expected_count": crops["plants"]},
+            {"group_id": f"{n}_cameras", "match_on": "role", "members": [cam1, cam2],
+             "expected_count": 2},
+        ],
         "allowed_variants": [],
     }
 
@@ -96,15 +133,21 @@ def _asset_task(n: str) -> dict[str, Any]:
     row = f"{n}_{name}_row"
     focus_p = f"{n}_{name}_focus"
     bg_p = f"{n}_{name}_bg"
+    light_dev = f"{n}_{name}_light"
+    place_asset = f"{n}_{name}_light_placeholder"
+    place_job = f"{n}_{name}_light_job"
     return {
         "task_id": f"T{n}-v2-asset",
         "task_type": "asset_routing",
         "difficulty": "medium",
-        "prompt": f"构建{name}温室，{focus} 株重点{focus}使用高保真资产，{bg} 株背景使用轻量 GLB，缺失补光设备生成占位任务。",
+        "prompt": (f"构建{name}温室，{focus} 株重点植株使用高保真资产，{bg} 株背景植株使用轻量 GLB。"
+                   f"温室缺少补光设备，需生成一个占位任务用于后续补光设备资产。"),
         "annotation_version": "v2",
-        "review_status": "PENDING_HUMAN_REVIEW",
+        "review_status": "pending",
         "initial_state": {},
         "query_spec": None, "expected_answer": None, "expected_evidence": None,
+        # REQUIRED: greenhouse + row + focus(hif-fi) + bg(lightweight) + light device
+        # placeholder + asset-generation job. Missing light -> placeholder is gradable.
         "expected_outcome": {"graph": {"required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
             {"id": row, "type": "CropRow", "role": "entity", "count": 1, "parent": root},
@@ -112,6 +155,9 @@ def _asset_task(n: str) -> dict[str, Any]:
              "parent": row, "key_attrs": {"asset_policy": "high_fidelity"}},
             {"id": bg_p, "type": "Plant", "role": "entity", "count": bg,
              "parent": row, "key_attrs": {"asset_policy": "lightweight_glb"}},
+            {"id": light_dev, "type": "Device", "role": "entity", "count": 1,
+             "parent": root, "key_attrs": {"device_type": "supplemental_light",
+                                            "asset_state": "placeholder"}},
         ]}},
         "graph_outcome": {"required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
@@ -120,6 +166,9 @@ def _asset_task(n: str) -> dict[str, Any]:
              "parent": row, "key_attrs": {"asset_policy": "high_fidelity"}},
             {"id": bg_p, "type": "Plant", "role": "entity", "count": bg,
              "parent": row, "key_attrs": {"asset_policy": "lightweight_glb"}},
+            {"id": light_dev, "type": "Device", "role": "entity", "count": 1,
+             "parent": root, "key_attrs": {"device_type": "supplemental_light",
+                                            "asset_state": "placeholder"}},
         ]},
         "required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
@@ -128,22 +177,42 @@ def _asset_task(n: str) -> dict[str, Any]:
              "parent": row, "key_attrs": {"asset_policy": "high_fidelity"}},
             {"id": bg_p, "type": "Plant", "role": "entity", "count": bg,
              "parent": row, "key_attrs": {"asset_policy": "lightweight_glb"}},
+            {"id": light_dev, "type": "Device", "role": "entity", "count": 1,
+             "parent": root, "key_attrs": {"device_type": "supplemental_light",
+                                            "asset_state": "placeholder"}},
         ],
         "required_edges": [
             {"subject": root, "predicate": "contains", "object": row},
             {"subject": row, "predicate": "contains", "object": focus_p},
             {"subject": row, "predicate": "contains", "object": bg_p},
+            {"subject": root, "predicate": "contains", "object": light_dev},
         ],
         "required_bindings": [
-            {"subject": focus_p, "target": root, "type": "asset",
+            {"subject": focus_p, "target": f"{n}_{name}_focus_asset", "type": "asset",
              "metadata": {"asset_key": f"{name}_focus", "policy": "high_fidelity"}},
-            {"subject": bg_p, "target": root, "type": "asset",
+            {"subject": bg_p, "target": f"{n}_{name}_bg_asset", "type": "asset",
              "metadata": {"asset_key": f"{name}_bg", "policy": "lightweight_glb"}},
+            {"subject": light_dev, "target": place_asset, "type": "asset_job",
+             "metadata": {"job_type": "placeholder", "policy": "procedural_model",
+                          "reason": "missing_supplemental_light"}},
         ],
-        "critical_objects": [],
-        "forbidden_side_effects": ["all_low_fidelity", "skip_placeholder_for_missing_light"],
-        "fatal_constraints": [], "allowed_side_effects": [],
-        "equivalence_groups": [], "allowed_variants": [],
+        "critical_objects": [light_dev],
+        "forbidden_side_effects": ["all_low_fidelity",
+                                   "skip_placeholder_for_missing_light",
+                                   "silent_omit_supplemental_light"],
+        "fatal_constraints": [
+            "missing_supplemental_light_must_generate_placeholder",
+            "focus_plants_must_be_high_fidelity",
+            "background_plants_must_be_lightweight_glb",
+        ],
+        "allowed_side_effects": ["set_placeholder", "create_asset_job"],
+        "equivalence_groups": [
+            {"group_id": f"{n}_focus", "match_on": "key_attrs",
+             "members": [focus_p], "expected_count": focus},
+            {"group_id": f"{n}_bg", "match_on": "key_attrs",
+             "members": [bg_p], "expected_count": bg},
+        ],
+        "allowed_variants": [],
     }
 
 
@@ -160,14 +229,32 @@ def _bind_task(n: str) -> dict[str, Any]:
     row = f"{n}_{name}_row"
     sensors = [f"{n}_{name}_sen{i}" for i in range(1, n_sensors + 1)]
     plant = f"{n}_{name}_plant"
+    # Explicit prompt so the gold's trait/timestamp are observable, not arbitrary:
+    # one key plant, trait=growth_stage, timestamp is part of the task's fixed clock.
+    trait = "growth_stage"
+    ts = "2026-09-01T00:00:00+08:00"
     return {
         "task_id": f"T{n}-v2-bind",
         "task_type": "data_binding",
         "difficulty": "medium",
-        "prompt": f"将温室内 {n_sensors} 个{metric}传感器绑定到对应作物行，并为关键植物绑定特征属性（含单位与时间戳）。",
+        "prompt": (f"将温室内 {n_sensors} 个{metric}传感器绑定到对应作物行。"
+                   f"为 1 株关键{name}植株绑定特征属性 {trait}（单位 text，时间戳 {ts}）。"),
         "annotation_version": "v2",
-        "review_status": "PENDING_HUMAN_REVIEW",
-        "initial_state": {}, "query_spec": None, "expected_answer": None, "expected_evidence": None,
+        "review_status": "pending",
+        "initial_state": {
+            "objects": [
+                {"id": root, "type": "Greenhouse"},
+                {"id": row, "type": "CropRow"},
+                *[{"id": s, "type": "Sensor", "metric": metric, "unit": unit} for s in sensors],
+                {"id": plant, "type": "Plant", "key_attrs": {"is_key": True}},
+            ],
+            "relations": [
+                {"subject": root, "predicate": "contains", "object": row},
+                {"subject": row, "predicate": "contains", "object": plant},
+                *[{"subject": row, "predicate": "contains", "object": s} for s in sensors],
+            ],
+        },
+        "query_spec": None, "expected_answer": None, "expected_evidence": None,
         "expected_outcome": {"graph": {"required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
             {"id": row, "type": "CropRow", "role": "entity", "count": 1, "parent": root},
@@ -188,123 +275,270 @@ def _bind_task(n: str) -> dict[str, Any]:
         ],
         "required_bindings": [
             *[{"subject": s, "target": row, "type": "sensor_bind",
-               "metadata": {"metrics": [metric], "unit": unit}} for s in sensors],
+               "metadata": {"metrics": [metric], "unit": unit,
+                            "timestamp": ts}} for s in sensors],
             {"subject": plant, "target": plant, "type": "trait_bind",
-             "metadata": {"trait": "growth_stage", "unit": "text",
-                          "timestamp": "2026-09-01T00:00:00+08:00"}},
+             "metadata": {"trait": trait, "unit": "text", "timestamp": ts}},
         ],
-        "critical_objects": [],
-        "forbidden_side_effects": ["missing_unit", "missing_timestamp", "wrong_monitoring_target"],
-        "fatal_constraints": [], "allowed_side_effects": [],
-        "equivalence_groups": [], "allowed_variants": [],
+        "critical_objects": [plant],
+        "forbidden_side_effects": ["missing_unit", "missing_timestamp",
+                                   "wrong_monitoring_target", "invent_trait"],
+        "fatal_constraints": [
+            "sensor_bind_must_have_unit_and_timestamp",
+            "key_plant_trait_must_be_growth_stage",
+        ],
+        "allowed_side_effects": [],
+        "equivalence_groups": [
+            {"group_id": f"{n}_sensors", "match_on": "type", "members": [*sensors],
+             "expected_count": n_sensors},
+            {"group_id": f"{n}_plants", "match_on": "id", "members": [plant],
+             "expected_count": 1},
+            {"group_id": f"{n}_rows", "match_on": "id", "members": [row],
+             "expected_count": 1},
+        ],
+        "allowed_variants": [],
     }
 
 
 def _repair_task(n: str) -> dict[str, Any]:
     specs = {
-        "N31": ("Pump", "lemongrass", "tree"),
-        "N32": ("Camera", "soy", "crop"),
-        "N33": ("Irrigation", "alfalfa", "grass"),
-        "N34": ("Pump", "oregano", "herb"),
+        "N31": ("Pump", "lemongrass"),
+        "N32": ("Camera", "soy"),
+        "N33": ("Irrigation", "alfalfa"),
+        "N34": ("Pump", "oregano"),
     }[n]
-    obj_type, wrong_tie, good_tie = specs
+    obj_type, wrong_tie = specs
     obj = f"{n}_WaterPump_B" if obj_type == "Pump" else f"{n}_Asset_B"
     root = f"{n}_gh_root"
     row = f"{n}_row"
+    # Target asset class is device-type-derived, NOT crop-derived: a Pump /
+    # Irrigation object repairs to irrigation asset; a Camera repairs to a
+    # camera asset. Crop name is only context in the prompt, not the target.
+    device_asset = {
+        "Pump": "irrigation",
+        "Irrigation": "irrigation",
+        "Camera": "camera",
+    }[obj_type]
     return {
         "task_id": f"T{n}-v2-repair",
         "task_type": "rule_repair",
         "difficulty": "hard",
-        "prompt": f"输入一个{obj_type} {obj} 错误关联到{wrong_tie}植物的场景，识别资产类型不匹配并改为正确的 {good_tie} 灌溉设备资产或占位任务。",
+        "prompt": (f"输入一个{obj_type} {obj} 错误关联到{wrong_tie}植物的场景。"
+                   f"识别资产类型不匹配并修复：{obj} 的资产应为 {device_asset} 类"
+                   f"（若无法直接替换则生成占位任务）。作物类别不影响目标资产类别。"),
         "annotation_version": "v2",
-        "review_status": "PENDING_HUMAN_REVIEW",
+        "review_status": "pending",
+        # Concrete erroneous binding: the object carries asset_key = the wrong
+        # crop tie; goal_state requires asset_key corrected to the device asset.
         "initial_state": {"objects": [
             {"id": root, "type": "Greenhouse"},
-            {"id": obj, "type": obj_type, "asset_key": wrong_tie},
+            {"id": obj, "type": obj_type,
+             "asset_key": wrong_tie,
+             "asset_binding": {"type": "asset", "asset_key": wrong_tie}},
             {"id": row, "type": "CropRow"},
         ]},
         "goal_state": {"objects": [
             {"id": root, "type": "Greenhouse"},
-            {"id": obj, "type": obj_type, "asset_key": good_tie},
+            {"id": obj, "type": obj_type,
+             "asset_key": device_asset,
+             "asset_binding": {"type": "asset", "asset_key": device_asset}},
             {"id": row, "type": "CropRow"},
         ]},
         "query_spec": None, "expected_answer": None, "expected_evidence": None,
-        "expected_outcome": {"graph": {"required_nodes": [
-            {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
-            {"id": obj, "type": obj_type, "role": "entity", "count": 1, "parent": root},
-            {"id": row, "type": "CropRow", "role": "entity", "count": 1, "parent": root},
-        ]}},
+        "expected_outcome": {"graph": {
+            "required_nodes": [
+                {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
+                {"id": obj, "type": obj_type, "role": "entity", "count": 1, "parent": root,
+                 "key_attrs": {"asset_key": device_asset}},
+                {"id": row, "type": "CropRow", "role": "entity", "count": 1, "parent": root},
+            ],
+            "required_bindings": [
+                {"subject": obj, "target": obj, "type": "asset",
+                 "metadata": {"asset_key": device_asset, "fixed": True}},
+            ],
+        }},
         "required_nodes": [
             {"id": root, "type": "Greenhouse", "role": "root", "count": 1},
-            {"id": obj, "type": obj_type, "role": "entity", "count": 1, "parent": root},
+            {"id": obj, "type": obj_type, "role": "entity", "count": 1, "parent": root,
+             "key_attrs": {"asset_key": device_asset}},
             {"id": row, "type": "CropRow", "role": "entity", "count": 1, "parent": root},
         ],
         "required_edges": [
             {"subject": root, "predicate": "contains", "object": row},
             {"subject": root, "predicate": "contains", "object": obj},
         ],
-        "required_bindings": [],
+        "required_bindings": [
+            {"subject": obj, "target": obj, "type": "asset",
+             "metadata": {"asset_key": device_asset, "fixed": True}},
+        ],
         "critical_objects": [obj],
-        "forbidden_side_effects": ["noop_repair", "keep_asset_mismatch"],
-        "fatal_constraints": ["asset_type_mismatch_must_be_fixed"],
-        "allowed_side_effects": ["set_placeholder"], "equivalence_groups": [],
-        "allowed_variants": [],
+        "forbidden_side_effects": ["noop_repair", "keep_asset_mismatch",
+                                   "regenerate_whole_scene"],
+        "fatal_constraints": [
+            "asset_type_mismatch_must_be_fixed",
+            "critical_object_must_be_actually_modified",
+        ],
+        "allowed_side_effects": ["replace_asset", "set_placeholder"],
+        "equivalence_groups": [],
+        "allowed_variants": [            {"path": "replace_asset", "detail": "set obj.asset_key to device_asset"},
+            {"path": "set_placeholder", "detail": "keep asset mismatch + create placeholder asset_job"},
+        ],
     }
 
 
 def _memory_task(n: str, metric: str, days: int, unit: str) -> dict[str, Any]:
+    # metric is the SINGLE canonical metric name (e.g. 'temperature'); no alias.
+    # Per-day baseline values; each day is recorded 3x (morning/noon/evening) so
+    # a daily_mean is a genuine aggregation, not a single sample.
     start = datetime(2026, 8, 1, 0, 0, tzinfo=TZ) - timedelta(days=days - 1)
     values = {"co2": [410.0, 405.0, 420.0, 415.0], "humidity": [70.0, 68.0, 72.0, 66.0],
-              "thermo": [24.0, 25.0, 26.0, 23.0], "soil_moisture": [55.0, 56.0, 54.0, 57.0]}
+              "temperature": [24.0, 25.0, 26.0, 23.0], "soil_moisture": [55.0, 56.0, 54.0, 57.0]}
     days_vals = values.get(metric, [420.0] * days)[:days]
     while len(days_vals) < days:
         days_vals.append(days_vals[-1])
+    # daily intraday offsets (morning/noon/evening) — deterministic, small enough
+    # that the daily mean rounds to the baseline value.
+    intraday = (-0.5, 0.0, 0.5)
+    gh_id = f"{n}_gh"
+    sen_id = f"{n}_sen"
+    row_id = f"{n}_crop"
     objects = [
-        {"id": f"{n}_gh", "type": "Greenhouse"},
-        {"id": f"{n}_sen", "type": "Sensor", "monitoring_target": f"{n}_gh",
+        {"id": gh_id, "type": "Greenhouse"},
+        {"id": sen_id, "type": "Sensor", "monitoring_target": gh_id,
          "metric": metric, "unit": unit},
-        {"id": f"{n}_crop", "type": "CropRow", "label": f"Row {n[-1]}"},
+        {"id": row_id, "type": "CropRow", "label": f"Row {n[-1]}"},
     ]
-    timeseries = [
-        {"record_id": f"rec-{n}-{metric}-{(start+timedelta(days=i)).strftime('%Y%m%d')}",
-         "sensor_id": f"{n}_sen", "metric": metric, "unit": unit,
-         "timestamp": (start + timedelta(days=i)).isoformat(), "value": float(v)}
-        for i, v in enumerate(days_vals)
+    # Explicit relation so any 'associated_row' claim is grounded: greenhouse
+    # contains the crop row, sensor monitors the greenhouse.
+    relations = [
+        {"subject": gh_id, "predicate": "contains", "object": row_id},
+        {"subject": sen_id, "predicate": "monitors", "object": gh_id},
     ]
-    events = [{"event_id": f"evt-{n}-high", "object_id": f"{n}_gh",
+    # 3 records per day at 06:00/12:00/18:00 (deterministic intraday offsets).
+    timeseries = []
+    for i, base in enumerate(days_vals):
+        d = start + timedelta(days=i)
+        for hour, off in zip((6, 12, 18), intraday):
+            timeseries.append({
+                "record_id": f"rec-{n}-{metric}-{d.strftime('%Y%m%d')}-{hour:02d}",
+                "sensor_id": sen_id, "metric": metric, "unit": unit,
+                "timestamp": (start + timedelta(days=i, hours=hour)).isoformat(),
+                "value": round(base + off, 2),
+            })
+    # Interference records: same sensor/metric OUTSIDE the query window — the
+    # agent must bound its aggregation to [start, end], not sweep the whole store.
+    interference = [
+        {"record_id": f"rec-{n}-{metric}-pre", "sensor_id": sen_id, "metric": metric,
+         "unit": unit, "timestamp": (start - timedelta(days=2, hours=8)).isoformat(),
+         "value": 999.0},
+        {"record_id": f"rec-{n}-{metric}-post", "sensor_id": sen_id, "metric": metric,
+         "unit": unit, "timestamp": (start + timedelta(days=days + 1, hours=10)).isoformat(),
+         "value": 0.5},
+    ]
+    # Event thresholds are metric-specific and observably stated in the prompt
+    # (e.g. TN43: temperature threshold=35°C, value=38°C).
+    event_cfg = {
+        "co2": {"value": 900.0, "threshold": 800.0},
+        "humidity": {"value": 92.0, "threshold": 80.0},
+        "temperature": {"value": 38.0, "threshold": 35.0},
+        "soil_moisture": {"value": 5.0, "threshold": 20.0},
+    }.get(metric, {"value": 90.0, "threshold": 80.0})
+    events = [{"event_id": f"evt-{n}-high", "object_id": gh_id,
                "event_type": f"{metric}_high",
                "timestamp": (start + timedelta(days=1, hours=3)).isoformat(),
-               "payload": {"metric": metric, "value": 900 if metric == "co2" else 90,
-                           "threshold": 800 if metric == "co2" else 80}}]
-    initial_state = {"objects": objects, "timeseries_records": timeseries,
+               "payload": {"metric": metric, "value": event_cfg["value"],
+                           "threshold": event_cfg["threshold"]}}]
+    initial_state = {"objects": objects, "relations": relations,
+                     "timeseries_records": timeseries + interference,
                      "events": events, "daily_reports": []}
     q = {
-        "target_object_ids": [f"{n}_gh", f"{n}_sen"],
-        "metrics": [metric] if metric not in ("thermo",) else ["temperature"],
+        "target_object_ids": [gh_id, sen_id],
+        "metrics": [metric],
         "start_time": start.isoformat(),
         "end_time": (start + timedelta(days=days - 1, hours=23)).isoformat(),
         "aggregations": ["mean", "latest", "trend"],
-        "required_units": {("temperature" if metric == "thermo" else metric): unit},
+        "required_units": {metric: unit},
     }
-    metric_key = "temperature" if metric == "thermo" else metric
-    t = build_memory_task(
-        task_id=f"T{n}-v2-mem", prompt=f"查询温室内 {metric_key} 最近 {days} 天的浓度/状态趋势，返回日均值与异常事件。",
-        initial_state=initial_state, query_spec=q, difficulty="easy",
-    )
-    t["expected_answer"] = {
-        "normalized_values": {metric_key: {"daily_means": days_vals,
-                                           "latest": days_vals[-1],
-                                           "mean": round(sum(days_vals) / len(days_vals), 2),
-                                           "unit": unit}},
+    # Explicit trend: net_change_direction (up/down/flat) + a shape descriptor,
+    # deterministic and part of the canonical answer.
+    trend_label = _trend_label(days_vals)
+    trend_shape = _trend_shape(days_vals)
+    expected_answer = {
+        "normalized_values": {metric: {"daily_means": days_vals,
+                                       "latest": days_vals[-1],
+                                       "mean": round(sum(days_vals) / len(days_vals), 2),
+                                       "unit": unit}},
+        "trend": {"label": trend_label, "net_change_direction": trend_label,
+                  "shape": trend_shape, "daily_means": days_vals},
         "events": events,
-        "summary_facts": [f"sensor={n}_sen", f"associated_row={n}_crop",
+        "summary_facts": [f"sensor={sen_id}", f"associated_row={row_id}",
                           f"daily_means={days_vals}",
+                          f"trend={trend_label}",
                           f"{len(events)} high alarm event(s)"],
     }
-    t["expected_evidence"] = {"record_ids": [r["record_id"] for r in timeseries],
-                              "event_ids": [e["event_id"] for e in events]}
-    t["review_status"] = "PENDING_HUMAN_REVIEW"
+    # expected_evidence must reference ONLY in-window records (interference
+    # records are NOT part of the correct evidence).
+    expected_evidence = {"record_ids": [r["record_id"] for r in timeseries],
+                         "event_ids": [e["event_id"] for e in events]}
+    # SINGLE canonical Oracle: expected_outcome is one dict holding the answer
+    # and evidence; expected_answer/expected_evidence are views of it (not two
+    # independent shapes).
+    canonical = {"answer": expected_answer, "evidence": expected_evidence}
+    t = build_memory_task(
+        task_id=f"T{n}-v2-mem", prompt=f"查询温室内 {metric} 最近 {days} 天的浓度/状态趋势，返回日均值与异常事件（阈值 {event_cfg['threshold']}{unit}）。",
+        initial_state=initial_state, query_spec=q, difficulty="easy",
+    )
+    t["expected_answer"] = expected_answer
+    t["expected_evidence"] = expected_evidence
+    t["expected_outcome"] = canonical
+    t["review_status"] = "pending"
     return t
+
+
+def _trend_label(vals: list[float]) -> str:
+    """Deterministic trend label from a daily-values sequence.
+
+    Uses the NET change (last - first) for the direction, plus a shape keyword
+    for monotonic vs up_then_down / down_then_up sequences. Values that merely
+    oscillate but end above the start are still 'up' (net change direction).
+    """
+    if not vals:
+        return "no_data"
+    first, last = vals[0], vals[-1]
+    delta = last - first
+    if abs(delta) < 1e-9:
+        return "flat"
+    if delta > 0:
+        return "up"
+    return "down"
+
+
+def _trend_shape(vals: list[float]) -> str:
+    """Shape descriptor: monotonic / up_then_down / down_then_up / flat.
+
+    Used as an additional, non-directional guard on the trend claim so a method
+    cannot satisfy 'trend' by only reporting the net direction while ignoring
+    an intra-window reversal.
+    """
+    if len(vals) < 3:
+        return "flat" if abs(vals[-1] - vals[0]) < 1e-9 else _trend_label(vals)
+    deltas = [vals[i + 1] - vals[i] for i in range(len(vals) - 1)]
+    if all(abs(d) < 1e-9 for d in deltas):
+        return "flat"
+    if all(d >= 0 for d in deltas):
+        return "monotonic_up"
+    if all(d <= 0 for d in deltas):
+        return "monotonic_down"
+    # at least one reversal
+    sign = [1 if d > 0 else (-1 if d < 0 else 0) for d in deltas]
+    nz = [s for s in sign if s != 0]
+    if nz and all(s == nz[0] for s in nz):
+        return "flat"
+    if nz[0] > 0 and nz[-1] < 0:
+        return "up_then_down"
+    if nz[0] < 0 and nz[-1] > 0:
+        return "down_then_up"
+    return "oscillating"
 
 
 def build_test_v2() -> list[dict[str, Any]]:
@@ -323,10 +557,43 @@ def build_test_v2() -> list[dict[str, Any]]:
         tasks.append(_repair_task(n))
     # memory_query x4
     mem = [("N41", "co2", 4, "ppm"), ("N42", "humidity", 5, "%"),
-           ("N43", "thermo", 3, "°C"), ("N44", "soil_moisture", 4, "%")]
+           ("N43", "temperature", 3, "°C"), ("N44", "soil_moisture", 4, "%")]
     for n, metric, days, unit in mem:
         tasks.append(_memory_task(n, metric, days, unit))
     return tasks
+
+
+# Gold-only keys that must NEVER appear in public inputs. Anything else that
+# describes the *answer* is also excluded via the whitelist below.
+_GOLD_KEYS = {
+    "required_nodes", "required_edges", "required_bindings", "critical_objects",
+    "equivalence_groups", "fatal_constraints", "forbidden_side_effects",
+    "allowed_side_effects", "allowed_variants", "expected_outcome",
+    "graph_outcome", "expected_answer", "expected_evidence", "good_oracle",
+    "query_spec", "goal_state", "trait", "unit", "asset_key", "asset_policy",
+    "key_attrs", "observes", "monitoring_target", "required_events", "event_bind",
+    "target_object_ids", "metrics", "aggregations", "required_units",
+}
+
+
+def _public_fields(t: dict[str, Any]) -> dict[str, Any]:
+    """Whitelisted public fields a method may see — NO gold/answer leakage.
+
+    The method sees only the task description it must act on: identity,
+    prompt, task type, difficulty, a reference to the (referenced, not
+    inlined) shared knowledge policy, and any initial state it must operate
+    on. Every grading target is excluded.
+    """
+    return {
+        "task_id": t.get("task_id"),
+        "task_type": t.get("task_type"),
+        "difficulty": t.get("difficulty"),
+        "prompt": t.get("prompt"),
+        "policy_ref": t.get("policy_ref", "shared_knowledge:asset_policy/v2"),
+        # initial_state is part of the public input for repair/binding/memory
+        # (it is the *input* the method transforms/queries), NEVER the gold.
+        "initial_state": t.get("initial_state", {}),
+    }
 
 
 def write_test_v2() -> dict[str, Any]:
@@ -337,11 +604,9 @@ def write_test_v2() -> dict[str, Any]:
     gold_lines = []
     public_lines = []
     for t in tasks:
-        # public: strip gold
-        pub = {k: v for k, v in t.items() if k not in
-               ("expected_answer", "expected_evidence", "graph_outcome",
-                "expected_outcome", "goal_state", "initial_state")}
-        pub["initial_state"] = t.get("initial_state", {})
+        # public: whitelist only — never an exclusion list (refuses future gold
+        # keys instead of silently leaking new additions).
+        pub = _public_fields(t)
         public_lines.append(json.dumps(pub, ensure_ascii=False, sort_keys=True))
         gold_lines.append(json.dumps(t, ensure_ascii=False, sort_keys=True))
     (OUT / "test_v2_public_inputs.jsonl").write_text(

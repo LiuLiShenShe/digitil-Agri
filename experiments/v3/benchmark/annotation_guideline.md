@@ -1,10 +1,12 @@
 # 标注规范 — KAFarmTwin v3 测试集 Gold（annotation_guideline.md）
 
-版本：benchmark_v1 · 创建：2026-08-04
+版本：benchmark_v2 · 创建：2026-08-04 · 修订：2026-08-07（Annotator 2 第二轮）
 
 ## 目的
 
-为测试集（T27–T30 + 盲测 T031–T035）产出**两名独立标注者一致认可的 Gold**，并经仲裁确认后**冻结密封**。在双标注复核完成前，测试集 Gold 不视为密封，`make sota-gate` 不得通过。
+为 test_v2（20 任务：TN01–TN44，5 类 × 4）+ 盲测 T031–T035 产出**两名独立标注者一致认可的 Gold**，并经仲裁确认后**冻结密封**。在双标注复核完成前，测试集 Gold 不视为密封，`make sota-gate` 不得通过。
+
+> **test_v1 已作废**（F-007：T27–T30 memory_query 存在 Prompt-Gold 矛盾），归档于 `archive/test_v1_invalid/`。本文档的"测试集"一律指 test_v2。
 
 ## 标注角色
 
@@ -45,7 +47,8 @@
 
 ## 当前状态
 
-- [ ] 标注者 1 初稿（T27–T30 已有派生；T031–T035 盲测为 TODO）
-- [ ] 标注者 2（用户）复核
+- [x] 标注者 1 初稿（test_v2 20 任务 + T031–T035 盲测）
+- [ ] 标注者 2（用户）第二轮复核（round 1 已提交修订；P0-1..P1-5 已应用，重新提交中）
 - [ ] 仲裁
 - [ ] 密封 + SHA-256
+- [ ] `review_status` 统一置 `approved` 后方可冻结

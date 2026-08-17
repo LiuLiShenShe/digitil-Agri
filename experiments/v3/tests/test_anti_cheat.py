@@ -28,7 +28,7 @@ import pytest
 EVAL = Path(__file__).resolve().parents[1] / "evaluators"  # experiments/v3/evaluators
 sys.path.insert(0, str(EVAL))
 
-from node_match import match_nodes, object_precision_recall  # noqa: E402
+from node_match import match_nodes, object_precision_recall, id_correspondence  # noqa: E402
 from edge_match import match_edges, edge_precision_recall  # noqa: E402
 from binding_match import match_bindings  # noqa: E402
 from state_match import repair_match  # noqa: E402
@@ -317,3 +317,119 @@ def test_anti_cheat_bonus_min_count_not_used():
     assert nm["all_matched"] is False
     prf = object_precision_recall(nm, n_required=4, n_generated=4)
     assert prf["f1"] < 0.2
+
+
+# ---------------------------------------------------------------------------
+# 16. Node-id correspondence must be reused for edges/bindings (F-015 fix)
+# ---------------------------------------------------------------------------
+
+def test_anti_cheat_16_id_correspondence_aligns_generated_relations():
+    """Generated objects legitimately use invented ids (gold ids never shown to
+    methods). Node matching already proved generated greenhouse_1 == required
+    greenhouse. The scorer must reuse that correspondence when matching edges,
+    or every relation/binding is structurally mis-scored as 0 even for a correct
+    scene graph."""
+    required = _greenhouse_required()  # 1 greenhouse + 3 tomato
+    req_edges = [
+        {"subject": "greenhouse", "predicate": "contains", "object": "tomato"},
+    ]
+    # Method-generated scene: invented ids, same topology.
+    nodes = [
+        {"id": "gh_a", "type": "Greenhouse", "role": "root", "parent": ""},
+        {"id": "tom_1", "type": "Plant", "role": "entity", "parent": "gh_a"},
+        {"id": "tom_2", "type": "Plant", "role": "entity", "parent": "gh_a"},
+        {"id": "tom_3", "type": "Plant", "role": "entity", "parent": "gh_a"},
+    ]
+    edges = [
+        {"subject": "gh_a", "predicate": "contains", "object": "tom_1"},
+        {"subject": "gh_a", "predicate": "contains", "object": "tom_2"},
+        {"subject": "gh_a", "predicate": "contains", "object": "tom_3"},
+    ]
+    nm = match_nodes(required=required, generated=nodes)
+    assert nm["all_matched"], f"nodes should match, got {nm}"
+    id_map = id_correspondence(nm["assignments"], nodes, nm["req_expanded_ids"])
+    # The generated greenhouse maps to the required 'greenhouse' id.
+    assert id_map.get("gh_a") == "greenhouse"
+    em = match_edges(required=req_edges, generated=edges, id_map=id_map)
+    assert em["matched"] == 1, f"edge should match after id remap, got {em}"
+    assert em["all_matched"], f"all required edges should match, got {em}"
+
+
+def test_anti_cheat_17_wrong_target_binding_still_fails_after_remap():
+    """The correspondence must NOT rescue a binding to the wrong object. A binding
+    subject/target that does not correspond to any required node id must be
+    penalized even after the id remap, and a genuinely wrong target must fail."""
+    from binding_match import match_bindings
+    # Gold nodes + the binding under test.
+    node_required = [
+        {"id": "greenhouse", "type": "Greenhouse", "role": "root", "count": 1},
+        {"id": "tomato", "type": "Plant", "role": "entity", "count": 1},
+    ]
+    req_bindings = [
+        {"subject": "greenhouse", "target": "tomato", "type": "monitor"},
+    ]
+    nodes = [
+        {"id": "gh_a", "type": "Greenhouse", "role": "root"},
+        {"id": "tom_a", "type": "Plant", "role": "entity"},
+    ]
+    nm = match_nodes(required=node_required, generated=nodes)
+    id_map = id_correspondence(nm["assignments"], nodes, nm["req_expanded_ids"])
+    # Generated binds greenhouse -> tom_a (maps to required tomato). This is correct.
+    generated_right = [{"subject": "gh_a", "target": "tom_a", "type": "monitor"}]
+    bm = match_bindings(required=req_bindings, generated=generated_right, id_map=id_map)
+    assert bm["matched"] == 1, "correct binding must match after remap"
+    assert bm["all_matched"], "the one required binding is satisfied"
+    # Genuinely wrong: binds to a plant that is not in the scene at all.
+    generated_fake = [{"subject": "gh_a", "target": "nonexistent_plant", "type": "monitor"}]
+    bm2 = match_bindings(required=req_bindings, generated=generated_fake, id_map=id_map)
+    assert bm2["matched"] == 0, "binding to an absent node must not match anything"
+
+
+# ---------------------------------------------------------------------------
+# 18. SingleAgent honest no-repair fires for test-v2 repair representation
+# ---------------------------------------------------------------------------
+
+def test_anti_cheat_18_singleagent_honest_norepair_on_rule_repair():
+    """F-016: SingleAgent's honest no-repair branch must fire when the task is a
+    repair task, whether it arrives as legacy category='repair' (v1) or as
+    task_type='rule_repair' (test_v2 Gold Schema v2). Previously the check used
+    category == 'rule_repair' (never true after the runner maps rule_repair ->
+    repair), so SingleAgent silently rebuilt the repair task from its prompt
+    instead of emitting the unchanged broken input — an unfair asymmetry vs the
+    KAFarmTwin repair loop."""
+    from methods.single_agent import run_single_agent
+
+    class _FakeBudget:
+        summary = lambda self: {}
+        llm_calls = 0
+        tool_calls = 0
+
+    class _FakeRegistry:
+        def __init__(self):
+            self.trace_proxy = None
+            self.ctx = {}
+        def call(self, *a, **k):
+            return {}
+
+    init_obj = [
+        {"id": "N31_gh_root", "type": "Greenhouse"},
+        {"id": "N31_WaterPump_B", "type": "Pump", "asset_key": "lemongrass"},
+        {"id": "N31_row", "type": "CropRow"},
+    ]
+    # test_v2 representation: task_type=rule_repair, no legacy category
+    task = {
+        "task_id": "TN31-v2-repair",
+        "task_type": "rule_repair",
+        "category": None,
+        "prompt": "fix it",
+        "initial_state": {"objects": init_obj},
+    }
+    out = run_single_agent(task=task, registry=_FakeRegistry(), budget=_FakeBudget(),
+                           llm_call_fn=lambda messages, b=None: {})
+    # Honest no-repair: emits the unchanged broken input, no fabricated fix.
+    # canonicalize_output folds top-level asset_key into key_attrs.asset_key.
+    assert len(out.get("nodes", [])) == 3
+    pump = next(n for n in out["nodes"] if n["id"] == "N31_WaterPump_B")
+    assert (pump.get("asset_key") == "lemongrass"
+            or (pump.get("key_attrs") or {}).get("asset_key") == "lemongrass"), \
+        "must not 'fix' the asset mismatch"

@@ -27,12 +27,44 @@ from task_types import TASK_TYPES, task_type_of, requires_graph_gold, requires_q
 RETRIEVAL_HINTS = ("查询", "返回", "汇总", "最近", "趋势", "现状", "状态", "日报", "报告",
                    "query", "return", "summarize", "trend", "report", "coverage", "history")
 
+_SCHEMA_PATH = Path(__file__).resolve().parents[1] / "benchmark" / "schema.json"
+
+
+def validate_task_schema(task: dict[str, Any]) -> list[tuple[str, str, str]]:
+    """Validate one task against schema.json (the independent schema check).
+
+    The static audit checks *intent* (Prompt-Gold consistency); the JSON Schema
+    check enforces the *shape* contract. Both must pass (Annotator 2 round-2
+    requirement P0-2). Returns issues in the same (level, code, message) shape.
+    """
+    try:
+        import json as _json
+        from jsonschema import Draft7Validator
+        schema = _json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
+        v = Draft7Validator(schema)
+        errs = list(v.iter_errors(task))
+        if not errs:
+            return []
+        issues = []
+        for e in errs[:20]:
+            path = "/".join(str(p) for p in e.path) or "<root>"
+            issues.append(("error", "schema_violation",
+                           f"schema {path}: {e.message}"))
+        return issues
+    except FileNotFoundError:
+        return [("error", "schema_missing", "schema.json not found")]
+    except Exception as exc:  # pragma: no cover
+        return [("error", "schema_error", f"schema validation failed: {exc}")]
+
 
 def audit_task(task: dict[str, Any]) -> dict[str, Any]:
     """Return {task_id, issues: [ (level, code, message) ]}. issue level in
     {error, warning}."""
     issues = []
     tid = task.get("task_id", "?")
+
+    # 0. JSON Schema shape contract (independent of the intent audit)
+    issues.extend(validate_task_schema(task))
 
     # 1. known task_type
     tt = task_type_of(task)
@@ -45,7 +77,7 @@ def audit_task(task: dict[str, Any]) -> dict[str, Any]:
         issues.append(("error", "bad_annotation_version",
                        f"annotation_version={ver!r}, expected 'v2'"))
     rs = task.get("review_status")
-    _allowed_rs = {"pending", "reviewed", "approved", "rejected", "PENDING_HUMAN_REVIEW"}
+    _allowed_rs = {"pending", "needs_revision", "reviewed", "approved", "rejected"}
     if rs not in _allowed_rs:
         issues.append(("error", "bad_review_status", f"review_status={rs!r}"))
     if rs != "approved":

@@ -58,22 +58,27 @@ def evaluate_task(*, task: dict[str, Any], method: str,
                   trace: dict[str, Any] | None = None,
                   proxy_calls: list[dict[str, Any]] | None = None,
                   final_state: dict[str, Any] | None = None,
+                  answer: dict[str, Any] | None = None,
                   rule_engine: Any = None,
                   llm_calls: int = 0, tool_calls: int = 0, repair_rounds: int = 0,
                   tokens: int = 0, cost: float = 0.0, latency_ms: float = 0.0) -> TaskEval:
     """Evaluate a single task-method run into a TaskEval record."""
-    from node_match import match_nodes, object_precision_recall
+    from node_match import match_nodes, object_precision_recall, id_correspondence
     from edge_match import match_edges, edge_precision_recall
     from binding_match import match_bindings, binding_precision_recall
     from state_match import repair_match
     from trace_evidence import evaluate_trace
     from replay import replay_trace
+    from task_types import task_type_of
 
     required = task.get("required_nodes") or []
     required_edges = task.get("required_edges") or []
     required_bindings = task.get("required_bindings") or []
     critical = task.get("critical_objects") or []
-    category = task.get("category") or ""
+    # Resolve the task type from the authoritative field (task_type for test_v2
+    # Gold Schema v2; falls back to the legacy v1 `category` for older tasks).
+    # This keeps the scene/repair/memory branch logic identical for both shapes.
+    category = task_type_of(task)
     # memory_query tasks answer historical questions (R8); they do not author a full
     # scene, so the scene-authoring rules R1-R7 do not apply to them. All other
     # categories (scene_build/asset_route/data_bind/repair) use the full rule set.
@@ -83,8 +88,14 @@ def evaluate_task(*, task: dict[str, Any], method: str,
         active_rules = task.get("rules") or ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
 
     nm = match_nodes(required=required, generated=nodes, equivalence_groups=task.get("equivalence_groups"))
-    em = match_edges(required=required_edges, generated=edges, equivalence_groups=task.get("equivalence_groups"))
-    bm = match_bindings(required=required_bindings, generated=bindings)
+    # Node matching already proved which generated node corresponds to which required
+    # object. Reuse that correspondence (generated_id → required_id) when matching
+    # edges and bindings, so relations/bindings authored against method-generated ids
+    # can align to the gold. Applied identically to ALL methods; no supplementation.
+    id_map = id_correspondence(nm["assignments"], nodes, nm["req_expanded_ids"])
+    em = match_edges(required=required_edges, generated=edges, equivalence_groups=task.get("equivalence_groups"),
+                     id_map=id_map)
+    bm = match_bindings(required=required_bindings, generated=bindings, id_map=id_map)
 
     n_req = len([_expand_count(r) for r in required])
     n_req_total = sum(max(1, int(r.get("count") or 1)) for r in required)
@@ -119,8 +130,8 @@ def evaluate_task(*, task: dict[str, Any], method: str,
 
     # rule violations
     rule_engine = rule_engine if rule_engine is not None else _default_rule_engine()
-    initial_state = task.get("initial_state") if category == "repair" else None
-    goal_state = task.get("goal_state") if category == "repair" else None
+    initial_state = task.get("initial_state") if category == "rule_repair" else None
+    goal_state = task.get("goal_state") if category == "rule_repair" else None
     violations = rule_engine.evaluate(
         nodes=nodes, edges=edges, bindings=bindings, active_rules=active_rules,
         task=task, initial_state=initial_state, goal_state=goal_state,
@@ -130,9 +141,14 @@ def evaluate_task(*, task: dict[str, Any], method: str,
 
     # repair success
     repair_success = None
-    if category == "repair" and final_state is not None:
-        rm = repair_match(task=task, initial_state=initial_state, goal_state=goal_state, final_state=final_state)
-        repair_success = rm["success"]
+    if category == "rule_repair" and final_state is not None:
+        # test_v2 repair gold encodes a DISJUNCTIVE success contract (replace_asset
+        # OR set_placeholder; retained-wrong-binding and no-op both fail). Route
+        # through the shared disjunctive adapter so the runner's verdict matches
+        # the sealed gold semantics, not a stricter full-scene re-match.
+        from register_adapters import _repair_adapter
+        ra_ok, _ra_diag = _repair_adapter(task, {"final_state": final_state})
+        repair_success = bool(ra_ok)
 
     # evidence
     steps = (trace or {}).get("steps") or []
@@ -148,6 +164,9 @@ def evaluate_task(*, task: dict[str, Any], method: str,
         rp = replay_trace(proxy_calls=proxy_calls, tool_fn=make_replay_tool_fn())
 
     # CVSR
+    # memory_query tasks: the verdict comes from Query-CVSR (answer-based
+    # retrieval/aggregation), NOT from object-graph matching. The graph
+    # plumbing above is vacuous (empty gold) for these tasks.
     all_nodes = nm["all_matched"]
     all_critical = critical_recall >= 1.0
     all_edges = em["all_matched"]
@@ -158,6 +177,13 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     if repair_success is not None:
         cvsr = cvsr and repair_success
 
+    # memory_query: override CVSR with the Query-CVSR verdict (answer-based).
+    if category == "memory_query":
+        from query_cvsr import evaluate_query_cvsr
+        qres = evaluate_query_cvsr(task=task, answer=answer)
+        cvsr = bool(qres["success"])
+        qd = qres["diagnostics"]
+        critical_recall = qd.get("evidence_recall", critical_recall) or critical_recall
     return TaskEval(
         task_id=task.get("task_id") or "",
         method=method,

@@ -75,14 +75,20 @@ def load_split(split: str, max_tasks: int | None = None) -> list[dict]:
     bench = ROOT / "experiments" / "v3" / "benchmark"
     # Public inputs for the methods.
     if split == "test":
-        path = bench / "test_public_inputs.jsonl"
+        # test_v2 (F-014 rebuild) is the FROZEN test split: 20 tasks across
+        # scene/asset/bind/repair/mem. test_v1 (test_public_inputs.jsonl, 9
+        # tasks) was invalidated under F-007 and must not be re-run as evidence.
+        path = bench / "test_v2" / "test_v2_public_inputs.jsonl"
     else:
         path = bench / f"{split}.jsonl"
     rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
     if max_tasks:
         rows = rows[:max_tasks]
     # Gold answer key for the scorer (kept separate; methods never see it).
-    gold_path = bench / (f"{split}_gold.sealed.jsonl" if split == "test" else f"{split}.jsonl")
+    if split == "test":
+        gold_path = bench / "test_v2" / "test_v2_gold.jsonl"
+    else:
+        gold_path = bench / f"{split}.jsonl"
     gold_map = {}
     if gold_path.exists():
         for l in gold_path.read_text(encoding="utf-8").splitlines():
@@ -130,8 +136,25 @@ def make_ctx_for_task(task: dict) -> dict:
 
 
 def _strip_public(task: dict) -> dict:
-    """Return a copy of the task containing ONLY public fields (never gold)."""
-    return {k: v for k, v in task.items() if k in _PUBLIC_FIELDS}
+    """Return a copy of the task containing ONLY public fields (never gold).
+
+    test_v2 public inputs carry `task_type` (Gold Schema v2) but not the legacy
+    v1 `category` field. Methods were written against `category` (repair /
+    scene_build / ...). We derive the legacy category from task_type so methods
+    see a stable, unified field, while gold is never exposed.
+    """
+    out = {k: v for k, v in task.items() if k in _PUBLIC_FIELDS}
+    tt = out.get("task_type") or out.get("category") or ""
+    LEGACY_LOOKUP = {
+        "scene_construction": "scene_build",
+        "asset_routing": "asset_route",
+        "data_binding": "data_bind",
+        "rule_repair": "repair",
+        "memory_query": "memory_query",
+    }
+    if not out.get("category"):
+        out["category"] = LEGACY_LOOKUP.get(tt, tt)
+    return out
 
 
 def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) -> dict:
@@ -151,6 +174,11 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
     # seed the initial state if repair (public field)
     if public.get("initial_state"):
         ctx["scene_state"] = public["initial_state"]
+
+    # memory_query tasks: seed the retrieval store the timeseries/event tools read.
+    # Methods never see gold; they see the same pre-existing records both can query.
+    if public.get("category") == "memory_query" and public.get("initial_state"):
+        ctx["memory_state"] = public["initial_state"]
 
     # DeterministicFallback uses no LLM
     fn = METHODS[method]
@@ -172,6 +200,7 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
         trace={"steps": out.get("traceSteps") or []},
         proxy_calls=proxy_calls,
         final_state={"objects": out.get("nodes") or []},
+        answer=out.get("answer"),
         llm_calls=budget.llm_calls, tool_calls=budget.tool_calls,
         repair_rounds=budget.repair_rounds,
         tokens=budget.tokens, cost=budget.cost,

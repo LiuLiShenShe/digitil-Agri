@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Shared stepwise scene builder (F-015/F-016, method-agnostic).
+
+Root cause F-018: asset/bind/repair tasks require complex JSON (multi-group
+objects + asset bindings + repair ops) that exceeds the model's single-response
+output cap (~1200 tokens on DeepSeek-V4-Flash). A one-shot ``{objects, relations,
+bindings}`` call truncates mid-JSON (finish=length) -> content_json=None ->
+empty scene for BOTH methods on those tasks.
+
+This helper removes that shared ceiling by building the scene in SEPARATE LLM
+calls, each well under the cap:
+
+  step 1  objects   :  nodes {id,type,role,parent,key_attrs,count}
+  step 2  relations :  edges {subject,predicate,object} referencing step-1 ids
+  step 3  bindings  :  bindings {subject,target,type,metadata}
+
+Each step is fed the prior steps' ids as context (so edges/bindings reference
+REAL generated ids), but asked to output ONLY its own list. No step sees gold.
+Every step is charged to the budget, recorded through the shared trace proxy,
+and parsed defensively (a truncated step yields the partial parse + continues).
+
+Both SingleAgent and KAFarmTwin invoke this identical helper, so the two methods
+have symmetric scene-authoring capability and are compared fairly. The methods
+still keep their distinguishing orchestration (layout / typed-repair loop) around
+the emitted scene.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+from experiments.v3.harness.canonicalizer import canonicalize_node, canonicalize_edge, canonicalize_binding  # type: ignore
+
+
+def _merge_json_part(part: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    """Return the per-step list a partial JSON dict holds for `key`."""
+    v = (part or {}).get(key)
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [x for x in v if isinstance(x, dict)]
+    if isinstance(v, str) and v.strip():
+        try:
+            inner = json.loads(v)
+            if isinstance(inner, list):
+                return [x for x in inner if isinstance(x, dict)]
+        except Exception:
+            return []
+    return []
+
+
+def _extract_list(content_json: Any, keys: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Robustly pull the per-step list out of a model response.
+
+    The model may emit the step's list in any of these shapes (all seen live):
+      - bare JSON array            [{...}, ...]
+      - dict wrapper               {"objects": [{...}, ...]}
+      - JSON string of either      '{"edges":[...]}' or '[...]'
+    Returns [] only when nothing parseable is present.
+    """
+    cj = content_json
+    if isinstance(cj, str) and cj.strip():
+        try:
+            cj = json.loads(cj)
+        except Exception:
+            return []
+    if isinstance(cj, list):
+        return [x for x in cj if isinstance(x, dict)]
+    if isinstance(cj, dict):
+        for k in keys:
+            v = cj.get(k)
+            if isinstance(v, list):
+                return [x for x in v if isinstance(x, dict)]
+        # dict but key missing: fall back to any single list value
+        for v in cj.values():
+            if isinstance(v, list):
+                return [x for x in v if isinstance(x, dict)]
+    return []
+
+
+def stepwise_build_scene(
+    *,
+    prompt: str,
+    ontology_hint: str,
+    llm_call_fn,
+    budget: Any,
+    registry: Any,
+    agent_id: str,
+    max_objects: int = 60,
+) -> dict[str, Any]:
+    """Build {nodes, edges, bindings} via three capped LLM steps + tools.
+
+    Returns the same shape a one-shot builder would, but assembled stepwise so no
+    single LLM response must hold the whole scene.
+
+    - nodes   : canonicalized object nodes
+    - edges   : canonicalized relations
+    - bindings: canonicalized bindings
+    Trace/tool evidence is real (registry.call for scene.plan after nodes).
+    """
+    system = (
+        "You build digital-twin farm scenes. Shared knowledge:\n"
+        f"{ontology_hint}\n"
+        "Output ONLY compact JSON. Repeated objects = one object with count=N. "
+        "Keep each response short and stop as soon as the JSON is complete.\n"
+        "Emit NO markdown code fences and NO extra prose."
+    )
+
+    # ---- step 1: objects ----
+    budget.assert_llm_budget()
+    r1 = llm_call_fn({
+        "system": system + "\n\nResponsibility: list ALL scene objects as JSON array under key \"objects\". "
+                           "Each node: {\"id\":str,\"type\":<SharedType>,\"role\":\"root\"|\"entity\",\"parent\":str|omit,\"key_attrs\":{},\"count\":int}.",
+        "user": prompt,
+    }, budget)
+    budget.add_tokens(r1.get("usage", {}).get("total_tokens", 0))
+    cj1 = r1.get("content_json")
+    if isinstance(cj1, list):
+        # model returned a bare array (treat as the objects list)
+        p1 = {"objects": cj1}
+    elif isinstance(cj1, dict):
+        p1 = cj1
+    else:
+        p1 = {}
+    if not p1 or not p1.get("objects"):
+        p1 = {"objects": _merge_json_part(p1, "objects")}
+    nodes = [_as_node(o) for o in (_extract_list(cj1, ("objects", "nodes", "entities")) or [])]
+    nodes = _dedupe_nodes(nodes)[:max_objects]
+
+    # reflect layout through tools if we have objects (real trace)
+    if nodes:
+        registry.call("scene.plan", {"objects": nodes}, agent_id=agent_id)
+        registry.call("layout.solve", {"objects": nodes}, agent_id=agent_id)
+        registry.call("layout.validate", {"layout": list(nodes)}, agent_id=agent_id)
+        from experiments.v3.harness.canonicalizer import merge_layout_into_nodes  # type: ignore
+        nodes = merge_layout_into_nodes(nodes, list(nodes))
+
+    node_ids = "\n".join(f"- {o.get('id')} ({o.get('type')})" for o in nodes) or "(none yet)"
+
+    # ---- step 2: relations ----
+    budget.assert_llm_budget()
+    r2 = llm_call_fn({
+        "system": system + "\n\nResponsibility: output relations for the scene as JSON array under key \"edges\". "
+                           "Each edge: {\"subject\":str,\"predicate\":\"contains\",\"object\":str}. "
+                           "Use ONLY the exact existing ids listed below. If the parent/child relationship "
+                           "is already implied by a node's `parent` field, still emit the explicit contains edge "
+                           "for every parent->child pair.",
+        "user": f"Scene objects (ids to use exactly):\n{node_ids}\n\nOriginal prompt:\n{prompt}",
+    }, budget)
+    budget.add_tokens(r2.get("usage", {}).get("total_tokens", 0))
+    edges = [_as_edge(e) for e in (_extract_list(r2.get("content_json"), ("edges", "relations", "relationships")) or [])]
+
+    # ---- step 3: bindings ----
+    budget.assert_llm_budget()
+    r3 = llm_call_fn({
+        "system": system + "\n\nResponsibility: output bindings for the scene as JSON array under key \"bindings\". "
+                           "Each binding: {\"subject\":str,\"target\":str,\"type\":\"asset\"|\"sensor_bind\"|\"trait_bind\","
+                           "\"metadata\":{\"metrics\":[str],\"unit\":str,\"asset_key\":str,\"policy\":str}}. "
+                           "Use ONLY the exact existing ids below.",
+        "user": f"Scene objects (ids):\n{node_ids}\n\nOriginal prompt:\n{prompt}",
+    }, budget)
+    budget.add_tokens(r3.get("usage", {}).get("total_tokens", 0))
+    bindings = [_as_binding(b) for b in (_extract_list(r3.get("content_json"), ("bindings", "binding", "links")) or [])]
+
+    return {"nodes": nodes, "edges": edges, "bindings": bindings}
+
+
+def _as_node(o: dict[str, Any]) -> dict[str, Any]:
+    return canonicalize_node(o)
+
+
+def _as_edge(e: dict[str, Any]) -> dict[str, Any]:
+    return canonicalize_edge(e)
+
+
+def _as_binding(b: dict[str, Any]) -> dict[str, Any]:
+    return canonicalize_binding(b)
+
+
+def _dedupe_nodes(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop exact duplicates by (type, id) while keeping useful distinct types."""
+    seen: dict[tuple[str, str], dict[str, Any]] = {}
+    order: list[tuple[str, str]] = []
+    for n in nodes:
+        k = (str(n.get("type") or ""), str(n.get("id") or ""))
+        if k not in seen:
+            seen[k] = n
+            order.append(k)
+    return [seen[k] for k in order]

@@ -18,11 +18,18 @@ from gold_audit import audit_task  # noqa: E402
 
 def _good_memory_task() -> dict:
     return {
-        "task_id": "T", "task_type": "memory_query", "prompt": "查询最近 7 天温度趋势，返回日均值。",
+        "task_id": "TN41-v2-mem", "task_type": "memory_query", "prompt": "查询最近 7 天温度趋势，返回日均值。",
         "annotation_version": "v2", "review_status": "approved",
-        "query_spec": {"metrics": ["temperature"]},
+        "initial_state": {"objects": [], "timeseries_records": []},
+        "query_spec": {"metrics": ["temperature"],
+                       "start_time": "2026-07-01T00:00:00+08:00",
+                       "end_time": "2026-07-07T23:59:59+08:00",
+                       "aggregations": ["mean", "latest", "trend"]},
         "expected_answer": {"normalized_values": {"temperature": {"mean": 22.0}}},
         "expected_evidence": {"record_ids": ["rec-1"]},
+        "expected_outcome": {"answer": {"normalized_values": {"temperature": {"mean": 22.0}}},
+                             "evidence": {"record_ids": ["rec-1"]}},
+        "fatal_constraints": [], "allowed_side_effects": [], "forbidden_side_effects": [],
         "required_nodes": [], "required_edges": [], "required_bindings": [],
     }
 
@@ -31,16 +38,19 @@ def _testv1_style_bad_memory_task() -> dict:
     """A memory_query that (wrongly) demands scene construction — the test_v1 defect."""
     t = _good_memory_task()
     t["required_nodes"] = [{"id": "p1", "type": "Plant", "count": 20}]
-    del t["query_spec"], t["expected_answer"], t["expected_evidence"]
+    del t["query_spec"], t["expected_answer"], t["expected_evidence"], t["expected_outcome"]
     return t
 
 
 def _good_graph_task() -> dict:
     return {
-        "task_id": "T", "task_type": "scene_construction", "prompt": "构建温室，包含 3 行作物。",
+        "task_id": "TN01-v2-scene", "task_type": "scene_construction", "prompt": "构建温室，包含 3 行作物。",
         "annotation_version": "v2", "review_status": "approved",
+        "initial_state": {},
         "required_nodes": [{"id": "row1", "type": "CropRow", "count": 3}],
         "required_edges": [], "required_bindings": [],
+        "expected_outcome": {"graph": {"required_nodes": [{"id": "row1", "type": "CropRow", "count": 3}]}},
+        "fatal_constraints": [], "allowed_side_effects": [], "forbidden_side_effects": [],
     }
 
 
@@ -77,6 +87,6 @@ def test_not_approved_blocks_freeze():
 
 def test_memory_missing_query_flagged():
     t = _good_memory_task()
-    del t["query_spec"], t["expected_answer"], t["expected_evidence"]
+    del t["query_spec"], t["expected_answer"], t["expected_evidence"], t["expected_outcome"]
     codes = [c for _, c, _ in audit_task(t)["issues"]]
     assert "memory_query_missing_query_gold" in codes

@@ -13,11 +13,20 @@ def _norm(s: str) -> str:
     return (s or "").strip().lower()
 
 
-def _binding_key(b: dict[str, Any]) -> tuple[str, str, str]:
-    return (_norm(b.get("subject")), _norm(b.get("target")), _norm(b.get("type") or "binding"))
+def _binding_key(b: dict[str, Any], id_map: dict[str, str] | None = None) -> tuple[str, str, str]:
+    s = (id_map and id_map.get(_norm(b.get("subject")))) or _norm(b.get("subject")) or ""
+    t = (id_map and id_map.get(_norm(b.get("target")))) or _norm(b.get("target")) or ""
+    return (s, t, _norm(b.get("type") or "binding"))
 
 
-def match_bindings(*, required: list[dict[str, Any]], generated: list[dict[str, Any]]) -> dict[str, Any]:
+def match_bindings(*, required: list[dict[str, Any]], generated: list[dict[str, Any]],
+                   id_map: dict[str, str] | None = None) -> dict[str, Any]:
+    """Match required vs generated bindings.
+
+    id_map: generated_id → required_id correspondence from node matching, reused so
+    a binding whose subject/target node was authored under a method-generated id can
+    still align to the gold id it was matched to. Applies to all methods identically.
+    """
     req_by_key: dict[tuple[str, str, str], dict[str, Any]] = {}
     for b in required or []:
         req_by_key[_binding_key(b)] = b
@@ -28,7 +37,7 @@ def match_bindings(*, required: list[dict[str, Any]], generated: list[dict[str, 
     missing_metadata: list[dict[str, Any]] = []
 
     for b in generated or []:
-        key = _binding_key(b)
+        key = _binding_key(b, id_map)
         if key in req_by_key and key not in matched_keys:
             # metadata check
             req_md = req_by_key[key].get("metadata") or {}

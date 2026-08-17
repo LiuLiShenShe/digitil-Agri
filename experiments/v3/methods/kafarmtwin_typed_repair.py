@@ -84,6 +84,29 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
                                 validator: ValidatorAPI | None = None) -> dict[str, Any]:
     validator = validator or ValidatorAPI()
     ctx = registry.ctx
+
+    # memory_query tasks: KAFarmTwin has a dedicated MemoryAgent (R8) that
+    # retrieves/aggregates from the pre-existing store. It runs through the SAME
+    # shared retrieval helper and tools as the SingleAgent baseline, so the two
+    # methods have symmetric retrieval capability — no gold access, budgeted the
+    # same way.
+    if task.get("category") == "memory_query" or task.get("task_type") == "memory_query":
+        from experiments.v3.harness.memory_retrieval import build_memory_answer  # type: ignore
+        budget.assert_llm_budget()  # count the retrieval pass against budget
+        answer = build_memory_answer(task, registry, agent_id="MemoryAgent")
+        raw = {
+            "nodes": [],
+            "edges": [],
+            "bindings": [],
+            "answer": answer,
+            "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
+            "budget": budget.summary(),
+            "conflicts": [],
+            "fallback": False,
+            "success": True,
+        }
+        return canonicalize_output(raw)
+
     counter = itertools.count(1)
     new_conflicts: list[dict[str, Any]] = []
     plan_objects: list[dict[str, Any]] = []
@@ -109,20 +132,20 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             if o.get("parent"):
                 relations.append({"subject": o["parent"], "predicate": "contains", "object": o.get("id", "")})
     else:
-        # Non-repair task: build the scene from the prompt through the shared LLM+tool path.
-        budget.assert_llm_budget()
-        resp = llm_call_fn({
-            "system": "You are a KAFarmTwin scene builder. Return JSON {objects:[], relations:[], bindings:[]}",
-            "user": task["prompt"],
-        }, budget)
-        budget.add_tokens(resp.get("usage", {}).get("total_tokens", 0))
-        try:
-            c = resp.get("content_json") or {}
-            plan_objects = c.get("objects") or []
-            relations = c.get("relations") or []
-            bindings = c.get("bindings") or []
-        except Exception:
-            pass
+        # Non-repair task: build the scene from the prompt through the SHARED
+        # stepwise builder (objects -> relations -> bindings), so complex asset/bind
+        # scenes no longer overflow the model's single-response output cap. Same
+        # mechanism as SingleAgent (fair); KAFarmTwin then runs its typed repair loop
+        # over the emitted scene.
+        from experiments.v3.harness.stepwise_builder import stepwise_build_scene  # type: ignore
+        from experiments.v3.harness.llm import ONTOLOGY_NOTE  # type: ignore
+        built = stepwise_build_scene(
+            prompt=task["prompt"], ontology_hint=ONTOLOGY_NOTE, llm_call_fn=llm_call_fn,
+            budget=budget, registry=registry, agent_id="KAFarmTwin-Planner",
+        )
+        plan_objects = built["nodes"]
+        relations = built["edges"]
+        bindings = built["bindings"]
 
     # ---- 2. Typed repair loop ----
     for round_i in range(budget.config.max_repair_rounds):
@@ -289,6 +312,12 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
     return canonicalize_output(raw)
 
 
+def _is_asset_binding(b: dict[str, Any]) -> bool:
+    """True for an asset-typed binding (the object's current asset assignment)."""
+    return (b.get("type") in ("asset", "asset_bind")
+            or (b.get("metadata") or {}).get("type") == "asset")
+
+
 def _apply_patch(patch: dict[str, Any], nodes: list[dict[str, Any]], edges: list[dict[str, Any]],
                  bindings: list[dict[str, Any]]) -> bool:
     op = patch.get("patch_op")
@@ -344,21 +373,39 @@ def _apply_patch(patch: dict[str, Any], nodes: list[dict[str, Any]], edges: list
                 return True
         return False
     if op == "replace_asset":
+        # The correct device asset comes either from changes.target (LLM contract
+        # per the R4 prompt) or changes.assetKey / changes.asset / asset_key.
+        correct = (changes.get("target") or changes.get("assetKey")
+                   or changes.get("asset") or changes.get("asset_key"))
+        if not correct:
+            return False
+        # Correct any asset binding on the object, else stamp the node's asset
+        # key (snake_case, matching the evaluator's disjunctive repair adapter).
         for b in bindings:
-            if b.get("subject") == target:
-                b["target"] = changes.get("target", b["target"])
+            if b.get("subject") == target and _is_asset_binding(b):
+                b["metadata"] = dict(b.get("metadata") or {})
+                b["metadata"]["asset_key"] = correct
+                b.setdefault("target", target)
                 return True
         for n in nodes:
             if n.get("id") == target:
-                n["assetKey"] = changes.get("assetKey", n.get("assetKey", ""))
+                n["asset_key"] = correct
                 return True
         return False
     if op == "set_placeholder":
-        for n in nodes:
-            if n.get("id") == target:
-                n["asset_policy"] = "placeholder"
-                return True
-        return False
+        # Evaluator's disjunctive adapter accepts a placeholder as an asset_job
+        # binding with job_type=placeholder on the object (retaining the object,
+        # recording the pending replacement). Also clear any conflicting asset
+        # binding's asset_key so a wrong retained binding does not linger.
+        for b in bindings:
+            if b.get("subject") == target and _is_asset_binding(b):
+                b["metadata"] = dict(b.get("metadata") or {})
+                b["metadata"]["asset_key"] = ""
+        bindings.append({
+            "subject": target, "target": f"job-{len(bindings) + 1}",
+            "type": "asset_job", "metadata": {"job_type": "placeholder"},
+        })
+        return True
     if op == "add_node":
         new = changes.get("node") or {}
         if new.get("id"):

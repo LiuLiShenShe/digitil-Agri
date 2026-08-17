@@ -106,9 +106,10 @@ def evaluate_query_cvsr(*, task: dict[str, Any], answer: dict[str, Any] | None,
     diag["unsupported_claim_rate"] = round(1.0 - metric_precision, 4)
 
     # 5. aggregation correct: mean/min/max/latest must match oracle (if agent
-    #    reported these keys)
+    #    reported these keys); daily_means (per-day aggregation) must match too.
     exp_norm = expected_answer.get("normalized_values") or {}
     agg_ok = True
+    daily_ok = True
     for m in metrics:
         mk = next((k for k in ans_norm if _norm_key(k) == _norm_key(m)), None)
         if mk is None:
@@ -121,7 +122,37 @@ def evaluate_query_cvsr(*, task: dict[str, Any], answer: dict[str, Any] | None,
             if agg in e_v and agg in a_v:
                 if not _values_close(a_v[agg], e_v[agg]):
                     agg_ok = False
+        # daily_means: per-day aggregation must match oracle's day grouping
+        if "daily_means" in e_v:
+            exp_daily = e_v["daily_means"]
+            if "daily_means" in a_v:
+                a_daily = a_v["daily_means"]
+                if not (isinstance(exp_daily, list) and isinstance(a_daily, list)
+                        and len(exp_daily) == len(a_daily)
+                        and all(_values_close(x, y) for x, y in zip(exp_daily, a_daily))):
+                    daily_ok = False
+            else:
+                daily_ok = False
     diag["aggregation_correct"] = 1.0 if agg_ok else 0.0
+    diag["daily_means_correct"] = 1.0 if daily_ok else 0.0
+
+    # 5b. trend correct: label / net_change_direction must match oracle.
+    exp_trend = expected_answer.get("trend") or {}
+    ans_trend = answer.get("trend") or {}
+    trend_ok = True
+    if exp_trend.get("label") or exp_trend.get("net_change_direction"):
+        exp_dir = _norm_key(exp_trend.get("net_change_direction") or exp_trend.get("label"))
+        a_dir = _norm_key(ans_trend.get("net_change_direction") or ans_trend.get("label"))
+        if exp_dir and a_dir and a_dir != exp_dir:
+            trend_ok = False
+        # directional guard: shape (if reported) must match the oracle shape —
+        # a reversal the oracle classifies as 'up_then_down' cannot pass as
+        # 'monotonic_up', so a mismatched shape fails the trend check.
+        exp_shape = _norm_key(exp_trend.get("shape") or "")
+        a_shape = _norm_key(ans_trend.get("shape") or "")
+        if exp_shape and a_shape and a_shape != exp_shape and a_shape != "no_data":
+            trend_ok = False
+    diag["trend_correct"] = 1.0 if trend_ok else 0.0
 
     # 6. numeric accuracy (across mean/min/max/latest)
     numeric_ok = agg_ok
@@ -189,7 +220,9 @@ def evaluate_query_cvsr(*, task: dict[str, Any], answer: dict[str, Any] | None,
         "metrics_returned": all_metrics_returned,
         "no_invented": no_invented,
         "aggregation_ok": agg_ok,
+        "daily_means_ok": daily_ok,
         "numeric_ok": numeric_ok,
+        "trend_ok": trend_ok,
         "units_ok": units_ok,
         "evidence_ok": evidence_ok,
         "evidence_precision_ok": diag["evidence_precision"] == 1.0,
