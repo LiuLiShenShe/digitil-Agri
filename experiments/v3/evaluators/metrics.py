@@ -70,6 +70,7 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     from trace_evidence import evaluate_trace
     from replay import replay_trace
     from task_types import task_type_of
+    from rule_engine import _same_object  # A1 critical-recall repair guard
 
     required = task.get("required_nodes") or []
     required_edges = task.get("required_edges") or []
@@ -108,6 +109,17 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     # method was asked to modify must be present in the produced state, however it is
     # represented in the task's data model (T23 models its trait as a binding/trait,
     # not a scene node).
+    #
+    # A1 scorer-correctness (P0-1): methods legitimately never see the gold's literal
+    # required ids — they author their own. `id_map` (computed above) already proved
+    # which generated node corresponds to which required object. Count a critical
+    # gold id as present when it appears literally OR when id_map proves a generated
+    # object corresponds to it. Applied identically to ALL methods; no supplementation.
+    # A repair guard is preserved below: for rule_repair the critical object must also
+    # be *actually modified* versus initial_state, else an id-rename-no-op is not counted.
+    import re as _re
+    def _normcid(c_): return _re.sub(r"-\d+$", "", (str(c_ or "").strip().lower()))
+    sel = {_normcid(v) for v in id_map.values() if v}
     crit_present = 0
     node_ids = {str(n.get("id") or "") for n in nodes}
     binding_subjects = {str(b.get("subject") or "") for b in bindings}
@@ -117,9 +129,29 @@ def evaluate_task(*, task: dict[str, Any], method: str,
         if str(to.get("id") or "") in node_ids:
             continue
         trait_ids.add(str(to.get("id") or ""))
+    init_objs = ((task.get("initial_state") or {}).get("objects")) if category == "rule_repair" else None
+    def _init_obj(cid_):
+        if not init_objs: return None
+        for io in init_objs:
+            if str(io.get("id") or "") == cid_: return io
+        return None
+    def _final_obj(cid_):
+        for fo in final_objs:
+            if str(fo.get("id") or "") == cid_: return fo
+        return None
     for cid in critical:
-        if cid in node_ids or cid in binding_subjects or cid in trait_ids:
-            crit_present += 1
+        present = (cid in node_ids or cid in binding_subjects or cid in trait_ids
+                   or _normcid(cid) in sel)
+        if not present:
+            continue
+        if category == "rule_repair":
+            io = _init_obj(cid)
+            fo = _final_obj(cid)
+            # R10 guard: critical object must be genuinely modified. If it is
+            # structurally identical to initial_state (id-rename-no-op), do not count.
+            if io is not None and fo is not None and _same_object(io, fo):
+                continue
+        crit_present += 1
     critical_recall = crit_present / len(critical) if critical else 1.0
 
     # exact quantity accuracy (for the primary object counts)

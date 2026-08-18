@@ -222,7 +222,7 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
         tokens=budget.tokens, cost=budget.cost,
         latency_ms=latency_ms,
     )
-    return {
+    rec = {
         "task_id": task.get("task_id"),
         "method": method,
         **{k: getattr(eval_result, k) for k in (
@@ -236,6 +236,10 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
         "proxy_calls": proxy_calls,
         "fallback": out.get("fallback", False),
     }
+    # G (P1-5): stamp evaluator version + source fingerprint so old runs cannot be
+    # scored against new code.
+    from experiments.v3.evaluators.version import stamp_record  # type: ignore
+    return stamp_record(rec)
 
 
 def _mock_llm_call_fn(task: dict):

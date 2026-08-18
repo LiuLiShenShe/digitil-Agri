@@ -23,14 +23,15 @@ class TraceProxy:
         self._counter = itertools.count(1)
 
     def record(self, *, agent_id: str, tool: str, request: dict[str, Any],
-               response: dict[str, Any], caller_method: str = "") -> str:
+               response: dict[str, Any], caller_method: str = "",
+               ctx_snapshot: dict[str, Any] | None = None) -> str:
         call_id = f"call-{next(self._counter):04d}"
         # deep-copy request/response: the trace must faithfully reflect the state AT
         # CALL TIME. In-place mutation of shared state later (e.g. add_edge setting
         # node.parent, merge_layout_into_nodes) must not retroactively rewrite a
         # recorded request, or replay would mismatch the recorded output.
         import copy
-        self._calls.append({
+        rec = {
             "call_id": call_id,
             "task_id": self.task_id,
             "method": self.method or caller_method,
@@ -40,7 +41,15 @@ class TraceProxy:
             "response": copy.deepcopy(response),
             "status": "ok" if "error" not in response else "error",
             "fallback": False,
-        })
+        }
+        # A2 (P0-5): context-dependent memory tools (timeseries.query / event.query)
+        # read ctx["memory_state"]; an empty-context replay returns zero points. Record
+        # the exact memory_state snapshot the call was made against so replay can
+        # reproduce the real store instead of an empty one. This is recorded evidence
+        # (the public initial_state/seed given to the method), not re-derived gold.
+        if ctx_snapshot is not None:
+            rec["ctx_snapshot"] = copy.deepcopy(ctx_snapshot)
+        self._calls.append(rec)
         return call_id
 
     def mark_fallback(self, call_id: str) -> None:

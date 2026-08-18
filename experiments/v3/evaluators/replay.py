@@ -44,7 +44,7 @@ def replay_trace(*, proxy_calls: list[dict[str, Any]],
             continue
         replayable += 1
         try:
-            actual = fn(tool, request)
+            actual = fn(tool, request, c.get("ctx_snapshot"))
         except Exception as e:  # pragma: no cover
             mismatched += 1
             continue
@@ -94,11 +94,19 @@ def make_replay_tool_fn() -> dict[str, Callable[..., Any]]:
     def _make(tool_name: str):
         fn = DEFAULT_TOOLS.get(tool_name)
 
-        def _replay(tool: str, request: dict[str, Any]) -> dict[str, Any]:
+        def _replay(tool: str, request: dict[str, Any],
+                    ctx_snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
             ctx = dict(empty_ctx)
             ctx["scene_objects"] = list(empty_ctx["scene_objects"])
             ctx["scene_plan"] = list(empty_ctx["scene_plan"])
             ctx["scene_bindings"] = list(empty_ctx["scene_bindings"])
+            # A2 (P0-5): restore the recorded memory_state snapshot so the memory
+            # queries (timeseries.query / event.query) replay against the real store,
+            # not an empty one. The snapshot is recorded evidence, not re-derived gold.
+            mem = (ctx_snapshot or {}).get("memory_state")
+            if mem:
+                import copy
+                ctx["memory_state"] = copy.deepcopy(mem)
             return fn(ctx, request)
         return _replay
 

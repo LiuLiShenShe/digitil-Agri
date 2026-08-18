@@ -209,6 +209,31 @@ def check_conditions(summary: dict[str, dict], runs: list[dict]) -> list[dict]:
         violations.append({"condition": "gold_hash_match", "status": "FAIL",
                            "detail": "benchmark_manifest.json missing"})
 
+    # 1b. Scorer version bind (G/P1-5): refuse to score runs against a different
+    # evaluator than the current source. Prevents "regressed scorer + stale results".
+    try:
+        from experiments.v3.evaluators.version import EVALUATOR_VERSION, evaluator_fingerprint  # type: ignore
+        cur_hash = evaluator_fingerprint()
+    except Exception:
+        EVALUATOR_VERSION = "unknown"
+        cur_hash = ""
+    for r in runs:
+        rec_v = r.get("evaluator_version")
+        rec_h = r.get("evaluator_hash")
+        if not rec_v or not rec_h:
+            violations.append({"condition": "scorer_version_bound", "status": "FAIL",
+                               "detail": f"run {r.get('method')}/{r.get('task_id')} has no "
+                                         f"evaluator_version/hash (pre-v2.2 run?); must be re-scored"})
+            break
+        if rec_v != EVALUATOR_VERSION or rec_h != cur_hash:
+            rec_h_s = str(rec_h or "")[:8]
+            cur_h_s = str(cur_hash or "")[:8]
+            violations.append({"condition": "scorer_version_bound", "status": "FAIL",
+                               "detail": (f"run {r.get('method')}/{r.get('task_id')} was scored with "
+                                          f"{rec_v}/{rec_h_s}, current is {EVALUATOR_VERSION}/{cur_h_s}; "
+                                          "re-run required")})
+            break
+
     # 2. Per-task 5× repeat (P0-8)
     runs_by_method: dict[str, list[dict]] = {}
     for r in runs:

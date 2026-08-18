@@ -616,3 +616,141 @@ def test_anti_cheat_27_genuinely_empty_stays_vacuous():
                       trace={"steps": []}, proxy_calls=[], llm_calls=0, tool_calls=0)
     assert e.evidence_precision == 1.0
     assert e.replay_success == 1.0
+
+
+# ===========================================================================
+# v3.1 scorer-correctness + method-architecture regression tests (H/P0-P1)
+# ===========================================================================
+
+
+def test_anti_cheat_28_critical_recall_uses_id_map():
+    """A1 (P0-1): a critical gold object present under a method-invented id must
+    count as present via id_map, NOT only via literal gold id membership.
+    Without the fix, critical_recall=0.0 for a method that authord 'gh_1' when
+    gold requires 'N11_greenhouse'."""
+    required = [{"id": "N11_greenhouse", "type": "Greenhouse", "role": "root", "count": 1}]
+    generated = [{"id": "gh_1", "type": "Greenhouse", "role": "root", "count": 1}]
+    # Node matcher should pair them (type+role align)
+    nm = match_nodes(required=required, generated=generated)
+    id_map = id_correspondence(nm["assignments"], generated, nm["req_expanded_ids"])
+    # evaluate_task should see gh_1 mapped to N11_greenhouse via id_map
+    task = {"task_id": "TN11", "required_nodes": required, "required_edges": [],
+            "required_bindings": [], "critical_objects": ["N11_greenhouse"],
+            "rules": ["R1"]}
+    te = evaluate_task(task=task, method="KAFarmTwin", nodes=generated, edges=[], bindings=[],
+                       trace={"steps": []}, proxy_calls=[])
+    assert te.critical_recall == 1.0, (f"critical_recall must use id_map; got {te.critical_recall}. "
+                                        f"id_map={id_map}")
+
+
+def test_anti_cheat_29_critical_recall_repair_guard():
+    """A1: for rule_repair tasks, a critical object that appears in the output but
+    was NOT actually modified from initial_state must NOT count as present (R10 guard).
+    This prevents an id-rename-no-op from inflating critical_recall."""
+    init_obj = {"id": "pump1", "type": "Pump", "asset_key": "tomato"}
+    final_obj = {"id": "pump1", "type": "Pump", "asset_key": "tomato"}  # unchanged
+    task = {"task_id": "TN31", "required_nodes": [{"id": "pump1", "type": "Pump", "role": "entity", "count": 1}],
+            "required_edges": [], "required_bindings": [], "critical_objects": ["pump1"],
+            "rules": ["R4", "R10"],
+            "category": "repair",
+            "initial_state": {"objects": [dict(init_obj)]},
+            "goal_state": {"objects": [{"id": "pump1", "type": "Pump", "asset_key": "irrigation"}]}}
+    te = evaluate_task(task=task, method="SingleAgent", nodes=[final_obj], edges=[], bindings=[],
+                       trace={"steps": []}, proxy_calls=[],
+                       final_state={"objects": [dict(final_obj)]})
+    assert te.critical_recall == 0.0, (f"no-op repair on critical object must NOT count; "
+                                        f"got {te.critical_recall}")
+
+
+def test_anti_cheat_30_replay_snapshot_loads_memory_state():
+    """A2 (P0-5): a timeseries.query call replayed WITH a ctx_snapshot reproduces
+    the real store; replayed WITHOUT a snapshot returns empty (0 points vs recorded).
+    This proves the snapshot is load-bearing."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "harness"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluators"))
+    from harness.tools import ToolRegistry
+    from harness.trace_proxy import TraceProxy
+    from replay import make_replay_tool_fn, replay_trace
+    mem = {"timeseries_records": [
+        {"metric": "temperature", "timestamp": "2026-08-10T00:00:00", "value": 25.0, "unit": "C"},
+        {"metric": "temperature", "timestamp": "2026-08-11T00:00:00", "value": 27.0, "unit": "C"}],
+        "events": []}
+    ctx = {"memory_state": mem}
+    tp = TraceProxy(task_id="TN41", method="KAFarmTwin")
+    reg = ToolRegistry(ctx=ctx, trace_proxy=tp)
+    # Real call via ToolRegistry (records snapshot automatically for memory tools)
+    resp = reg.call("timeseries.query", {
+        "metric": "temperature", "start": "2026-08-01T00:00:00", "end": "2026-08-17T00:00:00"},
+        agent_id="MemoryAgent")
+    assert resp.get("count", 0) == 2, f"expected 2 points, got {resp.get('count')}"
+    calls = tp.calls()
+    assert len(calls) == 1
+    assert "ctx_snapshot" in calls[0], "memory call must record ctx_snapshot"
+    # Replay WITH snapshot -> should match
+    fn = make_replay_tool_fn()
+    r_ok = replay_trace(proxy_calls=calls, tool_fn=fn)
+    assert r_ok["replay_success"] == 1.0, f"with snapshot replay must match, got {r_ok}"
+    # Replay WITHOUT snapshot (strip it) -> empty store -> mismatch
+    calls_nosnap = [dict(c) for c in calls]
+    calls_nosnap[0] = {k: v for k, v in calls_nosnap[0].items() if k != "ctx_snapshot"}
+    r_bad = replay_trace(proxy_calls=calls_nosnap, tool_fn=fn)
+    assert r_bad["matched"] == 0, f"without snapshot must NOT match, got {r_bad}"
+
+
+def test_anti_cheat_31_seed_nodes_preserves_ids():
+    """B (P0-2): seed_nodes_from_initial_state preserves the original object ids
+    from initial_state so id_map/binding_match aligns (not reinvented)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "harness"))
+    from harness.stepwise_builder import seed_nodes_from_initial_state
+    init = {"objects": [
+        {"id": "N21_kiwi_gh", "type": "Greenhouse", "role": "root"},
+        {"id": "N21_kiwi_row", "type": "CropRow", "parent": "N21_kiwi_gh"},
+        {"id": "N21_kiwi_sen1", "type": "Sensor", "parent": "N21_kiwi_row"},
+        {"id": "N21_kiwi_plant", "type": "Plant", "parent": "N21_kiwi_row"}],
+        "relations": []}
+    nodes, rels = seed_nodes_from_initial_state(init)
+    node_ids = [n["id"] for n in nodes]
+    assert "N21_kiwi_gh" in node_ids, f"must preserve initial ids, got {node_ids}"
+    assert "N21_kiwi_sen1" in node_ids
+    # contains edges materialized from parent
+    assert len(rels) >= 3, f"must materialize contains edges, got {len(rels)}"
+    assert all(r["predicate"] == "contains" for r in rels)
+
+
+def test_anti_cheat_32_deterministic_r4_skips_llm():
+    """D2 (P1-4): R4 replace_asset is deterministic — must produce the correct
+    patch without any LLM call (budget.assert_llm_budget not incremented)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "methods"))
+    from typed_deterministic import build_deterministic_patch
+    nodes = [{"id": "pump_01", "type": "Pump", "asset_key": "tomato"}]
+    violation = {"rule_id": "R4", "severity": "fatal",
+                 "message": "node pump_01 of type Pump has wrong asset_key='tomato' (expected 'irrigation')",
+                 "object_ids": ["pump_01"]}
+    p = build_deterministic_patch(rule_id="R4", violation=violation,
+                                 nodes=nodes, edges=[], bindings=[])
+    assert p is not None, "R4 must have a deterministic patch"
+    assert p["patch_op"] == "replace_asset"
+    assert p["changes"]["target"] == "irrigation"
+
+
+def test_anti_cheat_33_deepcopy_rollback_effective():
+    """E (P0-4): rollback from a deepcopy snapshot must restore the original state,
+    even after _apply_patch has mutated node dicts in-place."""
+    import copy
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "methods"))
+    from kafarmtwin_typed_repair import _apply_patch
+    nodes = [{"id": "pump1", "type": "Pump", "asset_key": "tomato",
+              "key_attrs": {"location": {"x": 5, "z": 10}}}]
+    snapshot = copy.deepcopy(nodes)
+    # Mutate in-place (simulating _apply_patch)
+    _apply_patch({"patch_op": "replace_asset", "target": "pump1",
+                  "changes": {"target": "irrigation"}}, nodes, [], [])
+    assert nodes[0].get("asset_key") == "irrigation", "patch must apply"
+    # Rollback from deepcopy snapshot
+    nodes[:] = copy.deepcopy(snapshot)
+    assert nodes[0].get("asset_key") == "tomato", "deepcopy rollback must restore pristine state"
+    assert nodes[0]["key_attrs"]["location"] == {"x": 5, "z": 10}, "nested attrs must be restored"

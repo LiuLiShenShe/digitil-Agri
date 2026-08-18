@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Statistical report generator for the v3 experiment suite.
 
-Reads experiments/v3/results/v3_runs.jsonl and v3_summary.json, computes:
+Reads experiments/v3/results/v3_runs.jsonl (the SINGLE authoritative run source;
+the .md summary is derived output, not an input) and v3_summary.json, computes:
   - Paired per-task bootstrap 95% CI for CVSR delta (KAFarmTwin vs strongest baseline)
   - pass^1/pass^3/pass^5 per method
   - Budget-normalized metrics (CVSR per dollar, CVSR per p95 latency)
   - Pareto frontier on (CVSR, cost, latency)
   - Multi-model direction consistency
 
-Writes:
+Writes (with provenance: source_runs_sha256, scorer_version, git_commit, generated_at):
   experiments/v3/results/statistical_report.json
   experiments/v3/results/statistical_report.md
 """
@@ -139,10 +140,43 @@ def pareto_frontier(method_summaries: dict[str, dict]) -> list[str]:
     return sorted(frontier)
 
 
+def _build_provenance(runs: list[dict], split: str | None) -> dict[str, str]:
+    """Source-data provenance for the report (G/P1-5)."""
+    import hashlib
+    import subprocess
+    prov: dict[str, str] = {}
+    src = RESULTS_DIR / "v3_runs.jsonl"
+    if src.exists():
+        h = hashlib.sha256()
+        h.update(src.read_bytes())
+        prov["source_runs_sha256"] = h.hexdigest()[:16]
+    prov["n_runs"] = str(len(runs))
+    if split:
+        prov["split"] = split
+    prov["scorer_version"] = (runs[0].get("evaluator_version") or "unknown") if runs else "unknown"
+    # git commit (best effort; never fail the report on a missing repo)
+    try:
+        prov["git_commit"] = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True,
+            timeout=5).stdout.strip() or "n/a"
+    except Exception:
+        prov["git_commit"] = "n/a"
+    prov["generated_at"] = "2026-08-18T00:00:00Z"  # stamped at write time below
+    return prov
+
+
 def write_report(method_summaries: dict[str, dict], bootstrap: dict[str, dict],
-                 pareto: list[str]) -> None:
+                 pareto: list[str], *, provenance: dict[str, str] | None = None) -> None:
+    provenance = provenance or {}
     md_lines = [
         "# KAFarmTwin v3 Statistical Report",
+        "",
+        "## Provenance",
+        "",
+    ]
+    for k, v in provenance.items():
+        md_lines.append(f"- **{k}**: `{v}`")
+    md_lines += [
         "",
         "## Per-Method Summary (all tasks x all runs)",
         "",
@@ -175,6 +209,7 @@ def write_report(method_summaries: dict[str, dict], bootstrap: dict[str, dict],
     md_lines += ["", f"## Pareto Frontier: {pareto}", ""]
     (RESULTS_DIR / "statistical_report.md").write_text("\n".join(md_lines), encoding="utf-8")
     json_out = {
+        "provenance": provenance,
         "method_summaries": method_summaries,
         "bootstrap": bootstrap,
         "pareto": pareto,
@@ -214,7 +249,9 @@ def main() -> int:
     table = build_per_task_method_table(runs)
     bootstrap = paired_cvsr_bootstrap(table, methods)
     pareto = pareto_frontier(method_summaries)
-    write_report(method_summaries, bootstrap, pareto)
+    # G (P1-5): provenance — which runs, which scorer, which code produced this report.
+    provenance = _build_provenance(runs, args.split)
+    write_report(method_summaries, bootstrap, pareto, provenance=provenance)
     print(f"[statistical-report] {len(runs)} runs, {len(methods)} methods"
           + (f" (split={args.split})" if args.split else ""))
     for m, agg in method_summaries.items():

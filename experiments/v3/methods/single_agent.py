@@ -50,6 +50,35 @@ def run_single_agent(*, task: dict[str, Any], registry: ToolRegistry,
             "success": bool(init_obj),
         })
 
+    # B (P0-2): data_binding tasks carry the complete object graph in initial_state
+    # (TN21: objects=[gh,row,sen1,sen2,plant], relations present). Seed objects+edges
+    # deterministically (preserving the ids gold references) and emit bindings only,
+    # so binding_match aligns instead of scoring 0 from reinvented ids. Same shared
+    # helper KAFarmTwin uses (fair).
+    if (task.get("category") in ("data_bind", "data_binding")
+            or task.get("task_type") == "data_binding"):
+        init_state = task.get("initial_state")
+        if isinstance(init_state, dict) and init_state.get("objects"):
+            from experiments.v3.harness.stepwise_builder import bindings_only_scene  # type: ignore
+            built = bindings_only_scene(
+                initial_state=init_state, prompt=prompt, llm_call_fn=llm_call_fn,
+                budget=budget, registry=registry, agent_id=agent_id,
+            )
+            plan_objects, relations, bindings = built["nodes"], built["edges"], built["bindings"]
+        else:
+            plan_objects, relations, bindings = [], [], []
+        for b in bindings:
+            registry.call("object.bind", b, agent_id=agent_id)
+        raw = {
+            "nodes": plan_objects,
+            "edges": relations,
+            "bindings": bindings,
+            "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
+            "budget": budget.summary(),
+            "success": bool(plan_objects),
+        }
+        return canonicalize_output(raw)
+
     # Non-repair scene/asset/bind: build the scene via the SHARED stepwise builder.
     # This splits the once-overflowing single JSON into objects/relations/bindings
     # steps, each well under the model's output cap, so asset/bind tasks are no

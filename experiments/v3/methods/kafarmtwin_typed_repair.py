@@ -62,16 +62,96 @@ def _severity(rule_id: str) -> str:
     return "fatal" if rule_id in {"R1", "R2", "R3", "R4", "R7"} else "warning"
 
 
-def _new_conflict(violation: dict[str, Any], counter: itertools.count) -> dict[str, Any]:
+def _new_conflict(violation: dict[str, Any], counter: itertools.count,
+                  *, nodes: list[dict[str, Any]] | None = None,
+                  bindings: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Build a typed RepairTicket from a RuleViolation.
+
+    D1 (P1-1): fill `observed`/`expected` so the owner agent gets actionable,
+    structured feedback (structural path + observed value + expected admissible
+    alternatives) instead of an empty dict the LLM must guess from. Values are
+    extracted from the violation message / scene state — never re-derived from gold.
+    """
     rule_id = violation.get("rule_id") or ""
+    message = str(violation.get("message") or "")
+    oids = list(violation.get("object_ids") or [])
+    nodes = nodes or []
+    bindings = bindings or []
+    import re as _re
+
+    def _first_oid():
+        if oids:
+            return oids[0]
+        m = _re.search(r"([A-Za-z0-9_#-]+)", message)
+        return (m.group(1) if m else "")
+
+    def _find_oid_node(oid):
+        for n in nodes:
+            if str(n.get("id") or "") == oid:
+                return n
+        return None
+
+    observed: dict[str, Any] = {}
+    expected: dict[str, Any] = {}
+
+    if rule_id == "R4":
+        # message: "node X of type T has wrong asset_key='y' (expected 'c')" or
+        #          "pump X wrongly bound to plant asset T"
+        m_expected = _re.search(r"expected '?([a-z_]+)'?", message)
+        m_wrong = _re.search(r"asset_key='?([^']+)'?|wrongly bound to (plant|tomato|lettuce|strawberry|corn) asset", message)
+        oid = _first_oid()
+        node = _find_oid_node(oid)
+        observed["asset_key"] = (node.get("asset_key") if node else None) or (m_wrong.group(1) if m_wrong else None)
+        expected["asset_key"] = m_expected.group(1) if m_expected else (
+            "irrigation" if "pump" in message.lower() or (node or {}).get("type") == "Pump"
+            else "camera" if "camera" in message.lower() or (node or {}).get("type") == "Camera"
+            else "sensor")
+    elif rule_id == "R2":
+        oid = _first_oid()
+        if "missing data binding" in message:
+            observed["binding"] = None
+            expected["binding"] = {"type": "sensor_bind", "target": "<monitored_object_id>",
+                                   "metadata": {"metrics": ["<metric>"], "unit": "<canonical unit>"}}
+        else:
+            observed["metadata"] = None
+            expected["binding"] = {"metadata": {"unit": "<canonical unit>", "timestamp": "<ISO8601>"}}
+    elif rule_id == "R1":
+        oid = _first_oid()
+        if "illegal parent" in message:
+            m = _re.search(r"illegal parent: (\w+) (\S+) under (\S+)", message)
+            observed["parent_type"] = m.group(1) if m else None
+            observed["parent"] = m.group(3) if m else None
+            expected["parent"] = "a legal parent type (Greenhouse/Plot/CropRow per hierarchy)"
+        else:
+            observed["parent"] = None
+            expected["parent"] = "attach a parent of a legal type (or set role=root)"
+    elif rule_id == "R3":
+        oid = _first_oid()
+        node = _find_oid_node(oid)
+        observed["location"] = ((node.get("key_attrs") or {}).get("location") if node else None) \
+            or (node.get("location") if node else None)
+        expected["location"] = "in-bounds position within parent Plot/Greenhouse bounds"
+    elif rule_id == "R5":
+        oid = _first_oid()
+        observed["camera_fields"] = "missing pose/observes/fov"
+        expected["camera_fields"] = {"pose": {"position": [0, 0, 0]}, "observes": "<contained object id>", "fov": "<number>"}
+    elif rule_id == "R6":
+        oid = _first_oid()
+        observed["served_object_binding"] = None
+        expected["served_object_binding"] = "a sensor_bind/asset binding to a contained crop object"
+    elif rule_id == "R9":
+        oid = _first_oid()
+        observed["asset_state"] = "wrong asset_key retained"
+        expected["asset_state"] = "set_placeholder (asset_job job_type=placeholder) OR replace_asset to correct type"
+
     return {
         "conflict_id": f"C{next(counter):03d}",
         "rule_id": rule_id,
         "severity": violation.get("severity") or _severity(rule_id),
         "conflict_type": f"violation_{rule_id}",
-        "object_ids": list(violation.get("object_ids") or []),
-        "observed": {},
-        "expected": {},
+        "object_ids": oids,
+        "observed": observed,
+        "expected": expected,
         "evidence_ids": [],
         "owner_agent": OWNER_BY_RULE.get(rule_id, "RepairAgent"),
         "allowed_patch_ops": list(PATCH_OPS_BY_RULE.get(rule_id, {"update_transform"})),
@@ -117,11 +197,19 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
     bindings: list[dict[str, Any]] = []
 
     # If the task is a repair task, seed the scene from initial_state and verify modification.
-    initial_state = task.get("initial_state") if task.get("category") == "repair" else None
-    goal_state = task.get("goal_state") if task.get("category") == "repair" else None
+    # B (P0-2): data_binding tasks ALSO carry a complete object graph in initial_state
+    # (TN21: objects=[gh,row,sen1,sen2,plant]). Reinventing those ids from the prompt
+    # broke id_map/binding alignment → BindF1=0. Seed objects+relations from
+    # initial_state and emit bindings only, preserving the seeded ids.
+    is_repair = (task.get("category") in ("repair", "rule_repair")
+                 or task.get("task_type") == "rule_repair")
+    is_data_bind = (task.get("category") in ("data_bind", "data_binding")
+                    or task.get("task_type") == "data_binding")
+    initial_state = task.get("initial_state") if is_repair else None
+    goal_state = task.get("goal_state") if is_repair else None
     critical = task.get("critical_objects") or []
 
-    if initial_state is not None:
+    if is_repair and initial_state is not None:
         # Repair task: the broken input scene IS the starting point. Seed from it and
         # let the typed repair loop actually fix it. Do NOT regenerate a fresh scene
         # from the prompt (that would ignore the error we are asked to repair).
@@ -134,12 +222,24 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         for o in plan_objects:
             if o.get("parent"):
                 relations.append({"subject": o["parent"], "predicate": "contains", "object": o.get("id", "")})
+    elif is_data_bind and (task.get("initial_state") or {}).get("objects"):
+        # data_binding: seed the deterministic object graph, emit bindings ONLY. The
+        # LLM sees only the existing ids → no scene/id reinvention → binding_match aligns.
+        from experiments.v3.harness.stepwise_builder import bindings_only_scene  # type: ignore
+        built = bindings_only_scene(
+            initial_state=task.get("initial_state"), prompt=task["prompt"],
+            llm_call_fn=llm_call_fn, budget=budget, registry=registry,
+            agent_id="KAFarmTwin-Planner",
+        )
+        plan_objects = built["nodes"]
+        relations = built["edges"]
+        bindings = built["bindings"]
     else:
-        # Non-repair task: build the scene from the prompt through the SHARED
-        # stepwise builder (objects -> relations -> bindings), so complex asset/bind
-        # scenes no longer overflow the model's single-response output cap. Same
-        # mechanism as SingleAgent (fair); KAFarmTwin then runs its typed repair loop
-        # over the emitted scene.
+        # Other (scene_build / asset_routing without seed): build the scene from the
+        # prompt through the SHARED stepwise builder (objects -> relations -> bindings),
+        # so complex asset/bind scenes no longer overflow the model's single-response
+        # output cap. Same mechanism as SingleAgent (fair); KAFarmTwin then runs its
+        # typed repair loop over the emitted scene.
         from experiments.v3.harness.stepwise_builder import stepwise_build_scene  # type: ignore
         from experiments.v3.harness.llm import ONTOLOGY_NOTE  # type: ignore
         built = stepwise_build_scene(
@@ -161,7 +261,7 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         warnings = [v for v in violations if v["severity"] == "warning"]
         ordered = sorted(fatal + warnings, key=lambda v: CONFLICT_PRIORITY.index(v.get("rule_id")) if v.get("rule_id") in CONFLICT_PRIORITY else 99)
         v = ordered[0]
-        conflict = _new_conflict(v, counter)
+        conflict = _new_conflict(v, counter, nodes=plan_objects, bindings=bindings)
         new_conflicts.append(conflict)
 
         if not budget.assert_repair_budget():
@@ -171,35 +271,55 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # propose patch: route to owner agent, which chooses the patch op
         owner = conflict["owner_agent"]
         _rule = v.get("rule_id") or ""
-        # Generic shape examples (placeholder IDs) so the owner agent learns the
-        # patch contract, NOT any task's specific answer.
-        _examples = {
-            "R2": 'e.g. {"patch_op":"add_binding","target":"<sensor_id>",'
-                  '"changes":{"subject":"<sensor_id>","target":"<monitored_object_id>","type":"sensor_bind",'
-                  '"metadata":{"metrics":["temperature"],"unit":"celsius"}}} '
-                  'or {"patch_op":"set_attr","target":"<sensor_id>","changes":{"unit":"celsius","timestamp":"<ISO8601>"}}',
-            "R1": 'e.g. {"patch_op":"update_transform","target":"<child_id>","changes":{"parent":"<parent_id>"}}',
-            "R3": 'e.g. {"patch_op":"update_transform","target":"<object_id>",'
-                  '"changes":{"key_attrs":{"location":{"x":<in-bounds num>,"z":<in-bounds num>}}}} '
-                  '— if the object is out of bounds, MOVE it to an in-bounds position '
-                  '(e.g. inside its parent Plot bounds 0<=z<=8)',
-            "R4": 'e.g. {"patch_op":"replace_asset","target":"<pump_id>","changes":{"target":"<correct_asset_type>"}}',
-        }
-        fix = llm_call_fn({
-            "system": f"You are {owner}. Repair this typed conflict. Return JSON with EITHER "
-                      f"{{patch_op: '<one of {PATCH_OPS_BY_RULE.get(_rule, {'update_transform'})}>', "
-                      f"target: '<object id>', changes: {{...}}}} OR a batched repair "
-                      f"{{ops: [{{patch_op, target, changes}}, ...]}} fixing ALL affected objects "
-                      f"in one round (one scene may have several broken objects at once). "
-                      f"{_examples.get(_rule, '')}",
-            "user": f"Conflict: {conflict}\nCurrent objects: {plan_objects}\n"
-                    f"Current relations: {relations}\nCurrent bindings: {bindings}\n"
-                    f"All current violations: {violations}",
-        }, budget)
-        try:
-            patch = fix.get("content_json") or {}
+        # D2 (P1-4): mechanical rules have an unambiguous deterministic fix. Try it
+        # FIRST — it skips the LLM round entirely (no budget charge), lowering cost
+        # AND raising repair success. Only genuinely ambiguous rules fall through to
+        # the owner LLM. Absent a config flag, deterministic ops default to enabled.
+        fix = None
+        deterministic_patch = None
+        _use_det = True
+        try:  # env override allows the ablation to disable this path
+            import os as _os
+            _use_det = _os.getenv("KAFARMTWIN_USE_DETERMINISTIC_OPS", "1").strip() != "0"
         except Exception:
-            patch = {}
+            _use_det = True
+        if _use_det:
+            from experiments.v3.methods.typed_deterministic import build_deterministic_patch  # type: ignore
+            deterministic_patch = build_deterministic_patch(
+                rule_id=_rule, violation=v, nodes=plan_objects,
+                edges=relations, bindings=bindings)
+        if deterministic_patch is not None:
+            patch = {"ops": [deterministic_patch]}
+        else:
+            # Generic shape examples (placeholder IDs) so the owner agent learns the
+            # patch contract, NOT any task's specific answer.
+            _examples = {
+                "R2": 'e.g. {"patch_op":"add_binding","target":"<sensor_id>",'
+                      '"changes":{"subject":"<sensor_id>","target":"<monitored_object_id>","type":"sensor_bind",'
+                      '"metadata":{"metrics":["temperature"],"unit":"celsius"}}} '
+                      'or {"patch_op":"set_attr","target":"<sensor_id>","changes":{"unit":"celsius","timestamp":"<ISO8601>"}}',
+                "R1": 'e.g. {"patch_op":"update_transform","target":"<child_id>","changes":{"parent":"<parent_id>"}}',
+                "R3": 'e.g. {"patch_op":"update_transform","target":"<object_id>",'
+                      '"changes":{"key_attrs":{"location":{"x":<in-bounds num>,"z":<in-bounds num>}}}} '
+                      '— if the object is out of bounds, MOVE it to an in-bounds position '
+                      '(e.g. inside its parent Plot bounds 0<=z<=8)',
+                "R4": 'e.g. {"patch_op":"replace_asset","target":"<pump_id>","changes":{"target":"<correct_asset_type>"}}',
+            }
+            fix = llm_call_fn({
+                "system": f"You are {owner}. Repair this typed conflict. Return JSON with EITHER "
+                          f"{{patch_op: '<one of {PATCH_OPS_BY_RULE.get(_rule, {'update_transform'})}>', "
+                          f"target: '<object id>', changes: {{...}}}} OR a batched repair "
+                          f"{{ops: [{{patch_op, target, changes}}, ...]}} fixing ALL affected objects "
+                          f"in one round (one scene may have several broken objects at once). "
+                          f"{_examples.get(_rule, '')}",
+                "user": f"Conflict: {conflict}\nCurrent objects: {plan_objects}\n"
+                        f"Current relations: {relations}\nCurrent bindings: {bindings}\n"
+                        f"All current violations: {violations}",
+            }, budget)
+            try:
+                patch = fix.get("content_json") or {}
+            except Exception:
+                patch = {}
 
         # ---- 3. precheck -> transactional apply -> local revalidate ----
         # Support a batched {ops: [...]} patch (multiple objects fixed in one round)
@@ -211,8 +331,13 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         if not patches:
             conflict["status"] = "unresolved"
             continue
-        # snapshot before
-        snapshot = (list(plan_objects), list(relations), list(bindings))
+        # snapshot before — E (P0-4): use DEEP copy. _apply_patch mutates node/binding
+        # dicts IN PLACE; a shallow list copy retains references to the SAME already-
+        # mutated dicts, so rollback would be ineffective. Deep-copy both the snapshot
+        # (so it stays pristine) and the restore (so the original dict objects are
+        # replaced, not kept mutated).
+        import copy as _copy
+        snapshot = (_copy.deepcopy(plan_objects), _copy.deepcopy(relations), _copy.deepcopy(bindings))
         conflict_rule = conflict.get("rule_id") or ""
         # pre-patch violated objects (any severity) to detect NEW problems later.
         # A patch that resolves its own rule while letting a DIFFERENT latent rule
@@ -231,7 +356,11 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             if ok:
                 applied_any = True
             else:
-                plan_objects[:], relations[:], bindings[:] = snapshot
+                # E (P0-4): restore from the DEEP-COPY snapshot (pristine dicts, not
+                # the mutated-originals referenced by a shallow copy).
+                plan_objects[:] = _copy.deepcopy(snapshot[0])
+                relations[:] = _copy.deepcopy(snapshot[1])
+                bindings[:] = _copy.deepcopy(snapshot[2])
                 conflict["status"] = "unresolved"
                 applied_any = False
                 break
@@ -258,7 +387,9 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
                 if oid not in pre_violated_obj:
                     new_fatal_objs.add(oid)
         if rule_level_new_fatal or new_fatal_objs:
-            plan_objects[:], relations[:], bindings[:] = snapshot
+            plan_objects[:] = _copy.deepcopy(snapshot[0])
+            relations[:] = _copy.deepcopy(snapshot[1])
+            bindings[:] = _copy.deepcopy(snapshot[2])
             conflict["status"] = "rolled_back"
             continue
         conflict["status"] = "verified"

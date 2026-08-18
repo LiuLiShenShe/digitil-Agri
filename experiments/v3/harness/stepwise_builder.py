@@ -162,6 +162,86 @@ def stepwise_build_scene(
     return {"nodes": nodes, "edges": edges, "bindings": bindings}
 
 
+def seed_nodes_from_initial_state(initial_state: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Derive objects + relations from a task's public initial_state (B, P0-2).
+
+    data_binding / asset_routing tasks legitimately start from a complete object
+    graph that the task already provides in `initial_state`. The method must NOT
+    reinvent those ids/hierarchy from the prompt (that breaks id_map/binding
+    alignment). Return (nodes preserving initial ids, relations) — the same shape
+    stepwise_build_scene's step 1-2 would produce, but deterministically from the
+    seeded graph.
+    """
+    if isinstance(initial_state, dict):
+        objs = initial_state.get("objects") or []
+        rels = initial_state.get("relations") or []
+    else:
+        return [], []
+    nodes = []
+    for o in objs:
+        if not isinstance(o, dict) or not o.get("id"):
+            continue
+        n = dict(o)
+        n.setdefault("count", 1)
+        nodes.append(n)
+    relations = []
+    for r in rels:
+        if not isinstance(r, dict):
+            continue
+        relations.append(canonicalize_edge(r))
+    # Also materialize contains edges implied by a node.parent, matching the repair
+    # seeding path (so R1 hierarchy is explicit in the scored relations).
+    seen = {(e.get("subject"), e.get("object")) for e in relations}
+    for n in nodes:
+        p = n.get("parent")
+        if p and (str(p), str(n.get("id") or "")) not in seen:
+            relations.append({"subject": p, "predicate": "contains", "object": str(n.get("id") or "")})
+            seen.add((str(p), str(n.get("id") or "")))
+    return nodes, relations
+
+
+def bindings_only_scene(
+    *,
+    initial_state: Any,
+    prompt: str,
+    llm_call_fn,
+    budget: Any,
+    registry: Any,
+    agent_id: str,
+) -> dict[str, Any]:
+    """data_binding path: seed objects+relations from initial_state, emit bindings only.
+
+    The task's public initial_state already carries the object graph with the exact
+    ids the gold references (TN21: objects=[gh,row,sen1,sen2,plant]). We preserve
+    those ids (deterministic — no LLM rebuild, so id_map/binding_match align) and ask
+    the LLM only for the bindings edge data (sensor_bind / trait_bind / asset). This
+    fixes the data_bind BindF1=0 root cause without the model reinventing the scene.
+    """
+    nodes, edges = seed_nodes_from_initial_state(initial_state)
+    node_ids = "\n".join(f"- {o.get('id')} ({o.get('type')})" for o in nodes) or "(none yet)"
+    # reflect the seeded graph through the SHARED tools (real trace/evidence)
+    if nodes:
+        registry.call("scene.plan", {"objects": nodes}, agent_id=agent_id)
+        registry.call("layout.solve", {"objects": nodes}, agent_id=agent_id)
+
+    system = (
+        "You emit data bindings for an existing digital-twin scene. Shared knowledge:\n"
+        "Binding types: sensor_bind (sensor→monitored object), trait_bind (trait→plant), "
+        "asset (object→asset). metadata: {metrics:[...], unit:<canonical unit>, asset_key, policy}. "
+        "Use ONLY the exact existing ids below. Do NOT invent or rename objects. "
+        "Output ONLY compact JSON under key \"bindings\". No markdown, no prose."
+    )
+    bind_r = llm_call_fn({
+        "system": system,
+        "user": f"Existing scene objects (ids to use exactly):\n{node_ids}\n\n"
+                f"Emit bindings for:\n{prompt}",
+    }, budget)
+    from experiments.v3.harness.canonicalizer import canonicalize_binding  # type: ignore
+    bindings = [_as_binding(b) for b in (_extract_list(bind_r.get("content_json"), ("bindings", "binding", "links")) or [])]
+
+    return {"nodes": nodes, "edges": edges, "bindings": bindings}
+
+
 def _as_node(o: dict[str, Any]) -> dict[str, Any]:
     return canonicalize_node(o)
 

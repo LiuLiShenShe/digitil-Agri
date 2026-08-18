@@ -236,7 +236,13 @@ class ToolRegistry:
         response = self.tools[tool](self.ctx, request)
         # record through the shared trace proxy
         if self.trace_proxy is not None:
+            # A2 (P0-5): memory tools are context-dependent (they read ctx["memory_state"]).
+            # Capture a snapshot so replay reproduces the real store, not an empty one.
+            import copy
+            ctx_snapshot = None
+            if tool in ("timeseries.query", "event.query") and self.ctx.get("memory_state"):
+                ctx_snapshot = {"memory_state": copy.deepcopy(self.ctx.get("memory_state"))}
             call_id = self.trace_proxy.record(agent_id=agent_id, tool=tool, request=request, response=response,
-                                              caller_method=caller_method)
+                                              caller_method=caller_method, ctx_snapshot=ctx_snapshot)
             response["_call_id"] = call_id
         return response

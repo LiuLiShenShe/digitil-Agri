@@ -73,3 +73,19 @@ satisfaction that neither method reaches. Hence paired CI is exactly [0.00, 0.00
 
 ## Test suite
 **68/68 pass** (incl. honesty tests for broken-work-trace vacuous evidence).
+
+## v3.1 整改 (2026-08-18) — 实现完成，待真实模型重评分
+
+9 项 P0/P1 修复全部落地并通过 74/74 单元测试回归：
+- **A** : critical_recall 用 id_map + R10 真实修改守卫；memory replay 载入 ctx_snapshot
+- **B** : data_binding 从 initial_state 播种（两方法统一 bindings_only_scene）
+- **C** : identity 型对象禁止 count=N 折叠 + ONTOLOGY_NOTE 指引
+- **D** : RepairTicket observed/expected 结构化 + typed_deterministic 机械规则免 LLM（R4/R1/R3/R5/R6）
+- **E** : 事务回滚 deepcopy 真实生效
+- **F** : semantic_compiler.py + knowledge/{unit_registry,binding_vocab,asset_policy}（KAFarmTwin 编译式构造，区别于 SingleAgent）
+- **G** : evaluator_v2.2 版本化 + scorer-bind 检查（gate 拒绝旧 run）+ statistical_report provenance
+- **H** : 6 条新 anti-cheat 测试 + 离线 mock 诊断 run 验证
+
+**诚实状态**：固定 500-run 文件已恢复纯净（mock dev 隔离到 dev_mock.jsonl）。GATE 现在正确 FAIL
+`scorer_version_bound`——旧 v1.x run 无版本戳、需在 v2.2 scorer 下重跑才能反映修复效果。真实重评分
+/重跑受当前环境无 AGNESS_API_KEY 阻塞（不伪造结果）。修复方向的有效性尚未在 frozen 集上实证。
