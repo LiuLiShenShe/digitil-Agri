@@ -71,7 +71,9 @@
 
 ---
 
-## 4. 根因（如实，非方法缺陷，对两方法公平）
+## 4. 根因（如实）—— 已识别的 Benchmark 与执行链联合缺陷
+
+> **结论修订（2026-08-17，Annotator 2 深度审计后）**：本节不再是"非方法缺陷、对两方法公平"的单因结论。F-016 的 0.2 vs 0.2 是 **Benchmark 标注设计约束（F-019）+ 执行链缺陷（Trace/Repair/规则引擎/计数/基线/门控等 P0 项）** 联合造成的，尚不能解释为"KAFarmTwin 与 SingleAgent 真实能力打平"。当前结果仅作为 **失败实验与调试证据** 保留，不作为论文最终实验，也不作为判断方法有效/无效的依据。
 
 stepwise 已解除输出上限（F-018 RESOLVED），但 **绑定合约对非 memory 任务两方法同为结构性不可能**（记 **F-019**）：
 
@@ -81,7 +83,17 @@ stepwise 已解除输出上限（F-018 RESOLVED），但 **绑定合约对非 me
 
 3. **rule_repair（TN31–TN34）**：gold 绑定 metadata 含**标注键** `"fixed": true`，`binding_match` 要求 `gen_md["fixed"]=="true"`；KAFarmTwin 的 `replace_asset`/`set_placeholder` 与 LLM 均不产出该键 → 即使 `_repair_adapter` 判 `repair_success=True`，图形绑定仍判错。旧 one-shot 归档中 KF 4 修复任务 20/20 `repair_success=False`。
 
-**结论：这是冻结 test_v2 标注设计的结构性约束，不是 stepwise 缺陷、不是修复循环缺陷，对两方法完全公平。** 不修改冻结 gold/评分器。
+**执行链缺陷（Annotator 2 已逐条核实，8 项 P0，修复后再重跑）**：
+- P0-1 **Trace 链断裂**：`canonicalize_output` 把 `traceSteps` 折叠进 `trace.steps` 后丢弃顶层键，runner 却读 `out["traceSteps"]` → 恒空；空 trace 使 `evidence_precision` 退化为空洞的 1.0（`trace_evidence.py` L63）。
+- P0-2 **Repair 执行/评分脱节**：R4 只查 `bindings` 不查 `node.asset_key`；runner 的 `final_state` 只传 objects 不传 bindings；R9 是空 `pass`；R10 需 initial+goal 同时传入（runner 从不这样）。
+- P0-3 **计数/代价失真**：`stepwise_builder` 与 `llm_call_fn` 双重计 token/调用；latency 恒 0。
+- P0-4 **memory 任务非真实 LLM**：`build_memory_answer` 是确定性共享助手，两方法同分来源。
+- P0-5 **基线不全**：5 个基线只有 2 个（SA/KF）实际运行，最强公平基线可能未被测量。
+- P0-6 **Gate 缺硬约束**：无 bootstrap CI 检查、无 per-task 5× 判定、critical_recall/fatal 用相对基线而非绝对 0.95/0.01 护栏。
+- P0-7 **Benchmark 标注缺口**：TN11–TN14 资产目标 id 不在 required_nodes；TN31–TN34 依赖 `fixed:true` 标注键；TN21–TN24 全等元数据过严（与 F-019 重叠）。
+- P0-8 **密钥曾明文入会话**（已从仓库文件移除；历史清理与轮换为人工操作，HUMAN_BLOCKED）。
+
+**结论：当前 0.2 vs 0.2 不可解释为方法真实能力对比。** 不修改冻结 gold/评分器/阈值；按上述 8 项 P0 修复执行链后，在冻结 test_v2 上重跑正式 F-015/F-016 再做裁决。
 
 ---
 

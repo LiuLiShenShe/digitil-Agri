@@ -42,6 +42,10 @@ def _type_of(n: dict[str, Any]) -> str:
     return str(n.get("type") or n.get("assetKey") or n.get("category") or "")
 
 
+def _norm(s: Any) -> str:
+    return str(s or "").strip().lower()
+
+
 def _parent(n: dict[str, Any]) -> str:
     return str(n.get("parent") or "")
 
@@ -182,15 +186,36 @@ class RuleEngine:
                                 [str(n.get('id') or '')]))
 
         if "R4" in active:
-            # Asset type consistent: an object's asset_policy must match its type.
-            # A pump bound to a plant asset is a fatal R4 violation.
+            # Asset type consistent: an object's asset_key must match the device-asset
+            # contract for its type. Detects a wrong asset_key on an object itself
+            # (R4 node.asset_key check — previously only checked binding target type)
+            # AND a pump wrongly bound to a plant asset.
+            _ASSET_BY_TYPE = {
+                "Pump": ("irrigation", {"tomato", "plant", "lettuce", "strawberry", "corn", "lemongrass", "basil", "oregano", "soy", "alfalfa"}),
+                "Camera": ("camera", {"tomato", "plant", "lettuce", "strawberry", "corn", "lemongrass", "basil", "oregano", "soy", "alfalfa"}),
+                "Sensor": ("sensor", {"tomato", "plant", "lettuce", "strawberry", "corn", "lemongrass", "basil", "oregano", "soy", "alfalfa"}),
+                "Irrigation": ("irrigation", {"tomato", "plant", "lettuce", "strawberry", "corn", "lemongrass", "basil", "oregano", "soy", "alfalfa"}),
+            }
+            for n in nodes:
+                nt = _type_of(n)
+                if nt not in _ASSET_BY_TYPE:
+                    continue
+                correct, wrong_assets = _ASSET_BY_TYPE[nt]
+                node_asset = _norm(str(_get("asset_key", n) or n.get("asset_key") or ""))
+                if node_asset and node_asset in wrong_assets:
+                    violations.append(RuleViolation("R4", "fatal",
+                                                    f"node {n.get('id')} of type {nt} has wrong asset_key={node_asset!r} (expected {correct!r})",
+                                                    [str(n.get('id') or '')]))
+            # Also check asset-typed bindings: a pump bound to a plant asset target.
             for b in bindings:
                 subject = b.get("subject")
                 target = b.get("target")
-                if b.get("type") == "asset":
+                btype = _norm(b.get("type") or "")
+                if btype == "asset":
                     s_obj = node_by_id.get(str(subject) or "")
                     st = _type_of(s_obj) if s_obj else ""
-                    if st == "Pump" and target in {"tomato", "plant", "lettuce", "strawberry", "corn"}:
+                    target_norm = _norm(str(target or ""))
+                    if st == "Pump" and target_norm in {"tomato", "plant", "lettuce", "strawberry", "corn"}:
                         violations.append(RuleViolation("R4", "fatal",
                                                         f"pump {subject} wrongly bound to plant asset {target}",
                                                         [str(subject or '')]))
@@ -231,9 +256,33 @@ class RuleEngine:
                                                         [str(b.get('subject') or '')]))
 
         if "R9" in active:
-            # Missing asset must not break: placeholder + generation task required when asset absent.
-            # Emitted by the state_match/replay layer; here we check bindings of type placeholder.
-            pass  # handled by trace/evidence layer
+            # Missing asset must not break: a placeholder asset_job must be present
+            # when a device asset is committed as a placeholder (set_placeholder
+            # branch of the repair contract), instead of silently retaining the
+            # wrong-mismatched binding. Previously `pass` — now it is a real check:
+            # any asset_job binding must carry job_type=placeholder; a retained
+            # wrong asset_key on the same object is a fatal R9 violation.
+            for b in bindings:
+                btype = _norm(b.get("type") or "")
+                subject = b.get("subject")
+                md = b.get("metadata") or {}
+                if btype == "asset_job":
+                    job_type = _norm(md.get("job_type") or "")
+                    if job_type != "placeholder":
+                        violations.append(RuleViolation(
+                            "R9", "fatal",
+                            f"placeholder asset_job on {subject} missing job_type=placeholder (got {job_type!r})",
+                            [str(subject or '')]))
+                elif btype == "asset":
+                    # a retained asset binding with a wrong (non-empty, non-device)
+                    # asset_key on a placeholder-able object = the mismatch survived
+                    bkey = _norm(md.get("asset_key") or "")
+                    if bkey in {"tomato", "plant", "lettuce", "strawberry", "corn",
+                                "lemongrass", "basil", "oregano", "soy", "alfalfa"}:
+                        violations.append(RuleViolation(
+                            "R9", "fatal",
+                            f"asset mismatch retained on {subject}: asset_key={bkey!r}",
+                            [str(subject or '')]))
 
         if "R10" in active:
             # Errors must be correctable: repair tasks must actually modify critical_objects

@@ -57,6 +57,21 @@ class BudgetEnforcer:
         if self.cost > self.config.max_cost:
             raise BudgetExhausted(f"cost={self.cost} > max {self.config.max_cost}")
 
+    # P0-6: derive cost from real usage. DeepSeek-V4-Flash pricing (per 1M tokens,
+    # USD): input $0.14, output $0.28 (SiliconFlow list price as of the experiment).
+    # Usage shape: {prompt_tokens, completion_tokens, total_tokens}.
+    INPUT_PER_1M = 0.14
+    OUTPUT_PER_1M = 0.28
+
+    def add_cost_from_usage(self, usage: dict[str, Any]) -> None:
+        """Accrue cost from a response's real token usage. Called once per LLM call
+        from the single-source `make_llm_call_fn` wrapper — methods must not also
+        call add_cost (double-count)."""
+        input_t = int(usage.get("prompt_tokens") or 0)
+        output_t = int(usage.get("completion_tokens") or usage.get("output_tokens") or 0)
+        delta = (input_t * self.INPUT_PER_1M + output_t * self.OUTPUT_PER_1M) / 1_000_000
+        self.add_cost(round(delta, 8))
+
     def summary(self) -> dict[str, Any]:
         return {
             "llm_calls": self.llm_calls,

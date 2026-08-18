@@ -20,12 +20,11 @@ def run_react(*, task: dict[str, Any], registry: ToolRegistry,
     max_react = budget.config.max_llm_calls // 3
 
     for i in range(max_react):
-        budget.assert_llm_budget()
+        # P0-6: accounting (assert_llm/tokens/cost) is in make_llm_call_fn; not here.
         resp = llm_call_fn({
             "system": "You are a ReAct agent. Return JSON {thought, action: {name, args}, done}",
             "user": f"{prompt}\nSo far: {steps[-2:] if steps else 'nothing'}",
         }, budget)
-        budget.add_tokens(resp.get("usage", {}).get("total_tokens", 0))
         try:
             act = resp.get("content_json") or {}
         except Exception:

@@ -19,7 +19,8 @@ def run_single_agent(*, task: dict[str, Any], registry: ToolRegistry,
     # methods have symmetric retrieval capability. Token/tool budget is charged
     # the same way; no scene is authored.
     if task.get("category") == "memory_query" or task.get("task_type") == "memory_query":
-        budget.assert_llm_budget()  # count this retrieval pass against budget
+        # P0-6: build_memory_answer is deterministic (no LLM call); must NOT charge
+        # an LLM call. Tool calls (timeseries.query/event.query) are real trace.
         answer = build_memory_answer(task, registry, agent_id=agent_id)
         raw = {
             "nodes": [],

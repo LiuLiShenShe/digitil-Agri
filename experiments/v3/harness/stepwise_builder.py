@@ -108,13 +108,13 @@ def stepwise_build_scene(
     )
 
     # ---- step 1: objects ----
-    budget.assert_llm_budget()
+    # P0-6: budget accounting is the single source in make_llm_call_fn (assert_llm
+    # + tokens + cost). Do NOT re-assert/add here or calls/tokens/cost double-count.
     r1 = llm_call_fn({
         "system": system + "\n\nResponsibility: list ALL scene objects as JSON array under key \"objects\". "
                            "Each node: {\"id\":str,\"type\":<SharedType>,\"role\":\"root\"|\"entity\",\"parent\":str|omit,\"key_attrs\":{},\"count\":int}.",
         "user": prompt,
     }, budget)
-    budget.add_tokens(r1.get("usage", {}).get("total_tokens", 0))
     cj1 = r1.get("content_json")
     if isinstance(cj1, list):
         # model returned a bare array (treat as the objects list)
@@ -139,7 +139,6 @@ def stepwise_build_scene(
     node_ids = "\n".join(f"- {o.get('id')} ({o.get('type')})" for o in nodes) or "(none yet)"
 
     # ---- step 2: relations ----
-    budget.assert_llm_budget()
     r2 = llm_call_fn({
         "system": system + "\n\nResponsibility: output relations for the scene as JSON array under key \"edges\". "
                            "Each edge: {\"subject\":str,\"predicate\":\"contains\",\"object\":str}. "
@@ -148,11 +147,9 @@ def stepwise_build_scene(
                            "for every parent->child pair.",
         "user": f"Scene objects (ids to use exactly):\n{node_ids}\n\nOriginal prompt:\n{prompt}",
     }, budget)
-    budget.add_tokens(r2.get("usage", {}).get("total_tokens", 0))
     edges = [_as_edge(e) for e in (_extract_list(r2.get("content_json"), ("edges", "relations", "relationships")) or [])]
 
     # ---- step 3: bindings ----
-    budget.assert_llm_budget()
     r3 = llm_call_fn({
         "system": system + "\n\nResponsibility: output bindings for the scene as JSON array under key \"bindings\". "
                            "Each binding: {\"subject\":str,\"target\":str,\"type\":\"asset\"|\"sensor_bind\"|\"trait_bind\","
@@ -160,7 +157,6 @@ def stepwise_build_scene(
                            "Use ONLY the exact existing ids below.",
         "user": f"Scene objects (ids):\n{node_ids}\n\nOriginal prompt:\n{prompt}",
     }, budget)
-    budget.add_tokens(r3.get("usage", {}).get("total_tokens", 0))
     bindings = [_as_binding(b) for b in (_extract_list(r3.get("content_json"), ("bindings", "binding", "links")) or [])]
 
     return {"nodes": nodes, "edges": edges, "bindings": bindings}

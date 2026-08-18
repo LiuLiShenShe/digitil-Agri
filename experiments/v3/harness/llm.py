@@ -214,6 +214,13 @@ def make_llm_call_fn(client: LLMClient):
     The shared ONTOLOGY_NOTE (controlled vocabulary used to author the frozen gold)
     is injected into the system message of EVERY call, identically for all methods,
     so all methods see the same domain knowledge the gold was typed from.
+
+    **Accounting contract (P0-6):** this wrapper is the SINGLE source of truth for
+    LLM call/token/cost accounting. Every method/builder passes `budget` through to
+    this callable and MUST NOT call `budget.assert_llm_budget()` / `add_tokens()`
+    / `add_cost()` around the call themselves (that double-counts). Deterministic
+    helpers that make NO LLM call (e.g. `build_memory_answer`) must NOT charge an
+    LLM call either.
     """
 
     def _normalize_messages(messages) -> list[dict[str, Any]]:
@@ -252,5 +259,6 @@ def make_llm_call_fn(client: LLMClient):
         resp = client.call(normalized)
         if budget is not None:
             budget.add_tokens(resp.get("usage", {}).get("total_tokens", 0))
+            budget.add_cost_from_usage(resp.get("usage") or {})
         return resp
     return call_fn

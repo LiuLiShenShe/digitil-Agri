@@ -182,6 +182,10 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
 
     # DeterministicFallback uses no LLM
     fn = METHODS[method]
+    # P0-6: measure real wall-clock latency around the method execution (was always
+    # 0.0 because the main loop stamped rec["_latency_ms"] AFTER evaluate_task already
+    # ran with out.get("_latency_ms", 0.0) — a key no method ever sets).
+    _t0 = time.time()
     if method == "DeterministicFallback":
         out = run_deterministic_fallback(task=public, registry=registry, budget=budget)
     else:
@@ -191,20 +195,32 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
                      llm_call_fn=_mock_llm_call_fn(public))
         else:
             out = fn(task=public, registry=registry, budget=budget, llm_call_fn=llm_call_fn)
+    latency_ms = round((time.time() - _t0) * 1000, 1)
 
     proxy_calls = proxy.calls()
+    # repair tasks need the full final state (objects AND bindings) for the
+    # disjunctive _repair_adapter to judge replace_asset/set_placeholder. Before
+    # this fix final_state carried objects only, so bindings were never passed
+    # and the repair could not be scored on its binding contract. P0-2.
+    final_state = {"objects": out.get("nodes") or []}
+    if out.get("bindings"):
+        final_state["bindings"] = out.get("bindings")
     eval_result = evaluate_task(
         task=gold, method=method,
         nodes=out.get("nodes") or [], edges=out.get("edges") or [],
         bindings=out.get("bindings") or [],
-        trace={"steps": out.get("traceSteps") or []},
+        # Methods canonicalize via canonicalize_output, which folds traceSteps into
+        # trace.steps and drops the top-level traceSteps key. Read the CANONICAL
+        # trace (NOT out["traceSteps"], which is always None after canonicalization
+        # and silently produced empty evidence). F-019/P0-1.
+        trace=out.get("trace") or {"steps": out.get("traceSteps") or out.get("steps") or []},
         proxy_calls=proxy_calls,
-        final_state={"objects": out.get("nodes") or []},
+        final_state=final_state,
         answer=out.get("answer"),
         llm_calls=budget.llm_calls, tool_calls=budget.tool_calls,
         repair_rounds=budget.repair_rounds,
         tokens=budget.tokens, cost=budget.cost,
-        latency_ms=out.get("_latency_ms", 0.0),
+        latency_ms=latency_ms,
     )
     return {
         "task_id": task.get("task_id"),
@@ -216,7 +232,7 @@ def run_one_method(method: str, task: dict, llm_call_fn, *, mock: bool = False) 
             "llm_calls", "tool_calls", "repair_rounds", "tokens", "cost", "latency_ms")},
         "budget": budget.summary(),
         "conflicts": out.get("conflicts") or [],
-        "trace_steps": out.get("traceSteps") or [],
+        "trace_steps": (out.get("trace") or {}).get("steps") or out.get("traceSteps") or [],
         "proxy_calls": proxy_calls,
         "fallback": out.get("fallback", False),
     }
@@ -268,7 +284,9 @@ def main(argv: list[str] | None = None) -> int:
                 r0 = time.time()
                 try:
                     rec = run_one_method(method, task, llm_call_fn, mock=args.mock)
-                    rec["_latency_ms"] = round((time.time() - r0) * 1000, 1)
+                    # P0-6: latency is now real inside run_one_method; the old
+                    # rec["_latency_ms"] was redundant with TaskEval.latency_ms
+                    # and was stamped AFTER evaluate_task (always 0.0 there).
                     rec["run_id"] = run_i + 1
                 except LLMError as e:
                     rec = {

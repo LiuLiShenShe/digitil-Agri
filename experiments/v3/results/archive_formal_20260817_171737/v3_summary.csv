@@ -1,0 +1,4 @@
+method,n_runs,mean_cvsr,pass1,pass3,pass5,object_f1,critical_recall,relation_f1,binding_f1,fatal_violation_rate,evidence_precision,replay_success,llm_calls_mean,cost_mean
+ReAct-AllTools,3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0,10.0,0.0026
+GenericMultiAgent-AllTools,3,0.0,0.0,0.0,0.0,0.6508,0.3333,0.0,0.0,0.3333,1.0,0.0,5.0,0.0006
+GenericRepair-AllTools,3,0.0,0.0,0.0,0.0,0.6901,0.3333,0.0,0.0,0.0,1.0,1.0,1.33,0.0003

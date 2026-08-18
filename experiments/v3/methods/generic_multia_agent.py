@@ -30,12 +30,11 @@ def run_generic_multi_agent(*, task: dict[str, Any], registry: ToolRegistry,
     for role, sys_prompt in AGENT_ROLES:
         if budget.llm_calls >= budget.config.max_llm_calls:
             break
-        budget.assert_llm_budget()
+        # P0-6: accounting (assert_llm/tokens/cost) is in make_llm_call_fn; not here.
         resp = llm_call_fn({
             "system": sys_prompt,
             "user": f"{prompt}\nBlackboard: {list(blackboard.keys())}",
         }, budget)
-        budget.add_tokens(resp.get("usage", {}).get("total_tokens", 0))
         try:
             out = resp.get("content_json") or {}
         except Exception:

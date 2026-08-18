@@ -3,7 +3,7 @@
 Append-only decision log. Each entry: timestamp (absolute), context, decision, rationale.
 
 ## D-001 (2026-08-04) LLM 后端配置 → SiliconFlow DeepSeek-V4-Flash
-- **Context**: 原指定 agnes 端点 `https://apihub.agnes-ai.com/v1`（`agnes-2.5-flash`）在当前环境 TCP 不可达。用户改用 SiliconFlow 平台 `deepseek-ai/DeepSeek-V4-Flash`，base URL `https://api.siliconflow.cn/v1`，新密钥 `sk-zxufolibvrsbbgztiffjqdydutxrkzbjoruaiunaiabkljzw`（SiliconFlow）。
+- **Context**: 原指定 agnes 端点 `https://apihub.agnes-ai.com/v1`（`agnes-2.5-flash`）在当前环境 TCP 不可达。用户改用 SiliconFlow 平台 `deepseek-ai/DeepSeek-V4-Flash`，base URL `https://api.siliconflow.cn/v1`，新密钥见 gitignored `.env`（`AGNES_API_KEY`）。(密钥已从本文件移除，勿回填)
 - **Decision**: `.env` 写入 `AGNES_BASE_URL=https://api.siliconflow.cn/v1`、`AGNES_API_KEY=<新密钥>`、`AGNES_MODEL=deepseek-ai/DeepSeek-V4-Flash`（`AGNES_*` 前缀保留为"LLM 供应商"前缀，含实际 SiliconFlow 值）。密钥只进 gitignored `.env`；`.env.example` 只放占位符。Python `load_llm_config()` 与 Go `config.go` 已支持 `AGNES_BASE_URL/API_KEY/MODEL` 优先读取。
 - **Rationale**: 遵守总控安全规则（密钥不进源码/git/日志），并使用可达的真实 LLM 端点。
 - **注意**: 该模型是推理模型（响应含 `reasoning_content`），harness 的 tool_calls/finish_reason 解析需兼容；`max_tokens` 对推理 token 不严格。

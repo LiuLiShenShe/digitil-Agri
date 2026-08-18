@@ -153,13 +153,34 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     # evidence
     steps = (trace or {}).get("steps") or []
     te = evaluate_trace(steps=steps, proxy_calls=proxy_calls)
+    # P0-1 / honesty clamp: evaluate_trace is context-free (doesn't see LLM/tool work).
+    # When the method DID real work (llm_calls>0 or tool_calls>0) but recorded no
+    # trace steps and no proxy evidence, the chain is broken — it is NOT vacuously
+    # auditable. Force evidence_precision=0 and all_evidence_real=False so a method
+    # that reasoned-but-didn't-record cannot claim a perfect evidence score.
+    if not steps and not proxy_calls and (llm_calls > 0 or tool_calls > 0):
+        te["evidence_precision"] = 0.0
+        te["all_evidence_real"] = False
     from replay import make_replay_tool_fn  # local import to avoid cycle
     # Empty trace → nothing to replay. treat as vacuously replayable, not 0.0:
     # a task that made no tool calls cannot prove or disprove trace authenticity,
     # and penalizing it conflates 'no evidence demanded' with 'evidence failed'.
+    #
+    # P0-1 / honesty fix: the vacuous-1.0 must NOT apply when the method actually
+    # did work. If the method made LLM calls or issued real tool calls (llm_calls > 0
+    # or tool_calls > 0) but produced no trace steps / no proxy evidence, the chain
+    # is BROKEN — the method executed without recording auditability. In that case
+    # replay_success is 0.0 (broken), not vacuously 1.0.
+    did_work = (llm_calls > 0 or tool_calls > 0)
     if not proxy_calls:
-        rp = {"replay_success": 1.0, "total_calls": 0, "replayable": 0,
-              "not_replayable": 0, "matched": 0, "mismatched": 0}
+        if did_work and not steps:
+            # work happened but nothing was recorded → broken trace
+            rp = {"replay_success": 0.0, "total_calls": 0, "replayable": 0,
+                  "not_replayable": 0, "matched": 0, "mismatched": 0}
+        else:
+            # genuinely nothing happened: no LLM/tool work, no trace demanded
+            rp = {"replay_success": 1.0, "total_calls": 0, "replayable": 0,
+                  "not_replayable": 0, "matched": 0, "mismatched": 0}
     else:
         rp = replay_trace(proxy_calls=proxy_calls, tool_fn=make_replay_tool_fn())
 

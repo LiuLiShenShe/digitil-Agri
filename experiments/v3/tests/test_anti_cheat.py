@@ -433,3 +433,186 @@ def test_anti_cheat_18_singleagent_honest_norepair_on_rule_repair():
     assert (pump.get("asset_key") == "lemongrass"
             or (pump.get("key_attrs") or {}).get("asset_key") == "lemongrass"), \
         "must not 'fix' the asset mismatch"
+
+
+# ---------------------------------------------------------------------------
+# 19. P0-1: empty trace with real proxy calls must NOT be vacuously perfect
+# ---------------------------------------------------------------------------
+
+def test_anti_cheat_19_empty_trace_with_real_proxy_not_vacuous():
+    """F-019/P0-1: if the runner's trace is empty (canonicalizer dropped traceSteps)
+    but the trace proxy recorded real tool calls, evidence_precision must be 0.0
+    and all_evidence_real False — NOT the old vacuous 1.0 / True."""
+    steps = []  # the buggy path: out["traceSteps"] read after canonicalization
+    proxy = [
+        {"call_id": "call-0001", "tool": "scene.plan", "request": {"objects": []}, "response": "ok"},
+        {"call_id": "call-0002", "tool": "layout.solve", "request": {"objects": []}, "response": "ok"},
+    ]
+    te = evaluate_trace(steps=steps, proxy_calls=proxy)
+    assert te["evidence_precision"] == 0.0, f"empty trace + real calls must be 0.0, got {te}"
+    assert te["all_evidence_real"] is False
+    # control: genuinely nothing happened -> vacuous 1.0 is acceptable
+    te2 = evaluate_trace(steps=[], proxy_calls=[])
+    assert te2["evidence_precision"] == 1.0
+    assert te2["all_evidence_real"] is True
+
+
+def test_anti_cheat_20_runner_reads_canonical_trace_steps():
+    """P0-1: the runner must read the CANONICAL trace (canonicalize_output folds
+    traceSteps -> trace.steps and drops the top-level key). Reading out['traceSteps']
+    always yields [] after canonicalization — that is the exact bug that made
+    evidence vacuous. This test locks the canonicalizer contract: top-level
+    traceSteps is consumed into trace.steps."""
+    from harness.canonicalizer import canonicalize_output
+    raw = {
+        "nodes": [{"id": "g", "type": "Greenhouse", "role": "root"}],
+        "edges": [], "bindings": [],
+        "traceSteps": [{"traceType": "executed", "evidenceId": "call-1", "tool": "scene.plan"}],
+    }
+    out = canonicalize_output(raw)
+    # trace.steps must carry the steps
+    assert out["trace"]["steps"] == raw["traceSteps"]
+    # the canonical result exposes trace, not the raw top-level key
+    assert out.get("traceSteps") is None, "canonicalize_output must consume traceSteps"
+    # canonicalizer returns {"nodes","edges","bindings","trace"}
+    assert set(out.keys()) == {"nodes", "edges", "bindings", "trace"}
+
+
+# ---------------------------------------------------------------------------
+# 21. P0-2: R4 must detect a wrong node.asset_key (repair target)
+# ---------------------------------------------------------------------------
+
+def test_anti_cheat_21_r4_detects_wrong_asset_key_on_node():
+    """F-019/P0-2: R4 previously only looked at binding target type. It must also
+    fire when the node ITSELF carries a wrong asset_key (e.g. N31_WaterPump_B with
+    asset_key=lemongrass instead of irrigation). And it must be silent once the
+    asset_key is repaired."""
+    from rule_engine import RuleEngine
+    re = RuleEngine()
+    # unrepaired: pump still has the wrong crop asset_key
+    nodes_bad = [{"id": "N31_WaterPump_B", "type": "Pump", "asset_key": "lemongrass"}]
+    v_bad = re.evaluate(nodes=nodes_bad, edges=[], bindings=[], active_rules=["R4"])
+    assert any(v.rule_id == "R4" and v.severity == "fatal" for v in v_bad)
+    # repaired: pump now has the correct device asset
+    nodes_good = [{"id": "N31_WaterPump_B", "type": "Pump", "asset_key": "irrigation"}]
+    v_good = re.evaluate(nodes=nodes_good, edges=[], bindings=[], active_rules=["R4"])
+    assert not any(v.rule_id == "R4" and v.severity == "fatal" for v in v_good)
+
+
+# ---------------------------------------------------------------------------
+# 22. P0-2: R9 must not be a silent pass — retained asset mismatch fails
+# ---------------------------------------------------------------------------
+
+def test_anti_cheat_22_r9_placeholder_and_retained_mismatch():
+    """F-019/P0-2: R9 was literally `pass`. It must now reject (a) an asset_job
+    binding without job_type=placeholder, and (b) a retained asset binding whose
+    asset_key is still the wrong crop asset. A clean placeholder passes."""
+    from rule_engine import RuleEngine
+    re = RuleEngine()
+    # placeholder asset_job without job_type -> fatal
+    bad_job = [{"subject": "P", "target": "job-1", "type": "asset_job", "metadata": {"job_type": "other"}}]
+    v = re.evaluate(nodes=[], edges=[], bindings=bad_job, active_rules=["R9"])
+    assert any(v.rule_id == "R9" and v.severity == "fatal" for v in v)
+    # retained wrong crop asset binding -> fatal
+    bad_bind = [{"subject": "P", "target": "P", "type": "asset", "metadata": {"asset_key": "lemongrass"}}]
+    v2 = re.evaluate(nodes=[], edges=[], bindings=bad_bind, active_rules=["R9"])
+    assert any(v.rule_id == "R9" and v.severity == "fatal" for v in v2)
+    # clean placeholder -> no R9 fatal
+    good = [{"subject": "P", "target": "job-1", "type": "asset_job", "metadata": {"job_type": "placeholder"}}]
+    v3 = re.evaluate(nodes=[], edges=[], bindings=good, active_rules=["R9"])
+    assert not any(v.rule_id == "R9" and v.severity == "fatal" for v in v3)
+
+
+# ---------------------------------------------------------------------------
+# 23. P0-3/4: annotation-normalized binding match (fixed:true, {subject}_asset)
+# ---------------------------------------------------------------------------
+
+def _norm_binding(b):
+    from harness.canonicalizer import canonicalize_binding
+    return canonicalize_binding(b)
+
+
+def test_binding_matches_asset_routing_semantic_contract():
+    """P0-4 (TN11-14): gold asset bindings target '{subject}_asset' (a notation
+    artifact with no distinct node in required_nodes). A method given only public
+    fields emits the asset via metadata {asset_key, policy}. The scorer must match
+    on (subject, asset_key, policy), not the literal target string. A wrong
+    asset_key must still fail."""
+    req = [
+        _norm_binding({"subject": "N11_mango_focus", "target": "N11_mango_focus_asset",
+                       "type": "asset", "metadata": {"asset_key": "mango_focus", "policy": "high_fidelity"}}),
+        _norm_binding({"subject": "N11_mango_light", "target": "N11_mango_light_placeholder",
+                       "type": "asset_job", "metadata": {"job_type": "placeholder", "policy": "procedural_model"}}),
+    ]
+    gen_ok = [
+        _norm_binding({"subject": "N11_mango_focus", "target": "N11_mango_focus",
+                       "type": "asset", "metadata": {"asset_key": "mango_focus", "policy": "high_fidelity"}}),
+        _norm_binding({"subject": "N11_mango_light", "target": "light",
+                       "type": "asset_job", "metadata": {"job_type": "placeholder", "policy": "procedural_model"}}),
+    ]
+    bm = match_bindings(required=req, generated=gen_ok, id_map={})
+    assert bm["all_matched"], f"asset semantic contract must match, got {bm}"
+    # wrong asset_key must not match (anti-cheat)
+    gen_wrong = [_norm_binding({"subject": "N11_mango_focus", "target": "x", "type": "asset",
+                                "metadata": {"asset_key": "papaya_bg", "policy": "high_fidelity"}})]
+    bmw = match_bindings(required=req[:1], generated=gen_wrong, id_map={})
+    assert bmw["matched"] == 0, "wrong asset_key must NOT match"
+
+
+def test_binding_strips_fixed_annotation_key():
+    """P0-3 (TN31-34): gold required binding carries metadata.fixed=true — a labeler
+    annotation, never emitted by a method. The scorer must strip it so a correctly
+    repaired binding (asset_key=irrigation, no fixed key) matches."""
+    req = [_norm_binding({"subject": "N31_WaterPump_B", "target": "N31_WaterPump_B",
+                          "type": "asset", "metadata": {"asset_key": "irrigation", "fixed": True}})]
+    gen_repaired = [_norm_binding({"subject": "N31_WaterPump_B", "target": "N31_WaterPump_B",
+                                   "type": "asset", "metadata": {"asset_key": "irrigation"}})]
+    bm = match_bindings(required=req, generated=gen_repaired, id_map={})
+    assert bm["all_matched"], f"fixed:true must be stripped; repaired binding matches, got {bm}"
+
+
+def test_binding_data_binding_unit_alias():
+    """P0-5 (TN21-24): gold sensor_bind metadata unit='%'; a method may emit
+    unit='percent'. These are authoring variants, not a real difference. match on
+    canonical unit + set-compare metrics. A wrong data-binding target still fails."""
+    req = [_norm_binding({"subject": "N21_kiwi_sen1", "target": "N21_kiwi_row", "type": "sensor_bind",
+                          "metadata": {"metrics": ["humidity"], "unit": "%", "timestamp": "2026-09-01T00:00:00+08:00"}})]
+    gen = [_norm_binding({"subject": "N21_kiwi_sen1", "target": "N21_kiwi_row", "type": "sensor_bind",
+                          "metadata": {"metrics": ["humidity"], "unit": "percent", "timestamp": "2026-09-01T00:00:00+08:00"}})]
+    bm = match_bindings(required=req, generated=gen, id_map={})
+    assert bm["all_matched"], f"unit alias percent must match '%', got {bm}"
+    # wrong target -> fail
+    gen_wrong = [_norm_binding({"subject": "N21_kiwi_sen1", "target": "N21_kiwi_plant", "type": "sensor_bind",
+                                "metadata": {"metrics": ["humidity"], "unit": "%", "timestamp": "2026-09-01T00:00:00+08:00"}})]
+    bmw = match_bindings(required=req, generated=gen_wrong, id_map={})
+    assert bmw["matched"] == 0, "wrong data-binding target must fail"
+
+
+def test_anti_cheat_26_work_without_trace_not_vacuous():
+    """P0-1 honesty: a method that made LLM/tool calls but recorded NO trace steps
+    and NO proxy evidence has a BROKEN audit chain — it executed without recording.
+    It must NOT get vacuously-perfect evidence_precision / replay_success."""
+    task = {"task_id": "T19", "required_nodes": [
+        {"id": "r1", "type": "Greenhouse", "role": "root", "count": 1}],
+        "required_edges": [], "required_bindings": [], "critical_objects": [],
+        "rules": ["R1", "R2", "R3", "R5"]}
+    # 10 LLM calls, empty trace, empty proxy = reasoned-but-didn't-record
+    e = evaluate_task(task=task, method="ReAct-AllTools", nodes=[], edges=[], bindings=[],
+                      trace={"steps": []}, proxy_calls=[], llm_calls=10, tool_calls=0)
+    assert e.evidence_precision == 0.0, f"broken-work evidence must be 0, got {e.evidence_precision}"
+    assert e.replay_success == 0.0, f"broken-work replay must be 0, got {e.replay_success}"
+    assert e.cvsr is False
+
+
+def test_anti_cheat_27_genuinely_empty_stays_vacuous():
+    """Opposite contract: a method that genuinely did NO work (0 LLM, 0 tool,
+    0 trace, 0 proxy) demands no evidence — vacuously auditable is correct. This
+    is distinct from 'did work but didn't record'."""
+    task = {"task_id": "T19", "required_nodes": [
+        {"id": "r1", "type": "Greenhouse", "role": "root", "count": 1}],
+        "required_edges": [], "required_bindings": [], "critical_objects": [],
+        "rules": ["R1", "R2", "R3", "R5"]}
+    e = evaluate_task(task=task, method="Det", nodes=[], edges=[], bindings=[],
+                      trace={"steps": []}, proxy_calls=[], llm_calls=0, tool_calls=0)
+    assert e.evidence_precision == 1.0
+    assert e.replay_success == 1.0

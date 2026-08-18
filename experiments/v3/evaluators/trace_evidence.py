@@ -60,7 +60,20 @@ def evaluate_trace(*, steps: list[dict[str, Any]], proxy_calls: list[dict[str, A
     evidence_steps = real_evidence  # only real, verifiable evidence counts
 
     total_evidence_claims = len([s for s in steps if (s.get("evidenceId") or s.get("evidence_id"))])
-    evidence_precision = real_evidence / total_evidence_claims if total_evidence_claims > 0 else (1.0 if not executed_steps else 0.0)
+    # P0-1: forbid vacuous 1.0. Before this fix, empty steps (trace chain broken)
+    # returned 1.0 via the "no claims, no executed" branch — a fake perfect score.
+    # If the trace is empty, evidence_precision must be 0 (no evidence provided),
+    # UNLESS the task genuinely made no tool calls at all (proxy_calls also empty),
+    # in which case we stay vacuously 1.0 (no evidence demanded = no penalty).
+    if total_evidence_claims > 0:
+        evidence_precision = real_evidence / total_evidence_claims
+    elif executed_steps > 0:
+        # executed steps exist but none have evidenceIds — all fabricated
+        evidence_precision = 0.0
+    else:
+        # truly empty trace: no declared/executed steps at all
+        # vacuously true only if proxy also has no calls (nothing to prove)
+        evidence_precision = 1.0 if not proxy else 0.0
     evidence_coverage = executed_steps / len(steps) if steps else 0.0
 
     return {
@@ -73,7 +86,16 @@ def evaluate_trace(*, steps: list[dict[str, Any]], proxy_calls: list[dict[str, A
         "evidence_ids": evidence_ids,
         "evidence_precision": round(evidence_precision, 4),
         "evidence_coverage": round(evidence_coverage, 4),
-        "all_evidence_real": fabricated == 0 and declared_steps == 0,
+        # P0-1: all_evidence_real must NOT be vacuously true on an empty trace.
+        # - genuinely nothing happened (empty trace + empty proxy): vacuously fine
+        # - real proxy calls but empty trace (broken chain): NOT fine
+        # - declared steps with no backing call: NOT fine (red flag)
+        # - fabricated evidenceIds: NOT fine
+        "all_evidence_real": bool(
+            fabricated == 0
+            and declared_steps == 0
+            and (real_evidence > 0 or (not steps and not proxy))
+        ),
     }
 
 

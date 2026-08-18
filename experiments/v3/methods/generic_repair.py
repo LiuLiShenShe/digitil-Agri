@@ -24,12 +24,11 @@ def run_generic_repair(*, task: dict[str, Any], registry: ToolRegistry,
     bindings: list[dict[str, Any]] = []
 
     # initial plan
-    budget.assert_llm_budget()
+    # P0-6: accounting (assert_llm/tokens/cost) is in make_llm_call_fn; not here.
     resp = llm_call_fn({
         "system": "You are a scene-builder. Return JSON {objects:[], relations:[], bindings:[]}",
         "user": prompt,
     }, budget)
-    budget.add_tokens(resp.get("usage", {}).get("total_tokens", 0))
     try:
         plan_objects = (resp.get("content_json") or {}).get("objects") or []
         relations = (resp.get("content_json") or {}).get("relations") or []
@@ -44,12 +43,11 @@ def run_generic_repair(*, task: dict[str, Any], registry: ToolRegistry,
             break
         if not budget.assert_repair_budget():
             break
-        budget.assert_llm_budget()
+        # P0-6: accounting (assert_llm/tokens/cost) is in make_llm_call_fn; not here.
         fix = llm_call_fn({
             "system": "You are a repairer. Fix the violations. Return JSON {objects:[], relations:[], bindings:[]}",
             "user": f"Fix:\n{verdict['violations']}\nCurrent objects: {plan_objects}",
         }, budget)
-        budget.add_tokens(fix.get("usage", {}).get("total_tokens", 0))
         try:
             c = fix.get("content_json") or {}
             if c.get("objects") is not None:

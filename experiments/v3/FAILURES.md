@@ -4,7 +4,7 @@
 
 ## F-001 [HUMAN_BLOCKED] 密钥轮换
 - **状态**: HUMAN_BLOCKED（人工操作）
-- **描述**: LLM API 密钥 `sk-ssPAvndcU73t2qTcYNUA3M5Y62a6BYu0PjJHPg5RdYJiMdSY` 以明文出现在会话中，且已写入本地 `.env`（gitignored，不提交）。
+- **描述**: LLM API 密钥曾以明文出现在会话中，已从文件移除（密钥见 gitignored `.env`）。
 - **风险**: 若会话记录或共享环境外泄，他人可使用该密钥。
 - **下一步（人工）**: 实验完成后轮换该密钥；同时评估是否需用 `git filter-repo` 清理历史（当前工作区干净，无密钥提交记录，此项优先级低）。
 
@@ -99,3 +99,16 @@ T23 的表型指标建模为 traits[]+trait_bind 而非场景节点，原评分�
   - **rule_repair (TN31-TN34)**：gold 绑定 metadata 含标注键 `"fixed": true`（如 `{"metadata":{"asset_key":"irrigation","fixed":true}}`），`binding_match` 要求 `gen_md["fixed"]=="true"`；KAFarmTwin 的 `replace_asset`/`set_placeholder` 与 LLM 均不产出该键 → 即使 `_repair_adapter` 判 `repair_success=True`，图形绑定仍判错。F-015 归档中 KF 在 4 修复任务 20/20 run `repair_success=False`（R4 资产不匹配未以绑定呈现，规则引擎改走 R6 设备覆盖 → 修复循环无法命中 gold 的资产修复契约）。
 - **影响**: 非 memory 任务无法通过 CVSR（绑定全灭），两方法无区分度。这是**冻结 test_v2 标注设计**的结构性约束，不是 stepwise 缺陷、不是修复循环缺陷，对两方法完全公平。
 - **下一步（诚实）**: 不修改冻结 gold/评分器。如实上报 F-016 GATE FAIL。若后续需区分度，须人工重标注（改变冻结集，违反 A+ 协议，需用户明确授权），或接受当前结论。
+
+## F-019 [ACTIVE] 正式 gate FAIL — 非 memory 任务全灭
+- **状态**: ACTIVE（如实记录，未调门槛）
+- **描述**: 冻结 test_v2 正式 500 run（20 任务 × 5 方法 × 5 次，真实 DeepSeek-V4-Flash）完成。**SOTA_GATE=FAIL（6 项未达）**：paired bootstrap CI [0.00,0.00]，point Δ=0.000；pass5 未超；critical_recall 0.60<0.95；fatal_rate 0.22>0.01；replay 0.80<0.95；cost ratio 1.75>1.5。
+- **逐任务根因（双峰分布）**: CVSR=0.20 完全来自 4 个 memory_query 任务（TN41-44，SA/KF 均 5/5 全过=确定性）。**16 个非 memory 任务（scene×4/asset×4/bind×4/repair×4）每个方法每任务全 0/5**。KF 与 SA 在单个任务不可区分 → paired CI 恒 0。
+- **结论**: 非 memory 任务需精确"图结构+绑定元数据契约"才可达 CVSR，当前模型/执行链对两类方法都是 method-agnostic 的天花板。**非 KF 优势，不得声明 SOTA。不调阈值/测试集/评分器/预算。**
+- **下一步**: 让方法真正攻克 16 个非 memory 任务的图+绑定契约，而非仅确定性 memory 检索。若 KF 结构上真优于 SA，CVSR 差会自然 >3pp。
+
+## F-020 [ACTIVE] Fatal rate 与 Critical recall 绝对门槛未达
+- **状态**: ACTIVE
+- **描述**: KF fatal_violation_rate=0.22（>0.01 门槛），critical_recall=0.60（<0.95 门槛）。ReAct evidence_precision=0（空 trace，已按 P0-1 诚实钳制为 0）。
+- **根因**: 规则违规（R4 等）在非 memory 任务未被消除 + 关键对象未在所有场景中显式产出。
+- **下一步**: 类型化修复闭环需真正命中 critical_objects 并消除 fatal 规则违规，而非仅 memory 确定性检索。

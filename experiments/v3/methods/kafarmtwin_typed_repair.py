@@ -92,7 +92,10 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
     # same way.
     if task.get("category") == "memory_query" or task.get("task_type") == "memory_query":
         from experiments.v3.harness.memory_retrieval import build_memory_answer  # type: ignore
-        budget.assert_llm_budget()  # count the retrieval pass against budget
+        # P0-6: build_memory_answer is a DETERMINISTIC helper (no LLM call). It must
+        # NOT charge an LLM call — only real tool calls (timeseries.query/event.query)
+        # are recorded through the trace proxy. The old assert_llm_budget() inflated
+        # llm_calls for a non-LLM operation and differed from no LLM being invoked.
         answer = build_memory_answer(task, registry, agent_id="MemoryAgent")
         raw = {
             "nodes": [],
@@ -167,7 +170,6 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
 
         # propose patch: route to owner agent, which chooses the patch op
         owner = conflict["owner_agent"]
-        budget.assert_llm_budget()
         _rule = v.get("rule_id") or ""
         # Generic shape examples (placeholder IDs) so the owner agent learns the
         # patch contract, NOT any task's specific answer.
@@ -194,7 +196,6 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
                     f"Current relations: {relations}\nCurrent bindings: {bindings}\n"
                     f"All current violations: {violations}",
         }, budget)
-        budget.add_tokens(fix.get("usage", {}).get("total_tokens", 0))
         try:
             patch = fix.get("content_json") or {}
         except Exception:

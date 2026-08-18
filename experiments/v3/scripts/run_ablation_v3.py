@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
                         task=task, registry=registry, budget=budget, llm_call_fn=llm_call_fn)
                     latency = round((time.time() - r0) * 1000, 1)
                 except Exception as e:
-                    out = {"nodes": [], "edges": [], "bindings": [], "traceSteps": [], "fallback": True}
+                    out = {"nodes": [], "edges": [], "bindings": [], "trace": {"steps": []}, "fallback": True}
                     latency = round((time.time() - r0) * 1000, 1)
                 rec = {
                     "task_id": task.get("task_id"), "method": f"ablation_{variant}",
@@ -108,7 +108,7 @@ def _eval_dict(task, out, proxy_calls, budget):
     eval_result = evaluate_task(
         task=task, method="KAFarmTwin", nodes=out.get("nodes", []),
         edges=out.get("edges", []), bindings=out.get("bindings", []),
-        trace={"steps": out.get("traceSteps", [])}, proxy_calls=proxy_calls,
+        trace={"steps": (out.get("trace") or {}).get("steps", []) or out.get("traceSteps", [])}, proxy_calls=proxy_calls,
         final_state={"objects": out.get("nodes", [])},
         llm_calls=budget.llm_calls, tool_calls=budget.tool_calls,
         repair_rounds=budget.repair_rounds, tokens=budget.tokens, cost=budget.cost)

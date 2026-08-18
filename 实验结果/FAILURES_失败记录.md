@@ -4,7 +4,7 @@
 
 ## F-001 [HUMAN_BLOCKED] 密钥轮换
 - **状态**: HUMAN_BLOCKED（人工操作）
-- **描述**: LLM API 密钥 `sk-ssPAvndcU73t2qTcYNUA3M5Y62a6BYu0PjJHPg5RdYJiMdSY` 以明文出现在会话中，且已写入本地 `.env`（gitignored，不提交）。
+- **描述**: LLM API 密钥曾以明文出现在会话中，已从文件移除（密钥见 gitignored `.env`）。
 - **风险**: 若会话记录或共享环境外泄，他人可使用该密钥。
 - **下一步（人工）**: 实验完成后轮换该密钥；同时评估是否需用 `git filter-repo` 清理历史（当前工作区干净，无密钥提交记录，此项优先级低）。
 
