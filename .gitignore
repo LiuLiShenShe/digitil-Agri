@@ -1,8 +1,15 @@
 # Dependencies
 node_modules/
+*/node_modules/
 
 # Build output
 dist/
+
+# Compiled Go binaries (build artifacts)
+digital-twingo/scene-server-go/scene-server
+digital-twingo/scene-server-go/SceneServerApplication
+digital-twingo/scene-server-go/__debug_bin.exe
+*.exe
 
 # Large external tools
 TRELLIS.2/modelscope_models/
@@ -11,7 +18,28 @@ TRELLIS.2/TRELLIS.2-4B/
 # Archives
 *.zip
 *.tar.gz
+*.tar
+*.tgz
 *.rar
+*.7z
+
+# Machine learning model weights
+*.pth
+*.pt
+*.safetensors
+*.ckpt
+*.gguf
+*.ggml
+*.onnx
+*.model
+
+# Large 3D model assets (GLB/PLY — download separately to run the scene apps)
+*.glb
+*.ply
+
+# Scene server runtime assets (large textures / sources)
+digital-twingo/scene-server-go/scene-assets/sources/
+digital-twingo/scene-server-go/scene-assets/reference/
 
 # Logs
 logs/
