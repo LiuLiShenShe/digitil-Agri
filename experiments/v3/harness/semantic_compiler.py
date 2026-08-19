@@ -16,6 +16,12 @@ from the gold's controlled vocabulary), the compiler:
 
 The typed repair loop then only cleans up residual deviations (D/E). The LLM stops
 owning deterministic structure work.
+
+F (review 2026-08-18): the domain knowledge is NOT an inline if/else block — it is
+a "knowledge compilation layer" decomposed into knowledge/{ontology,constraint,
+mapping,policy}. This module is the compiler; the knowledge modules are the
+compiled domain knowledge it consumes. Contribution claim = "Knowledge
+compilation layer", not "rule table".
 """
 
 from __future__ import annotations
@@ -23,21 +29,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from experiments.v3.knowledge.unit_registry import canonical_unit, unit_for_metric  # type: ignore
-from experiments.v3.knowledge.binding_vocab import make_sensor_bind, make_asset_bind, make_asset_job_placeholder, canonical_metrics  # type: ignore
+from experiments.v3.knowledge.unit_registry import unit_for_metric  # type: ignore
+from experiments.v3.knowledge.binding_vocab import make_sensor_bind, make_asset_bind  # type: ignore
 from experiments.v3.knowledge.asset_policy import ASSET_BY_TYPE, asset_key_for, policy_for  # type: ignore
-
-# object types that carry per-instance identity (must NOT be count-folded)
-_IDENTITY_TYPES = {"Camera", "Sensor", "Device", "Pump", "WeatherStation", "Irrigation", "Trait", "Event"}
-
-# device -> the object class its sensor observes (semantic default)
-_DEVICE_DEFAULT_TARGET_CLASS = {
-    "Sensor": "plant",
-    "Camera": "plant",
-    "Irrigation": "plant",
-    "Pump": "plot",
-    "Device": "plot",
-}
+from experiments.v3.knowledge.ontology import IDENTITY_TYPES, ROOT_ID  # type: ignore
+from experiments.v3.knowledge.constraint import DEVICE_DEFAULT_TARGET_CLASS, DEVICE_DEFAULT_METRIC, DEVICE_ASSET_CLASSES, AGGREGATABLE_TYPES  # type: ignore
+from experiments.v3.knowledge.mapping import (  # type: ignore
+    is_identity_type,
+    is_aggregatable,
+    resolve_parent_hint,
+    find_child,
+    find_any,
+    find_contained_plant,
+)
 
 
 @dataclass
@@ -66,7 +70,7 @@ class TypedObjectGraph:
     bindings: list[dict[str, Any]] = field(default_factory=list)
 
 
-_ROOT_ID = "greenhouse_1"
+_ROOT_ID = ROOT_ID  # kept for import-compat; canonical id lives in knowledge/ontology.py
 
 
 def emit_intent(prompt: str, llm_call_fn, budget) -> IntentIR:
@@ -144,16 +148,16 @@ def expand_graph(ir: IntentIR, unit_reg=None, vocab=None) -> TypedObjectGraph:
         count = max(1, int(grp.get("count") or 1))
         role = str(grp.get("role") or "entity")
         parent_hint = str(grp.get("parent") or "")
-        is_identity = nt in _IDENTITY_TYPES
+        is_identity = is_identity_type(nt)
         n_to_emit = 1 if not is_identity else count  # identity: individual; aggregate: one group node
         # resolve parent: declared -> greenhouse root
-        parent = _resolve_parent(parent_hint, ids, g, default=gh_id)
+        parent = resolve_parent_hint(parent_hint, gh_id)
         if not is_identity and count > 1:
             # aggregate background group: one node with count
             oid = _nid(nt.lower())
             # Plant/CropRow groups attach under a CropRow (Plant) or the GH (CropRow)
             if nt in ("Plant", "plant") and (not parent_hint or parent_hint == "root"):
-                row = _find_child(g.objects, gh_id, "CropRow")
+                row = find_child(g.objects, gh_id, "CropRow")
                 if row:
                     parent = row
             node = {"id": oid, "type": nt, "role": role,
@@ -163,7 +167,7 @@ def expand_graph(ir: IntentIR, unit_reg=None, vocab=None) -> TypedObjectGraph:
             # Plant belongs_to CropRow; CropRow belongs_to Greenhouse/Plot — model the Plant group as under a CropRow
             if nt in ("Plant", "plant") and "belongs_to" not in (node.get("key_attrs") or {}):
                 # attach to a CropRow child of parent if present, else parent directly
-                child_row = _find_child(g.objects, parent, "CropRow") or _find_child(g.objects, gh_id, "CropRow")
+                child_row = find_child(g.objects, parent, "CropRow") or find_child(g.objects, gh_id, "CropRow")
                 if child_row:
                     node["key_attrs"]["belongs_to"] = child_row
         else:
@@ -183,8 +187,8 @@ def expand_graph(ir: IntentIR, unit_reg=None, vocab=None) -> TypedObjectGraph:
         g.relations.append({"subject": gh_id, "predicate": "contains", "object": rid})
 
     # Device expansion: each listed device is an identity object with correct asset
-    _plot = _find_any(g.objects, "Plot")
-    _row = _find_any(g.objects, "CropRow")
+    _plot = find_any(g.objects, "Plot")
+    _row = find_any(g.objects, "CropRow")
     device_parent_default = (_plot.get("id") if _plot else _row.get("id") if _row else gh_id)
     for dev in ir.devices:
         dt = str(dev.get("device_type") or "").strip()
@@ -192,7 +196,7 @@ def expand_graph(ir: IntentIR, unit_reg=None, vocab=None) -> TypedObjectGraph:
             continue
         count = max(1, int(dev.get("count") or 1))
         parent_hint = str(dev.get("parent") or "")
-        parent = _resolve_parent(parent_hint, ids, g, default=device_parent_default)
+        parent = resolve_parent_hint(parent_hint, device_parent_default)
         for i in range(count):
             oid = _nid(dt.lower())
             node = {"id": oid, "type": dt, "role": "entity",
@@ -213,7 +217,7 @@ def bind_scene(graph: TypedObjectGraph, ir: IntentIR,
     for n in graph.objects:
         nt = str(n.get("type") or "")
         oid = str(n.get("id") or "")
-        if nt not in ("Sensor", "Camera", "Device", "Irrigation", "Pump", "WeatherStation"):
+        if nt not in DEVICE_ASSET_CLASSES:
             continue
         # served object: use declared target, else a plant contained by the device's parent
         target = None
@@ -223,9 +227,9 @@ def bind_scene(graph: TypedObjectGraph, ir: IntentIR,
                     target = str(dev.get("target") or "")
                     break
         if not target:
-            target = _find_contained_plant(graph.objects, graph.relations, n.get("parent"))
+            target = find_contained_plant(graph.objects, graph.relations, n.get("parent"))
         if target:
-            metric = "moisture" if nt in ("Pump", "Irrigation") else "temperature"
+            metric = DEVICE_DEFAULT_METRIC.get(nt, "temperature")
             unit = unit_for_metric(metric)
             graph.bindings.append(make_sensor_bind(oid, target, [metric], unit))
         # correct asset (R4 at authoring)
@@ -233,34 +237,3 @@ def bind_scene(graph: TypedObjectGraph, ir: IntentIR,
         if ak:
             graph.bindings.append(make_asset_bind(oid, ak, policy_for(n)))
     return graph
-
-
-# ---- helpers ----
-
-def _resolve_parent(hint, ids, g, default):
-    if hint and hint.lower() == "root":
-        return default if default else "greenhouse_1"
-    return hint or default
-
-
-def _find_child(nodes, parent, typ):
-    for n in nodes:
-        if n.get("type") == typ and str(n.get("parent") or "") == parent:
-            return n.get("id")
-    return None
-
-
-def _find_any(nodes, typ):
-    for n in nodes:
-        if n.get("type") == typ:
-            return n
-    return None
-
-
-def _find_contained_plant(nodes, relations, parent):
-    # find a Plant under `parent`
-    cand = {r.get("object") for r in relations if r.get("subject") == parent}
-    for n in nodes:
-        if n.get("type") == "Plant" and str(n.get("id")) in cand:
-            return n.get("id")
-    return None

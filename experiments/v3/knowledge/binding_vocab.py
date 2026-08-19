@@ -22,6 +22,7 @@ _METRIC_CANONICAL = {
     "temperature": "temperature",
     "temp": "temperature",
     "humidity": "humidity",
+    "relative humidity": "humidity",
     "moisture": "moisture",
     "soil_moisture": "soil_moisture",
     "co2": "co2_ppm",

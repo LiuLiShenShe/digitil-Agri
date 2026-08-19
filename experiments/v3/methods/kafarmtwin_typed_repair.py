@@ -18,6 +18,7 @@ Key fairness invariants:
 from __future__ import annotations
 
 import itertools
+import json
 from typing import Any
 
 from experiments.v3.harness.tools import ToolRegistry  # type: ignore
@@ -29,6 +30,22 @@ PATCH_OPS = {
     "add_node", "remove_node", "replace_type", "add_edge", "remove_edge",
     "replace_binding", "add_binding", "update_transform", "set_attr",
     "replace_asset", "set_placeholder",
+}
+
+# D2 (review): owner_agent → candidate action labels the LLM may choose.
+# The LLM decides; the executor (typed_deterministic.apply_action) only executes.
+# Each action maps to a patch_op; "ask_user" defers to the LLM to produce a
+# full patch of its own (used for genuinely ambiguous rules like R2).
+ACTION_TO_PATCHOP = {
+    "replace_asset": "replace_asset",
+    "create_placeholder": "set_placeholder",
+    "attach_to_root": "update_transform",
+    "init_location": "update_transform",
+    "fill_observes": "set_attr",
+    "served_binding": "add_binding",
+    "replace_binding": "replace_binding",
+    "add_binding": "add_binding",
+    "ask_user": None,  # LLM decides the whole patch
 }
 
 # Fixed conflict priority (highest = handled first).
@@ -144,6 +161,16 @@ def _new_conflict(violation: dict[str, Any], counter: itertools.count,
         observed["asset_state"] = "wrong asset_key retained"
         expected["asset_state"] = "set_placeholder (asset_job job_type=placeholder) OR replace_asset to correct type"
 
+    # D2 (review): expose the bounded decision space the LLM may choose from.
+    # The LLM reasons over candidate_actions; the executor (typed_deterministic)
+    # only applies the chosen action. This keeps the LLM as the decision-maker,
+    # not a pure rule→patch bypass.
+    try:
+        from experiments.v3.methods.typed_deterministic import candidate_actions_for  # type: ignore
+        candidate_actions = candidate_actions_for(rule_id)
+    except Exception:
+        candidate_actions = ["ask_user"]
+
     return {
         "conflict_id": f"C{next(counter):03d}",
         "rule_id": rule_id,
@@ -152,6 +179,8 @@ def _new_conflict(violation: dict[str, Any], counter: itertools.count,
         "object_ids": oids,
         "observed": observed,
         "expected": expected,
+        # D2: the LLM's decision space (always includes ask_user for ambiguity)
+        "candidate_actions": candidate_actions,
         "evidence_ids": [],
         "owner_agent": OWNER_BY_RULE.get(rule_id, "RepairAgent"),
         "allowed_patch_ops": list(PATCH_OPS_BY_RULE.get(rule_id, {"update_transform"})),
@@ -268,31 +297,69 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             conflict["status"] = "unresolved"
             break
 
-        # propose patch: route to owner agent, which chooses the patch op
+        # propose patch: route to owner agent
         owner = conflict["owner_agent"]
         _rule = v.get("rule_id") or ""
-        # D2 (P1-4): mechanical rules have an unambiguous deterministic fix. Try it
-        # FIRST — it skips the LLM round entirely (no budget charge), lowering cost
-        # AND raising repair success. Only genuinely ambiguous rules fall through to
-        # the owner LLM. Absent a config flag, deterministic ops default to enabled.
-        fix = None
-        deterministic_patch = None
+        candidate_actions = conflict.get("candidate_actions") or ["ask_user"]
+
+        # D2 (review, max risk): the LLM is the DECISION-MAKER, the executor is
+        # deterministic. Previously build_deterministic_patch produced the whole
+        # patch and skipped the LLM — a pure rule system the reviewer correctly
+        # flagged ("you are not an agent"). New flow:
+        #   1. The LLM ALWAYS chooses ONE action from candidate_actions.
+        #   2. If the chosen action is mechanical, the deterministic executor
+        #      (typed_deterministic.apply_action) turns it into the concrete
+        #      patch — pure execution of the LLM's decision.
+        #   3. If the LLM chooses ask_user (or the action is unmappable /
+        #      ambiguous like R2), the LLM produces the full patch itself.
+        # This preserves LLM reasoning as the decision-maker in every round while
+        # still cutting cost on unambiguous structure work.
         _use_det = True
-        try:  # env override allows the ablation to disable this path
+        try:  # env override allows the ablation to disable the executor path
             import os as _os
             _use_det = _os.getenv("KAFARMTWIN_USE_DETERMINISTIC_OPS", "1").strip() != "0"
         except Exception:
             _use_det = True
-        if _use_det:
-            from experiments.v3.methods.typed_deterministic import build_deterministic_patch  # type: ignore
-            deterministic_patch = build_deterministic_patch(
-                rule_id=_rule, violation=v, nodes=plan_objects,
-                edges=relations, bindings=bindings)
-        if deterministic_patch is not None:
-            patch = {"ops": [deterministic_patch]}
-        else:
-            # Generic shape examples (placeholder IDs) so the owner agent learns the
-            # patch contract, NOT any task's specific answer.
+
+        _actions_str = json.dumps(candidate_actions)
+        # D2: ask the LLM to decide among candidate_actions FIRST. This is always
+        # the decision step — no rule bypasses the LLM.
+        fix = llm_call_fn({
+            "system": (
+                f"You are {owner}. A typed conflict was detected. Decide how to resolve it by "
+                f"choosing ONE action from candidate_actions ({_actions_str}). "
+                f"Reply with JSON: {{\"action\": \"<chosen action>\"}}. "
+                f"Do NOT generate a patch — only your decision. Choose ask_user if the repair "
+                f"is genuinely ambiguous and you need more information."
+            ),
+            "user": (
+                f"Conflict: {conflict}\n"
+                f"Current objects: {plan_objects}\n"
+                f"Current relations: {relations}\nCurrent bindings: {bindings}\n"
+                f"All violations: {violations}"
+            ),
+        }, budget)
+        try:
+            chosen_action = (fix.get("content_json") or {}).get("action") or ""
+        except Exception:
+            chosen_action = ""
+
+        # D2: execute the LLM's decision through the deterministic executor.
+        # The executor never chooses — it only translates a chosen action into a
+        # concrete patch, and returns None when it cannot (genuine ambiguity).
+        patch = {}
+        if _use_det and chosen_action in candidate_actions and chosen_action != "ask_user":
+            from experiments.v3.methods.typed_deterministic import apply_action  # type: ignore
+            deterministic_patch = apply_action(
+                action=chosen_action, rule_id=_rule, violation=v,
+                nodes=plan_objects, edges=relations, bindings=bindings)
+            if deterministic_patch is not None:
+                patch = {"ops": [deterministic_patch]}
+
+        if not patch:
+            # ask_user chosen, invalid/unmapped action, or executor can't apply
+            # (e.g. R2 target genuinely unknown): the LLM reasons over the full
+            # patch — its judgment, not a rule table.
             _examples = {
                 "R2": 'e.g. {"patch_op":"add_binding","target":"<sensor_id>",'
                       '"changes":{"subject":"<sensor_id>","target":"<monitored_object_id>","type":"sensor_bind",'

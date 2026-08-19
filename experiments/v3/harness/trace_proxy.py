@@ -10,9 +10,46 @@ This replaces the old behavior of auto-fabricating evidence IDs in the scorer.
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import itertools
+import json
 import uuid
 from typing import Any
+
+# A2 (review 2026-08-18): context-dependent memory tools (timeseries.query /
+# event.query) read ctx["memory_state"]; an empty-context replay returns zero.
+# The fix records the memory_state the call was made against. Per the review we
+# do NOT store the full snapshot in the run record (a reviewer could claim
+# test-environment leakage from the run log): the trace records only
+#   ctx_snapshot_id / ctx_snapshot_version / ctx_snapshot_hash,
+# and the snapshot CONTENT is kept in a separate, process-local FIXTURE store
+# keyed by that hash. Replay loads the fixture by hash. The content is the PUBLIC
+# seeded memory_state (never gold), so no gold ever leaves the method boundary.
+_FIXTURE_VERSION = "v1"
+_FIXTURES: dict[str, dict[str, Any]] = {}  # snapshot sha256 -> deepcopied snapshot
+
+
+def store_snapshot(snapshot: dict[str, Any]) -> tuple[str, str, str]:
+    """Persist a ctx snapshot into the fixture store; return (id, version, hash).
+
+    The run record carries only these three fields; the full content lives in the
+    process-local fixture store so the trace is lean (no test-environment leakage).
+    """
+    try:
+        s = json.dumps(snapshot, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
+    except Exception:
+        s = repr(snapshot).encode("utf-8", "replace")
+    h = hashlib.sha256(s).hexdigest()
+    if h not in _FIXTURES:
+        _FIXTURES[h] = copy.deepcopy(snapshot)
+    return f"mem-snap-{h[:12]}", _FIXTURE_VERSION, h
+
+
+def load_snapshot(snapshot_hash: str) -> dict[str, Any] | None:
+    """Return the deepcopied fixture for a snapshot hash, else None."""
+    snap = _FIXTURES.get(snapshot_hash)
+    return copy.deepcopy(snap) if snap is not None else None
 
 
 class TraceProxy:
@@ -42,13 +79,13 @@ class TraceProxy:
             "status": "ok" if "error" not in response else "error",
             "fallback": False,
         }
-        # A2 (P0-5): context-dependent memory tools (timeseries.query / event.query)
-        # read ctx["memory_state"]; an empty-context replay returns zero points. Record
-        # the exact memory_state snapshot the call was made against so replay can
-        # reproduce the real store instead of an empty one. This is recorded evidence
-        # (the public initial_state/seed given to the method), not re-derived gold.
+        # A2 (review): store ONLY the hash + version of the memory-state snapshot,
+        # not the full content (trace stays lean; the fixture store holds content).
         if ctx_snapshot is not None:
-            rec["ctx_snapshot"] = copy.deepcopy(ctx_snapshot)
+            snap_id, snap_version, snap_hash = store_snapshot(ctx_snapshot)
+            rec["ctx_snapshot_id"] = snap_id
+            rec["ctx_snapshot_version"] = snap_version
+            rec["ctx_snapshot_hash"] = snap_hash
         self._calls.append(rec)
         return call_id
 

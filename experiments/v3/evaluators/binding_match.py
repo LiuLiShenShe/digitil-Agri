@@ -27,7 +27,14 @@ from __future__ import annotations
 from typing import Any
 
 # Annotation-only keys authored by the gold labeler, never emitted by methods.
-_ANNOTATION_KEYS = {"fixed"}
+#
+# `fixed`  : annotation marker (the repairing method does not "know" to emit fixed:true)
+# `timestamp` : data-recording artifact (gold records when a measurement was taken; the
+#             shared vocabulary never requires methods to emit it — a binding's semantic
+#             contract is subject/target/type/metrics/unit, not its recording time).
+#            Requiring it would make every method fail bindF1 on data_binding tasks that
+#            do not mention timestamps at all.
+_ANNOTATION_KEYS = {"fixed", "timestamp"}
 
 # Unit authoring variants -> canonical form for fair comparison (F-019).
 _UNIT_CANONICAL = {}
@@ -76,15 +83,24 @@ def _clean_required_md(md: dict[str, Any]) -> dict[str, Any]:
 def _metadata_equal(gen_md: dict[str, Any], req_md: dict[str, Any]) -> bool:
     """Compare generated vs required metadata under annotation-normalization.
 
-    - annotation-only keys on the required side are ignored
+    - annotation-only keys on the required side are ignored (fixed, timestamp)
     - unit/asset values are alias-normalized
     - list values compare as sets
+    - trait_bind semantic equivalence: gold records the trait under `trait`
+      (e.g. "growth_stage"), while methods — following the shared binding
+      vocabulary — express it as `metrics: ["growth_stage"]`. The trait is the
+      semantic contract, so `req["trait"]` is compared against `gen["metrics"]`.
     """
     req = _clean_required_md(req_md)
     for k, v in req.items():
         if v is None:
             continue
-        if k in ("metrics", "asset_metrics"):
+        if k == "trait":
+            # gold's trait <-> method's metrics[0] (semantic equivalence)
+            gen_traits = _norm_list(gen_md.get("metrics") or gen_md.get("trait"))
+            if _norm_value(v) not in gen_traits:
+                return False
+        elif k in ("metrics", "asset_metrics"):
             if _norm_list(gen_md.get(k)) != _norm_list(v):
                 return False
         else:

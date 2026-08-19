@@ -44,7 +44,18 @@ def replay_trace(*, proxy_calls: list[dict[str, Any]],
             continue
         replayable += 1
         try:
-            actual = fn(tool, request, c.get("ctx_snapshot"))
+            # A2 (review): the trace records only ctx_snapshot_id/version/hash.
+            # Load the snapshot content from the fixture store by hash so the
+            # trace stays lean and replay reproduces the real recorded state.
+            snapshot = None
+            snap_hash = c.get("ctx_snapshot_hash")
+            if snap_hash:
+                try:
+                    from experiments.v3.harness.trace_proxy import load_snapshot  # type: ignore
+                    snapshot = load_snapshot(snap_hash)
+                except Exception:
+                    snapshot = None
+            actual = fn(tool, request, snapshot)
         except Exception as e:  # pragma: no cover
             mismatched += 1
             continue
