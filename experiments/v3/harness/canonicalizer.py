@@ -67,17 +67,14 @@ def canonicalize_output(raw: dict[str, Any]) -> dict[str, Any]:
     bindings_raw = raw.get("bindings") or raw.get("required_bindings") or []
     trace = raw.get("trace") or {"steps": raw.get("traceSteps") or raw.get("steps") or []}
 
-    # Expand count>1 nodes into individual instances (shared for all methods).
+    # nodes: canonicalize each node, preserving count on the node itself (the
+    # evaluator's node_match._expand_count handles count→instances for matching,
+    # and expanding here would break binding/edge subject ids which reference the
+    # group id, not per-instance ids).
     nodes: list[dict[str, Any]] = []
     for n in nodes_raw:
         canonical = canonicalize_node(n)
-        count = canonical["count"]
-        for i in range(count):
-            item = dict(canonical)
-            item["count"] = 1
-            if count > 1:
-                item["id"] = f"{canonical['id']}-{i + 1}"
-            nodes.append(item)
+        nodes.append(canonical)
 
     edges = [canonicalize_edge(e) for e in edges_raw]
     bindings = [canonicalize_binding(b) for b in bindings_raw]

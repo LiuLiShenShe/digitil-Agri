@@ -121,8 +121,31 @@ def _expand_count(n: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _expand_generated(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Expand generated nodes: each generated object is one instance."""
-    return list(nodes)
+    """Expand generated nodes by their count, mirroring the required side.
+
+    The gold types count>1 objects as a *single group node* (e.g. required
+    `N11_mango_focus` with count=4). Methods, following the shared vocabulary,
+    may likewise emit one group node with count=N (e.g. `plant_3` count=4). To
+    score these fairly we must expand BOTH sides identically — treat a generated
+    count=N node as N instances, exactly as _expand_count does for required.
+
+    This is evaluator-side normalization applied identically to all methods. The
+    generated *bounding* ids (plant_3-1..N) feed node matching, but the BASE ids
+    the method actually used for its bindings/edges (plant_3) are preserved via
+    id_correspondence's base-id stripping, so bindings/edges still align.
+    """
+    out: list[dict[str, Any]] = []
+    for n in nodes or []:
+        count = int(n.get("count") or 1)
+        base = dict(n)
+        base.pop("count", None)
+        for i in range(count):
+            item = dict(base)
+            item["_instance"] = i
+            if count > 1:
+                item["id"] = f"{n.get('id') or 'x'}-{i + 1}"
+            out.append(item)
+    return out
 
 
 def hungarian(cost: list[list[float]]) -> list[tuple[int, int]]:
@@ -234,6 +257,7 @@ def match_nodes(*, required: list[dict[str, Any]], generated: list[dict[str, Any
         "unmatched_generated": unmatched_generated,
         "assignments": [(gi, ri) for gi, ri in assignments],
         "req_expanded_ids": [str(r.get("id") or "") for r in req_expanded],
+        "gen_expanded": gen,
         "all_matched": matched == len(req_expanded),
     }
 
@@ -253,6 +277,11 @@ def id_correspondence(assignments: list[tuple[int, int]],
     Only *matched* nodes (cost below the CVSR threshold) are carried over, so no
     unmatched/fabricated node leaks a false identity. This is pure reasoning over
     the correspondence already proven for nodes — it supplements nothing.
+
+    `generated` MUST be the *expanded* generated list (the same list `match_nodes`
+    assigned over, returned as `gen_expanded`), because assignment indices index into
+    it — a count=N group node occupies N slots. Using the un-expanded list would
+    mis-align every instance past a group node (P0-correction).
     """
     corr: dict[str, str] = {}
     for gi, ri in assignments:
@@ -268,10 +297,10 @@ def id_correspondence(assignments: list[tuple[int, int]],
         # Strip that numeric instance suffix so edges/bindings can align to the base.
         import re as _re
         base_rid = _re.sub(r"-\d+$", "", rid)
-        # Methods also author repeated objects as one node with count=N; the
-        # canonicalizer expands it into suffixed instances (plant_1-1..plant_1-12),
-        # but relations reference the base id (plant_1). Register BOTH the full
-        # generated id and its base so edge/binding remapping aligns.
+        # Methods author repeated objects as one node with count=N; the generated
+        # expansion produces suffixed instances (plant_1-1..plant_1-12), but the
+        # method's bindings/edges reference the base id (plant_1). Register BOTH
+        # the full expanded id and its base so edge/binding remapping aligns.
         base_gid = _re.sub(r"-\d+$", "", gid)
         corr.setdefault(gid, base_rid)
         corr.setdefault(base_gid, base_rid)

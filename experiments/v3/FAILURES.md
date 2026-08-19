@@ -112,3 +112,10 @@ T23 的表型指标建模为 traits[]+trait_bind 而非场景节点，原评分�
 - **描述**: KF fatal_violation_rate=0.22（>0.01 门槛），critical_recall=0.60（<0.95 门槛）。ReAct evidence_precision=0（空 trace，已按 P0-1 诚实钳制为 0）。
 - **根因**: 规则违规（R4 等）在非 memory 任务未被消除 + 关键对象未在所有场景中显式产出。
 - **下一步**: 类型化修复闭环需真正命中 critical_objects 并消除 fatal 规则违规，而非仅 memory 确定性检索。
+
+## F-021 [RESOLVED] TN32 修复边饥饿：R1 逐孤儿单轮，3 轮预算耗尽（2026-08-19）
+- **状态**: RESOLVED（批量挂接 + 回归测试 T17）
+- **描述**: 首次资产诊断中 TN32 KF `repair_success=True` 但 `CVSR=F`（failclause=all_edges，relF1=0.667）。逐轮追踪显示 4 个违规（R4 资产、R5 camera、R1×2 孤儿）配 3 轮预算：R4→replace_asset、R5→fill_observes、R1→attach_to_root(仅 Asset_B) 各耗一轮，`N32_row` 的 `contains` 边从未建立——确定性 R1 执行器一轮只挂一个孤儿，预算耗尽后行节点仍是孤儿。
+- **根因**: 非方法概念缺陷，而是 R1 确定性执行器"一轮一对象"与修复预算（3 轮）相互作用的结构性饥饿。LLM 决策正确（选了 attach_to_root），是执行粒度问题。
+- **修复**: `typed_deterministic.py` 新增 `attach_all_rootless()`——LLM 选 attach_to_root 时在**单轮**内对所有孤儿对象批量产出 add_edge 算子（与既有 batched `{ops:[...]}` 路径一致，纯确定性结构工作，不新增 LLM 调用、不偏袒 KF）。`kafarmtwin_typed_repair.py` 修复循环在 R1+attach_to_root 时接入。单任务 TN32 复现 CVSR=T（objF1/relF1/bindF1/critR 全 1.0）。
+- **验证**: 94/94 测试全绿（+T16 fatal-first 排序回归 +T17 批量挂接回归）；最终诊断 TN31-34 KF **4/4 CVSR=T**、`repair_success=True`。

@@ -23,6 +23,14 @@ class LLMError(Exception):
 
 
 def _load_env() -> tuple[str, str, str]:
+    # Load the repo .env (gitignored, holds AGNES_*) so runners work without the
+    # caller having exported the vars. Guarded: python-dotenv is a soft dependency.
+    if not (os.getenv("AGNES_API_KEY") or os.getenv("LLM_API_KEY")):
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(os.path.join(os.getcwd(), ".env"))
+        except Exception:
+            pass
     base_url = os.getenv("AGNES_BASE_URL") or os.getenv("LLM_BASE_URL") or "https://api.siliconflow.cn/v1"
     api_key = os.getenv("AGNES_API_KEY") or os.getenv("LLM_API_KEY") or ""
     model = os.getenv("AGNES_MODEL") or os.getenv("LLM_MODEL") or "deepseek-ai/DeepSeek-V4-Flash"

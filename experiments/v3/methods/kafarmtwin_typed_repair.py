@@ -234,6 +234,8 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
                  or task.get("task_type") == "rule_repair")
     is_data_bind = (task.get("category") in ("data_bind", "data_binding")
                     or task.get("task_type") == "data_binding")
+    is_asset_route = (task.get("category") in ("asset", "asset_route", "asset_routing")
+                      or task.get("task_type") == "asset_routing")
     initial_state = task.get("initial_state") if is_repair else None
     goal_state = task.get("goal_state") if is_repair else None
     critical = task.get("critical_objects") or []
@@ -263,6 +265,23 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         plan_objects = built["nodes"]
         relations = built["edges"]
         bindings = built["bindings"]
+    elif is_asset_route:
+        # KAFarmTwin DISTINCT path (Task 2): knowledge-compiled construction.
+        # IntentIR -> Semantic/Ontology Compiler -> typed object graph ->
+        # AssetCompiler (compile_asset_routes) -> BindingCompiler -> Validator -> TypedRepair.
+        # The LLM only captures intent; the compiler + domain knowledge instantiate
+        # structure, route assets, and author bindings. No id/hierarchy/asset reinvention.
+        from experiments.v3.harness.semantic_compiler import build_scene_from_intent  # type: ignore
+        graph = build_scene_from_intent(
+            prompt=task["prompt"], llm_call_fn=llm_call_fn, budget=budget,
+            registry=registry, agent_id="KAFarmTwin-Planner",
+            catalog=ctx.get("catalog", {}),
+        )
+        plan_objects = graph.objects
+        relations = graph.relations
+        bindings = graph.bindings
+        if plan_objects:
+            ctx["scene_state"] = {"objects": plan_objects, "bindings": bindings}
     else:
         # Other (scene_build / asset_routing without seed): build the scene from the
         # prompt through the SHARED stepwise builder (objects -> relations -> bindings),
@@ -285,10 +304,20 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         violations = verdict["violations"]
         if not violations:
             break
-        # classify + route: sort by priority, take the first
-        fatal = [v for v in violations if v["severity"] == "fatal"]
-        warnings = [v for v in violations if v["severity"] == "warning"]
-        ordered = sorted(fatal + warnings, key=lambda v: CONFLICT_PRIORITY.index(v.get("rule_id")) if v.get("rule_id") in CONFLICT_PRIORITY else 99)
+        # classify + route: resolve FATAL violations before warnings, then by
+        # CONFLICT_PRIORITY within each group. This prevents a cheap warning (e.g. R1
+        # parent) from consuming a round while a blocking fatal (e.g. R5 camera pose)
+        # goes unfixed, which exhausted the 3-round budget on e.g. TN32 (R4 + R1 + R1
+        # would eat all rounds and never reach R5). Fatal-first is the safe order: a
+        # final-state that still carries a fatal is never CVSR, regardless of warnings.
+        fatal = [v for v in violations if v.get("severity") == "fatal"]
+        warnings = [v for v in violations if v.get("severity") == "warning"]
+        def _sev(v):
+            return 0 if v.get("severity") == "fatal" else 1
+        ordered = sorted(fatal + warnings,
+                         key=lambda v: (_sev(v),
+                                        CONFLICT_PRIORITY.index(v.get("rule_id"))
+                                        if v.get("rule_id") in CONFLICT_PRIORITY else 99))
         v = ordered[0]
         conflict = _new_conflict(v, counter, nodes=plan_objects, bindings=bindings)
         new_conflicts.append(conflict)
@@ -322,15 +351,27 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             _use_det = True
 
         _actions_str = json.dumps(candidate_actions)
+        # Guidance for WHEN ask_user is genuinely necessary vs over-deferral. The LLM
+        # is still the decision-maker; this is honest domain guidance (a camera MUST
+        # have pose/observes/fov under R5; a wrong asset MUST be replaced under R4),
+        # so it does not auto-fix or bypass the LLM — it only tells the model that
+        # deferring on a deterministic contract is not a valid repair.
+        _guidance = {
+            "R5": ("pose/observes/fov are a REQUIRED camera contract, not optional — "
+                   "choose fill_observes; ask_user is not a repair here."),
+            "R4": ("the correct asset is fixed by the asset policy — replace_asset "
+                   "is the required action; ask_user is not a repair here."),
+        }.get(_rule, "")
         # D2: ask the LLM to decide among candidate_actions FIRST. This is always
         # the decision step — no rule bypasses the LLM.
         fix = llm_call_fn({
             "system": (
                 f"You are {owner}. A typed conflict was detected. Decide how to resolve it by "
                 f"choosing ONE action from candidate_actions ({_actions_str}). "
+                f"{_guidance} "
                 f"Reply with JSON: {{\"action\": \"<chosen action>\"}}. "
-                f"Do NOT generate a patch — only your decision. Choose ask_user if the repair "
-                f"is genuinely ambiguous and you need more information."
+                f"Do NOT generate a patch — only your decision. Choose ask_user ONLY if the repair "
+                f"is genuinely ambiguous and the deterministic options cannot fix it."
             ),
             "user": (
                 f"Conflict: {conflict}\n"
@@ -354,7 +395,16 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
                 action=chosen_action, rule_id=_rule, violation=v,
                 nodes=plan_objects, edges=relations, bindings=bindings)
             if deterministic_patch is not None:
-                patch = {"ops": [deterministic_patch]}
+                if _rule == "R1" and chosen_action == "attach_to_root":
+                    # The LLM chose to repair the hierarchy; apply the attach to
+                    # EVERY orphaned object in one round (deterministic structure
+                    # work, not one round per orphan). Matches the batched {ops:[...]}
+                    # the LLM may emit on the non-deterministic path.
+                    from experiments.v3.methods.typed_deterministic import attach_all_rootless  # type: ignore
+                    ops = attach_all_rootless(nodes=plan_objects, edges=relations)
+                    patch = {"ops": ops} if ops else {"ops": [deterministic_patch]}
+                else:
+                    patch = {"ops": [deterministic_patch]}
 
         if not patch:
             # ask_user chosen, invalid/unmapped action, or executor can't apply
@@ -589,6 +639,14 @@ def _apply_patch(patch: dict[str, Any], nodes: list[dict[str, Any]], edges: list
         for n in nodes:
             if n.get("id") == target:
                 n["asset_key"] = correct
+                # The asset REPLACEMENT's semantic contract is the asset BINDING
+                # (binding_match matches on subject+asset_key+policy, not the node
+                # field). Ensure an asset binding exists so required_bindings align;
+                # a node asset_key alone never satisfies the gold's asset binding.
+                bindings.append({
+                    "subject": target, "target": target,
+                    "type": "asset", "metadata": {"asset_key": correct},
+                })
                 return True
         return False
     if op == "set_placeholder":
@@ -612,9 +670,10 @@ def _apply_patch(patch: dict[str, Any], nodes: list[dict[str, Any]], edges: list
             return True
         return False
     if op == "add_edge":
-        new = changes.get("edge") or {}
+        new = changes.get("edge") or changes  # accept both {edge:{...}} and flat {subject,...}
         if new.get("subject") and new.get("object"):
-            edges.append(new)
+            edges.append({"subject": new.get("subject"), "predicate": new.get("predicate") or "contains",
+                          "object": new.get("object")})
             # Keep node.parent consistent with the contains edge: R1 reads node.parent,
             # while the LLM naturally expresses hierarchy as contains edges. Setting the
             # child's parent field on add_edge makes both representations agree.

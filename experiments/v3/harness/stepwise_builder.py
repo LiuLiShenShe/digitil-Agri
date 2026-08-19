@@ -116,6 +116,8 @@ def stepwise_build_scene(
         "user": prompt,
     }, budget)
     cj1 = r1.get("content_json")
+    raw_text = r1.get("content") or ""
+    finish_reason = r1.get("finish_reason") or ""
     if isinstance(cj1, list):
         # model returned a bare array (treat as the objects list)
         p1 = {"objects": cj1}
@@ -123,10 +125,32 @@ def stepwise_build_scene(
         p1 = cj1
     else:
         p1 = {}
-    if not p1 or not p1.get("objects"):
-        p1 = {"objects": _merge_json_part(p1, "objects")}
-    nodes = [_as_node(o) for o in (_extract_list(cj1, ("objects", "nodes", "entities")) or [])]
+    json_parse_ok = isinstance(cj1, (dict, list))
+    if not p1.get("objects"):
+        # RECOVERY: content_json may be None (truncated) even though raw text has the
+        # objects array. Merge the recovered list into the canonical payload and extract
+        # FROM p1 (the recovered payload), NOT from cj1, so a recovered scene is not lost.
+        recovered = _merge_json_part(p1, "objects")
+        if recovered:
+            p1 = {"objects": recovered}
+        else:
+            p1 = {}
+    # Extract from the canonical/recovered payload p1, not raw cj1.
+    nodes = [_as_node(o) for o in (_extract_list(p1, ("objects", "nodes", "entities")) or [])]
     nodes = _dedupe_nodes(nodes)[:max_objects]
+
+    # Fail-fast diagnostics when the object-authoring stage produced nothing usable.
+    if not nodes:
+        gen_err = {
+            "stage": "object_authoring",
+            "finish_reason": finish_reason,
+            "raw_length": len(raw_text) if isinstance(raw_text, str) else len(str(raw_text)),
+            "json_parse_ok": json_parse_ok,
+            "recovery_ok": bool(p1.get("objects")),
+            "recovered_object_count": len(p1.get("objects") or []),
+        }
+        # Do NOT run the (useless) relations/bindings LLM calls; emit only real tool calls.
+        return {"nodes": [], "edges": [], "bindings": [], "generation_error": gen_err}
 
     # reflect layout through tools if we have objects (real trace)
     if nodes:

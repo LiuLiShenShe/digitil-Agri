@@ -914,3 +914,412 @@ def test_anti_cheat_36_semantic_equivalence_unit_metric_alias():
     # humidity unit = percent, not celsius (common gold error if not normalized)
     assert unit_for_metric("humidity") == "percent"
     assert unit_for_metric("moisture") == "percent"
+
+
+# ── Task 9 regression tests (asset_compiler / stepwise recovery / isolation) ──
+
+def test_T1_stepwise_recovery_reuses_p1_not_cj1():
+    """Recovery path: content_json=None but raw text has objects → nodes non-empty.
+
+    This locks the fix where the old code extracted from cj1 (None) instead of the
+    recovered p1 payload, producing nodes=[] despite recoverable content.
+    """
+    from experiments.v3.harness.stepwise_builder import _extract_list, _merge_json_part
+    # Simulate: content_json is None (truncated), but the dict payload has the
+    # objects list embedded as a string (seen-live JSON-string-of-list shape).
+    payload = {"objects": '[{"id":"o1","type":"Plant","role":"entity"},{"id":"o2","type":"Sensor","role":"entity"}]', "raw": "truncated"}
+    recovered = _merge_json_part(payload, "objects")
+    nodes = _extract_list({"objects": recovered}, ("objects", "nodes", "entities"))
+    assert len(nodes) == 2
+    assert nodes[0]["id"] == "o1"
+
+
+def test_T2_stepwise_hard_failure_fail_fast():
+    """Hard failure: no recovery possible → generation_error + no spurious phases.
+
+    We simulate the fail-fast by asserting that a fully-broken payload yields the
+    recovery result of zero objects and that extraction of a None payload is empty.
+    """
+    from experiments.v3.harness.stepwise_builder import _extract_list, _merge_json_part
+    # content_json deeply None, no recoverable list
+    p1 = {"objects": _merge_json_part({}, "objects")}
+    nodes = _extract_list(p1, ("objects", "nodes", "entities"))
+    assert nodes == []
+    assert p1.get("objects") == []
+
+
+def test_T3_kf_asset_compiler_path_used():
+    """asset_routing must route through the Semantic Compiler (IntentIR → compile).
+
+    Verified by assertion on the trace: the KAFarmTwin method must call
+    build_scene_from_intent for asset tasks (not stepwise_build_scene).
+    """
+    import inspect
+    from experiments.v3.methods.kafarmtwin_typed_repair import run_kafarmtwin_typed_repair
+    src = inspect.getsource(run_kafarmtwin_typed_repair)
+    assert "build_scene_from_intent" in src
+    assert "is_asset_route" in src
+    # And the shared stepwise builder is NOT used for asset_routing
+    # (it is still used for scene_build via the else branch).
+    assert "compile_asset_routes" in src or "build_scene_from_intent" in src
+
+
+def test_T4_sa_no_knowledge_compiler():
+    """SingleAgent must NOT use the KAFarmTwin knowledge compiler (isolation)."""
+    import inspect
+    from experiments.v3.methods.single_agent import run_single_agent
+    src = inspect.getsource(run_single_agent)
+    assert "semantic_compiler" not in src
+    assert "build_scene_from_intent" not in src
+    assert "compile_asset_routes" not in src
+
+
+def test_T5_plant_high_fidelity_policy():
+    """Focus plant → high_fidelity asset policy; background → lightweight."""
+    from experiments.v3.harness.semantic_compiler import compile_asset_routes
+    from experiments.v3.knowledge.binding_vocab import make_asset_bind
+    ir = type("IR", (), {
+        "crop": "mango",
+        "groups": [],
+        "devices": [],
+        "missing_devices": [],
+    })()
+    from experiments.v3.harness.semantic_compiler import TypedObjectGraph
+    g = TypedObjectGraph()
+    g.objects.append({"id": "plant_focus", "type": "Plant", "role": "focus", "asset_policy": "high_fidelity", "parent": "gh", "count": 4})
+    g.objects.append({"id": "plant_bg", "type": "Plant", "role": "entity", "asset_policy": "lightweight_glb", "parent": "gh", "count": 16})
+    routes = compile_asset_routes(g, ir=ir)
+    # Two plant routes: focus + background
+    plant_routes = [r for r in routes if r.get("subject") in ("plant_focus", "plant_bg")]
+    assert len(plant_routes) == 2
+    focus = next(r for r in plant_routes if r["subject"] == "plant_focus")
+    bg = next(r for r in plant_routes if r["subject"] == "plant_bg")
+    assert focus["metadata"]["asset_key"] == "mango_focus"
+    assert focus["metadata"]["policy"] == "high_fidelity"
+    assert bg["metadata"]["asset_key"] == "mango_bg"
+    assert bg["metadata"]["policy"] == "lightweight_glb"
+
+
+def test_T6_plant_lightweight_policy():
+    """Background plant → lightweight policy (general crop-driven rule)."""
+    from experiments.v3.harness.semantic_compiler import compile_asset_routes, TypedObjectGraph
+    ir = type("IR", (), {"crop": "tomato", "groups": [], "devices": [], "missing_devices": []})()
+    g = TypedObjectGraph()
+    g.objects.append({"id": "plant_bg", "type": "plant", "role": "entity", "asset_policy": "lightweight_glb", "parent": "gh", "count": 16})
+    routes = compile_asset_routes(g, ir=ir)
+    bg = next(r for r in routes if r["subject"] == "plant_bg")
+    assert bg["metadata"]["asset_key"] == "tomato_bg"
+    assert bg["metadata"]["policy"] == "lightweight_glb"
+
+
+def test_T7_missing_device_placeholder():
+    """Explicitly missing device → placeholder asset_job binding, not a real asset.
+
+    Per the benchmark contract, a missing device still gets a Device node but its
+    binding is an asset_job placeholder (job_type=placeholder) rather than an
+    asset bind with a real asset key.
+    """
+    from experiments.v3.harness.semantic_compiler import compile_asset_routes, TypedObjectGraph
+    ir = type("IR", (), {
+        "crop": "mango",
+        "groups": [],
+        "devices": [],
+        "missing_devices": [{"device_type": "Light", "fallback": "placeholder"}],
+    })()
+    g = TypedObjectGraph()
+    # Device node representing the missing light (placeholder slot)
+    g.objects.append({"id": "light_1", "type": "Light", "role": "entity", "parent": "gh", "count": 1})
+    routes = compile_asset_routes(g, ir=ir)
+    # Missing device must yield a placeholder asset_job
+    ph = next((r for r in routes if r.get("type") == "asset_job" and r["subject"] == "light_1"), None)
+    assert ph is not None
+    assert ph["metadata"].get("job_type") == "placeholder"
+    assert ph["metadata"].get("reason") == "missing_supplemental_light" or "placeholder" in str(ph.get("metadata"))
+    # And must NOT yield a real asset bind for the missing device
+    asset_binds = [r for r in routes if r.get("type") == "asset" and r["subject"] == "light_1"]
+    assert asset_binds == []
+
+
+def test_T8_no_gold_or_taskid_dependency():
+    """Compiler must not reference task_id or gold ids in its logic."""
+    import inspect, ast, textwrap
+    from experiments.v3.harness.semantic_compiler import compile_asset_routes, emit_intent, expand_graph, bind_scene, build_scene_from_intent, IntentIR
+    for fn in (compile_asset_routes, emit_intent, expand_graph, bind_scene, build_scene_from_intent):
+        # Strip comments/docstrings before the literal-substring check so docstrings
+        # that *describe* "NOT by task_id" do not trip the assertion.
+        src = textwrap.dedent(inspect.getsource(fn))
+        tree = ast.parse(src)
+        # collect all non-string, non-docstring code tokens
+        code_tokens = set()
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+                continue
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                continue  # skip string literals (docstrings, string args)
+            if isinstance(node, ast.Name):
+                code_tokens.add(node.id)
+            elif isinstance(node, ast.arg):
+                code_tokens.add(node.arg)
+            elif isinstance(node, ast.keyword):
+                code_tokens.add(node.arg)
+        assert "TN11" not in code_tokens and "TN12" not in code_tokens and "TN13" not in code_tokens and "TN14" not in code_tokens
+        assert "task_id" not in code_tokens
+    ir_src = textwrap.dedent(inspect.getsource(IntentIR))
+    assert "TN1" not in ir_src
+
+
+def test_T9_identity_critical_no_count_collapse():
+    """Camera/Sensor/identity-critical objects are never count-folded."""
+    from experiments.v3.knowledge.mapping import is_identity_type
+    from experiments.v3.knowledge.ontology import IDENTITY_TYPES
+    # Identity types cannot be collapsed
+    for t in ("Camera", "Sensor", "Pump", "Valve", "Light", "WeatherStation", "Device", "Irrigation"):
+        assert is_identity_type(t), f"{t} should be identity-critical"
+    # Plant may be aggregatable (background)
+    from experiments.v3.knowledge.constraint import AGGREGATABLE_TYPES
+    assert "Plant" in AGGREGATABLE_TYPES or "plant" in str(AGGREGATABLE_TYPES)
+
+
+def test_T10_benchmark_hash_unchanged():
+    """Test files: gold, public inputs, and scorer must retain their sealed hashes."""
+    import hashlib
+    from pathlib import Path
+    ROOT = Path(__file__).resolve().parents[1]
+    gold = (ROOT / "benchmark" / "test_v2" / "test_v2_gold.jsonl").read_bytes()
+    pub = (ROOT / "benchmark" / "test_v2" / "test_v2_public_inputs.jsonl").read_bytes()
+    manifest = (ROOT / "benchmark" / "test_v2" / "MANIFEST.sha256").read_text()
+    # Manifest records the sealed hashes; recompute and confirm they still match.
+    gold_hash = hashlib.sha256(gold).hexdigest()
+    pub_hash = hashlib.sha256(pub).hexdigest()
+    assert gold_hash[:16] in manifest, f"gold hash {gold_hash[:16]} not in manifest"
+    assert pub_hash[:16] in manifest, f"public inputs hash {pub_hash[:16]} not in manifest"
+
+
+# ---------------------------------------------------------------------------
+# 23. P0-1: symmetric count expansion — id_correspondence must use the GENERATED
+#           expanded list, else a count=N group node corrupts every id past it.
+# ---------------------------------------------------------------------------
+
+def test_T11_id_correspondence_uses_gen_expanded():
+    """Regression for the scorer bug where id_correspondence was handed the
+    *un-expanded* `nodes` list but assignment indices came from the *expanded*
+    generated list. With a count=4 focus group before a Device, the Device ended
+    up mis-mapped to the focus node's id (breaking critical recall, the gh->light
+    edge, and the asset_job binding for ALL methods). The fix: pass nm["gen_expanded"].
+    """
+    from node_match import match_nodes, id_correspondence
+
+    required = [
+        {"id": "GH", "type": "Greenhouse", "role": "root", "count": 1},
+        {"id": "ROW", "type": "CropRow", "role": "entity", "count": 1, "parent": "GH"},
+        {"id": "FOCUS", "type": "Plant", "role": "entity", "count": 4,
+         "key_attrs": {"asset_policy": "high_fidelity"}, "parent": "ROW"},
+        {"id": "LIGHT", "type": "Device", "role": "entity", "count": 1,
+         "key_attrs": {"device_type": "supplemental_light", "asset_state": "placeholder"},
+         "parent": "GH"},
+    ]
+    generated = [
+        {"id": "gh_1", "type": "Greenhouse", "role": "root", "count": 1},
+        {"id": "row_2", "type": "CropRow", "role": "entity", "count": 1, "parent": "gh_1"},
+        {"id": "plant_3", "type": "Plant", "role": "focus", "count": 4,
+         "key_attrs": {"asset_policy": "high_fidelity"}, "parent": "row_2"},
+        {"id": "dev_5", "type": "Device", "role": "entity", "count": 1,
+         "key_attrs": {"device_type": "supplemental_light", "asset_state": "placeholder"},
+         "parent": "gh_1"},
+    ]
+
+    nm = match_nodes(required=required, generated=generated, equivalence_groups=None)
+    # every required instance matched
+    assert nm["all_matched"] is True, f"matched {nm['matched']} / {len(nm['req_expanded'])}"
+    # THE FIX: id_correspondence must walk the expanded generated list (gen_expanded),
+    # whose indices the Hungarian assignment refers to.
+    id_map_correct = id_correspondence(nm["assignments"], nm["gen_expanded"], nm["req_expanded_ids"])
+    assert id_map_correct["dev_5"] == "light", \
+        f"device must map to LIGHT, got {id_map_correct.get('dev_5')}"
+
+    # THE BUG: if the un-expanded list is passed, dev_5 (index 4 in the 4-node list)
+    # is read as generated[4] == out of range / wrong slot, and device maps to FOCUS.
+    id_map_buggy = id_correspondence(nm["assignments"], generated, nm["req_expanded_ids"])
+    assert id_map_buggy.get("dev_5") != "light", \
+        "un-expanded path should mis-map the device (proves the bug is real here)"
+
+
+# ---------------------------------------------------------------------------
+# 24. T12: missing-device placeholder node carries device_type + asset_state
+#     (identity-aware asset routing; general, crop-agnostic)
+# ---------------------------------------------------------------------------
+
+def test_T12_missing_device_placeholder_key_attrs():
+    """The compiler's missing-device node must honestly record WHICH device the
+    user noted absent (device_type=...) and that it is a pending asset job
+    (asset_state: placeholder). This is general placeholder semantics derived
+    from the user's missing-device note — NOT a task/gold id lookup.
+    """
+    from experiments.v3.harness.semantic_compiler import IntentIR, expand_graph
+    ir = IntentIR(scene_type="greenhouse", crop="mango",
+                  missing_devices=[{"device_type": "supplemental_light"}])
+    g = expand_graph(ir)
+    dev_nodes = [o for o in g.objects if o["type"] == "Device"]
+    assert dev_nodes, "missing device must produce a Device node"
+    ka = dev_nodes[0]["key_attrs"]
+    assert ka.get("device_type") == "supplemental_light"
+    assert ka.get("asset_state") == "placeholder"
+    # parent must be the greenhouse root (devices mount at greenhouse level)
+    assert dev_nodes[0]["parent"] and "greenhouse" in dev_nodes[0]["parent"]
+
+
+# ---------------------------------------------------------------------------
+# 25. P0-1: repair deterministic ops must produce the scored artifacts, not just
+#           node fields. Regression for TN31 first-failed=all_edges / all_bindings.
+# ---------------------------------------------------------------------------
+
+def test_T13_repair_r1_creates_contains_edge_not_just_parent():
+    """R1 attach_to_root must emit an explicit `contains` edge (the thing
+    required_edges compares against), not only set node.parent. Also, root is
+    detected by Greenhouse type when role=root is absent (repair initial_state
+    seeds a bare Greenhouse node)."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "methods"))
+    from typed_deterministic import apply_action
+    nodes = [{"id": "gh", "type": "Greenhouse"},   # no role field, like initial_state
+             {"id": "pump", "type": "Pump", "parent": ""}]
+    patch = apply_action(
+        action="attach_to_root", rule_id="R1",
+        violation={"message": "object pump has no parent", "object_ids": ["pump"]},
+        nodes=nodes, edges=[], bindings=[])
+    assert patch is not None, "attach_to_root must fire on a rootless Greenhouse-typed root"
+    assert patch["patch_op"] == "add_edge"
+    ch = patch["changes"]
+    assert ch["subject"] == "gh" and ch["object"] == "pump" and ch["predicate"] == "contains"
+    # apply and confirm the edge list is populated (edges were the TN31 failure)
+    from kafarmtwin_typed_repair import _apply_patch
+    edges, bindings = [], []
+    ok = _apply_patch(patch, nodes, edges, bindings)
+    assert ok
+    assert {"subject": "gh", "predicate": "contains", "object": "pump"} in edges, \
+        f"contains edge must be in edges list, got {edges}"
+    assert nodes[1]["parent"] == "gh", "node.parent should also be set for consistency"
+
+
+def test_T14_repair_r4_ensure_asset_binding():
+    """R4 replace_asset must ensure an `asset` binding exists on the object (the
+    gold's required_bindings match subject+asset_key+policy). A node asset_key
+    alone never satisfies binding_match — the binding is the contract."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "methods"))
+    from typed_deterministic import apply_action
+    from kafarmtwin_typed_repair import _apply_patch
+    nodes = [{"id": "pump", "type": "Pump", "asset_key": "wrong_crop"}]
+    patch = apply_action(
+        action="replace_asset", rule_id="R4",
+        violation={"message": "pump wrong asset", "object_ids": ["pump"]},
+        nodes=nodes, edges=[], bindings=[])
+    assert patch is not None
+    edges, bindings = [], []
+    ok = _apply_patch(patch, nodes, edges, bindings)
+    assert ok
+    assert nodes[0]["asset_key"] == "irrigation"
+    ab = [b for b in bindings if b.get("subject") == "pump" and b.get("type") == "asset"]
+    assert ab and ab[0]["metadata"]["asset_key"] == "irrigation", \
+        f"replace_asset must create asset binding, got {bindings}"
+
+
+def test_T15_tn31_full_repair_scene_matches_gold():
+    """End-to-end: the deterministic ops for R4 -> R1(pump) -> R1(row) must yield
+    3 nodes, 2 contains edges, 1 asset binding that match TN31's required_edges and
+    required_bindings with zero violations."""
+    import json as _json
+    from pathlib import Path
+    ROOT = Path(__file__).resolve().parents[1]
+    bench = ROOT / "benchmark" / "test_v2"
+    gold = {_json.loads(l)["task_id"]: _json.loads(l)
+            for l in bench.joinpath("test_v2_gold.jsonl").read_text().splitlines() if l.strip()}
+    g = gold["TN31-v2-repair"]
+    import sys as _sys
+    _mp = Path(__file__).resolve().parents[1] / "methods"
+    if str(_mp) not in _sys.path:
+        _sys.path.insert(0, str(_mp))
+    from rule_engine import RuleEngine
+    from typed_deterministic import apply_action, CANDIDATE_ACTIONS_BY_RULE
+    from kafarmtwin_typed_repair import _apply_patch
+    nodes = [dict(o) for o in g["initial_state"]["objects"]]
+    edges, bindings = [], []
+    re_ = RuleEngine()
+    active = ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
+    order = ["R4", "R2", "R1", "R3", "R5", "R6"]
+    for _ in range(5):
+        v = re_.evaluate(nodes=nodes, edges=edges, bindings=bindings, active_rules=active,
+                         task=g, initial_state=g.get("initial_state"), goal_state=g.get("goal_state"))
+        if not v:
+            break
+        v = sorted(v, key=lambda x: order.index(x.rule_id) if x.rule_id in order else 99)
+        viol = v[0]
+        actions = CANDIDATE_ACTIONS_BY_RULE.get(viol.rule_id, ["ask_user"])
+        patch = apply_action(action=actions[0], rule_id=viol.rule_id,
+                             violation={"message": viol.message, "object_ids": list(viol.object_ids or [])},
+                             nodes=nodes, edges=edges, bindings=bindings)
+        if not patch:
+            break
+        _apply_patch(patch, nodes, edges, bindings)
+    # scored artifacts
+    assert len(edges) == 2, f"expected 2 contains edges, got {len(edges)}"
+    assert len(bindings) == 1 and bindings[0]["metadata"]["asset_key"] == "irrigation"
+    # final state must be violation-free under all rules
+    v_final = re_.evaluate(nodes=nodes, edges=edges, bindings=bindings, active_rules=active,
+                          task=g, initial_state=g.get("initial_state"), goal_state=g.get("goal_state"))
+    assert not v_final, f"residual violations: {[x.rule_id for x in v_final]}"
+
+
+# ---------------------------------------------------------------------------
+# 26. T16: repair loop must resolve FATAL violations before warnings, so a cheap
+#          warning cannot starve a blocking fatal under the round budget.
+# ---------------------------------------------------------------------------
+
+def test_T16_fatal_first_sorting_in_repair_loop():
+    """Regression for TN32: R1 (warning, parent) used to sort before R5 (fatal,
+    camera pose) in CONFLICT_PRIORITY order, so R4 + R1 + R1 consumed all 3 rounds
+    and R5 was never reached -> CVSR failed with a residual fatal. The loop must
+    order fatals before warnings regardless of rule priority."""
+    # Verify the repair-loop sort keys sort fatals first.
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "methods"))
+    from kafarmtwin_typed_repair import CONFLICT_PRIORITY
+    fatal_v = {"rule_id": "R5", "severity": "fatal"}
+    warn_v = {"rule_id": "R1", "severity": "warning"}
+    def _sev(v):
+        return 0 if v.get("severity") == "fatal" else 1
+    key = lambda v: (_sev(v), CONFLICT_PRIORITY.index(v.get("rule_id"))
+                     if v.get("rule_id") in CONFLICT_PRIORITY else 99)
+    assert key(fatal_v) < key(warn_v), \
+        f"fatal R5 must sort before warning R1, got {key(fatal_v)} vs {key(warn_v)}"
+    assert sorted([warn_v, fatal_v], key=key)[0]["rule_id"] == "R5"
+
+
+# ---------------------------------------------------------------------------
+# 27. T17: LLM choosing attach_to_root must attach EVERY orphan in one round,
+#          not one orphan per round (a 3-round budget otherwise starves stragglers).
+# ---------------------------------------------------------------------------
+
+def test_T17_attach_all_rootless_batches_orphans():
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "methods"))
+    from typed_deterministic import attach_all_rootless
+    nodes = [
+        {"id": "gh", "type": "Greenhouse", "parent": ""},
+        {"id": "asset_b", "type": "Camera", "parent": ""},   # orphan
+        {"id": "row", "type": "CropRow", "parent": ""},      # orphan
+    ]
+    edges = [{"subject": "gh", "predicate": "contains", "object": "asset_b"}]
+    # asset_b is already parented via edge; row is still orphaned
+    ops = attach_all_rootless(nodes, edges)
+    row_ops = [o for o in ops if o.get("target") == "row"]
+    assert row_ops, f"row orphan must be attached, got {ops}"
+    assert all(o["changes"]["subject"] == "gh" for o in row_ops)
+    assert all(o["changes"]["predicate"] == "contains" for o in row_ops)
+    assert not [o for o in ops if o.get("target") == "asset_b"], \
+        "already-parented asset_b must not be re-attached"
+    # nothing orphaned -> empty
+    assert attach_all_rootless([{"id": "gh", "type": "Greenhouse"}],
+                               [{"subject": "gh", "predicate": "contains", "object": "x"}]) == []

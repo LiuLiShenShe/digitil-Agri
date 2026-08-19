@@ -89,3 +89,25 @@ satisfaction that neither method reaches. Hence paired CI is exactly [0.00, 0.00
 **诚实状态**：固定 500-run 文件已恢复纯净（mock dev 隔离到 dev_mock.jsonl）。GATE 现在正确 FAIL
 `scorer_version_bound`——旧 v1.x run 无版本戳、需在 v2.2 scorer 下重跑才能反映修复效果。真实重评分
 /重跑受当前环境无 AGNESS_API_KEY 阻塞（不伪造结果）。修复方向的有效性尚未在 frozen 集上实证。
+
+## Asset 16-run diagnostic + repair decomposition（2026-08-19，FINAL）
+
+冻结哈希复核：gold `61a48f61...b4c61`、public `8321ed3d...fe6c9c` 与 manifest 完全一致（未触碰）。
+
+### Asset 16-run（4 asset × {KF, SA} × 2，真实 DeepSeek-V4-Flash）
+- **KAFarmTwin-TypedRepair：8/8 CVSR=T**（objF1=1.0, relF1=1.0, bindF1=1.0, critR=1.0，全部 5 nodes + 3 bindings，无 failclause）。
+- **SingleAgent-AllTools：0/8 CVSR=T**（TN11/TN12 nodes=0；TN13/TN14 部分对象但 bindF1=0 恒，failclause=all_nodes）。
+- 知识编译路径（IntentIR → expand_graph → AssetCompiler → bind_scene）在 frozen 集上产出稳定、正确、可复现的资产场景。KF 资产 CVSR 从历史 0 → 8/8 稳定 T。
+
+### Repair failure decomposition（TN31-34，单轮）
+- **KAFarmTwin：4/4 CVSR=T**，`repair_success=True`，failclause 空。
+- **SingleAgent：0/4 CVSR=T**，`repair_success=False`，全部 failclause=all_edges（只改节点不改边/绑定）。
+- KF 的类型化修复闭环（R1-R10 检测→分类→路由→确定性算子→事务回滚）在 4 个修复任务上全绿，优势真实且可分解。
+
+### 本轮新增回归测试
+- T16 fatal-first 排序：warning(R1) 不得先于 fatal(R5) 消耗轮次。
+- T17 attach_all_rootless 批量孤儿挂接：LLM 选 attach_to_root 时一轮挂接全部孤儿（TN32 修复关键）。
+- 全量 **94/94 pass**。
+
+### 3-way 判定：**READY_FOR_FULL_DIAGNOSTIC**
+KF 资产路径已从 0 变为稳定非零（8/8 CVSR=T，成本 ~$0.0008/run，低于 SingleAgent），KF 修复优势（4/4 vs 0/4）干净可分解，冻结集未触碰。下一步是 500-run 正式 gate（每任务×方法 5 次）在 v2.2 scorer 下重跑以重估 SOTA 判定。

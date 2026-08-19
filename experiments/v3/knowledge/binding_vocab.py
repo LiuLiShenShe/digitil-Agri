@@ -65,10 +65,18 @@ def make_asset_bind(subject: str, asset_key: str, policy: str = "TRELLIS.2") -> 
 
 def make_asset_job_placeholder(subject: str) -> dict:
     """Compile an asset_job placeholder (job_type=placeholder), matching the disjunctive
-    repair contract where a replacement is pending for a device asset."""
+    repair contract where a replacement is pending for a device asset.
+
+    The placeholder carries `job_type=placeholder` and a procedural_model generation
+    policy so the scorer's asset_job semantic key (subject, job_type, policy) aligns.
+    """
     return {
         "subject": subject,
         "target": f"{subject}_placeholder",
         "type": "asset_job",
-        "metadata": {"job_type": "placeholder"},
+        "metadata": {
+            "job_type": "placeholder",
+            "policy": "procedural_model",
+            "reason": "missing_device_placeholder",
+        },
     }

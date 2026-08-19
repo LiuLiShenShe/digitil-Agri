@@ -44,6 +44,7 @@ class TaskEval:
     evidence_precision: float = 0.0
     replay_success: float = 0.0
     new_conflicts: int = 0
+    first_failed_cvsr_clause: str = ""
     llm_calls: int = 0
     tool_calls: int = 0
     repair_rounds: int = 0
@@ -93,14 +94,17 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     # object. Reuse that correspondence (generated_id → required_id) when matching
     # edges and bindings, so relations/bindings authored against method-generated ids
     # can align to the gold. Applied identically to ALL methods; no supplementation.
-    id_map = id_correspondence(nm["assignments"], nodes, nm["req_expanded_ids"])
+    # NOTE: the correspondence must index into the *expanded* generated list
+    # (nm["gen_expanded"]) — a count=N group node occupies N assignment slots, so
+    # passing the un-expanded `nodes` mis-aligns every id past a group node.
+    id_map = id_correspondence(nm["assignments"], nm.get("gen_expanded") or nodes, nm["req_expanded_ids"])
     em = match_edges(required=required_edges, generated=edges, equivalence_groups=task.get("equivalence_groups"),
                      id_map=id_map)
     bm = match_bindings(required=required_bindings, generated=bindings, id_map=id_map)
 
     n_req = len([_expand_count(r) for r in required])
     n_req_total = sum(max(1, int(r.get("count") or 1)) for r in required)
-    n_gen = len(nodes)
+    n_gen = sum(max(1, int(n.get("count") or 1)) for n in nodes)
     obj_prf = object_precision_recall(nm, n_required=n_req_total, n_generated=n_gen)
 
     # critical object recall
@@ -230,6 +234,25 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     if repair_success is not None:
         cvsr = cvsr and repair_success
 
+    # First failing CVSR clause (for failure decomposition, Task 8).
+    first_failed = ""
+    if not all_nodes:
+        first_failed = "all_nodes"
+    elif not all_critical:
+        first_failed = "all_critical"
+    elif not all_edges:
+        first_failed = "all_edges"
+    elif not all_bindings:
+        first_failed = "all_bindings"
+    elif not no_fatal:
+        first_failed = "no_fatal"
+    elif not evidence_ok:
+        first_failed = "evidence_ok"
+    elif repair_success is not None and not repair_success:
+        first_failed = "repair_success"
+    elif not cvsr:
+        first_failed = "other"
+
     # memory_query: override CVSR with the Query-CVSR verdict (answer-based).
     if category == "memory_query":
         from query_cvsr import evaluate_query_cvsr
@@ -255,6 +278,7 @@ def evaluate_task(*, task: dict[str, Any], method: str,
         evidence_precision=te["evidence_precision"],
         replay_success=rp["replay_success"],
         new_conflicts=_count_new_conflicts(violations, final_state),
+        first_failed_cvsr_clause=first_failed,
         llm_calls=llm_calls, tool_calls=tool_calls, repair_rounds=repair_rounds,
         tokens=tokens, cost=cost, latency_ms=latency_ms,
     )

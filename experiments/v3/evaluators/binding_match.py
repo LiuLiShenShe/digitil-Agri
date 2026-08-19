@@ -55,11 +55,33 @@ _UNIT_CANONICAL = {
     "parts_per_million": "ppm",
 }
 
+# Asset-policy authoring variants -> canonical form for fair comparison.
+# "lightweight" and "lightweight_glb" describe the same background-plant policy;
+# "high_fidelity" and "high-fidelity" the same focus policy. Methods and gold may
+# spell these differently; normalize so semantic equivalence is scored correctly.
+_POLICY_CANONICAL = {
+    "lightweight_glb": "lightweight_glb",
+    "lightweight": "lightweight_glb",
+    "high_fidelity": "high_fidelity",
+    "high-fidelity": "high_fidelity",
+    "highfidelity": "high_fidelity",
+    "procedural_model": "procedural_model",
+    "procedural-model": "procedural_model",
+    "trellis.2": "trellis.2",
+    "trellis": "trellis.2",
+}
+
 
 def _norm_value(v: Any) -> str:
     """Normalize a single metadata value, applying unit aliasing to a canonical form."""
     raw = _norm(str(v))
     return _UNIT_CANONICAL.get(raw, raw)
+
+
+def _norm_policy_value(v: Any) -> str:
+    """Normalize an asset-policy value via the policy aliasing table."""
+    raw = _norm(str(v))
+    return _POLICY_CANONICAL.get(raw, raw)
 
 
 def _norm_list(v: Any) -> set[str]:
@@ -123,7 +145,7 @@ def _asset_semantic_key(b: dict[str, Any], id_map: dict[str, str] | None = None)
     md = b.get("metadata") or {}
     btype = _norm(b.get("type") or "binding")
     contract_key = "asset_key" if btype == "asset" else "job_type"
-    return (btype, s, _norm_value(md.get(contract_key)), _norm_value(md.get("policy")))
+    return (btype, s, _norm_value(md.get(contract_key)), _norm_policy_value(md.get("policy")))
 
 
 def match_bindings(*, required: list[dict[str, Any]], generated: list[dict[str, Any]],
