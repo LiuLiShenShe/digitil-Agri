@@ -23,6 +23,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -50,6 +51,9 @@ METHODS = {
 }
 
 PUBLIC_FIELDS = {"task_id", "category", "task_type", "difficulty", "prompt", "initial_state"}
+FREEZE_ID = os.environ.get("FREEZE_ID", "freeze-local")
+COMMIT = os.environ.get("FREEZE_COMMIT", "e3e8351cefec3e82049676b57223952a96386495")
+GOLD_SHA = "61a48f610e051df8042c905229eb84409af4800268d652d90c93f02b193b4c61"
 
 
 def load_split(split: str, max_tasks: int | None = None) -> list[dict]:
@@ -128,8 +132,14 @@ def main() -> int:
     results_dir = ROOT / "experiments" / "v3" / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    # Write to a SEPARATE file so v3_runs.jsonl is untouched
-    diag_file = results_dir / "v3_diagnostic_runs.jsonl"
+    # Write to a SEPARATE freeze-named file (v3_diagnostic_80_<FREEZE_ID>.jsonl).
+    # Refuse to append to an existing file: each freeze gets a pristine file, and a
+    # stale file means a prior freeze's runs would corrupt this one's counts.
+    diag_file = results_dir / f"v3_diagnostic_80_{FREEZE_ID}.jsonl"
+    if diag_file.exists():
+        print(f"[diagnostic] ERROR: {diag_file.name} already exists; refusing to overwrite "
+              f"(stale freeze output). Use a new FREEZE_ID or archive the old file.")
+        return 3
     records = []
     t_start = time.time()
 
@@ -173,16 +183,29 @@ def main() -> int:
                     latency_ms=latency_ms,
                 )
                 rec = {
-                    "task_id": task.get("task_id"), "method": method_name,
+                    "task_id": task.get("task_id"), "task_type": task.get("task_type"),
+                    "method": method_name, "repeat": run_i + 1,
+                    # run UUID — unique per execution
+                    "run_uuid": str(uuid.uuid4()),
                     **{k: getattr(eval_result, k) for k in (
                         "cvsr", "object_p", "object_r", "object_f1", "critical_recall", "exact_quantity",
                         "relation_f1", "binding_f1", "fatal_violations", "nonfatal_violations",
                         "repair_success", "evidence_precision", "replay_success", "new_conflicts",
                         "llm_calls", "tool_calls", "repair_rounds", "tokens", "cost", "latency_ms")},
+                    "first_failed_cvsr_clause": eval_result.first_failed_cvsr_clause,
                     "budget": budget.summary(),
+                    # provenance / construction path
+                    "construction_path": (out.get("construction_path") or
+                                          (out.get("trace") or {}).get("construction_path") or
+                                          (out.get("traceSteps") and "stepwise_llm") or "none"),
+                    "selected_repair_actions": (out.get("selected_repair_actions") or
+                                               (out.get("trace") or {}).get("selected_repair_actions") or []),
                     "run_id": run_i + 1,
                 }
                 rec = stamp_record(rec)
+                rec["git_commit"] = COMMIT
+                rec["benchmark_gold_sha256"] = GOLD_SHA
+                rec["freeze_id"] = FREEZE_ID
                 records.append(rec)
                 with diag_file.open("a", encoding="utf-8") as fh:
                     fh.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")

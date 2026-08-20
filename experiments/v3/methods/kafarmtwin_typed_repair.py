@@ -214,6 +214,8 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
             "budget": budget.summary(),
             "conflicts": [],
+            "construction_path": "memory_query",
+            "selected_repair_actions": [],
             "fallback": False,
             "success": True,
         }
@@ -224,6 +226,8 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
     plan_objects: list[dict[str, Any]] = []
     relations: list[dict[str, Any]] = []
     bindings: list[dict[str, Any]] = []
+    selected_repair_actions: list[dict[str, Any]] = []
+    construction_path = "unknown"
 
     # If the task is a repair task, seed the scene from initial_state and verify modification.
     # B (P0-2): data_binding tasks ALSO carry a complete object graph in initial_state
@@ -244,6 +248,7 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # Repair task: the broken input scene IS the starting point. Seed from it and
         # let the typed repair loop actually fix it. Do NOT regenerate a fresh scene
         # from the prompt (that would ignore the error we are asked to repair).
+        construction_path = "seeded_initial_state"
         init_objs = (initial_state.get("objects") if isinstance(initial_state, dict) else initial_state) or []
         init_binds = (initial_state.get("bindings") if isinstance(initial_state, dict) else []) or []
         plan_objects = [dict(o) for o in init_objs]
@@ -256,6 +261,7 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
     elif is_data_bind and (task.get("initial_state") or {}).get("objects"):
         # data_binding: seed the deterministic object graph, emit bindings ONLY. The
         # LLM sees only the existing ids → no scene/id reinvention → binding_match aligns.
+        construction_path = "bindings_only_scene"
         from experiments.v3.harness.stepwise_builder import bindings_only_scene  # type: ignore
         built = bindings_only_scene(
             initial_state=task.get("initial_state"), prompt=task["prompt"],
@@ -271,6 +277,7 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # AssetCompiler (compile_asset_routes) -> BindingCompiler -> Validator -> TypedRepair.
         # The LLM only captures intent; the compiler + domain knowledge instantiate
         # structure, route assets, and author bindings. No id/hierarchy/asset reinvention.
+        construction_path = "knowledge_compiler"
         from experiments.v3.harness.semantic_compiler import build_scene_from_intent  # type: ignore
         graph = build_scene_from_intent(
             prompt=task["prompt"], llm_call_fn=llm_call_fn, budget=budget,
@@ -288,6 +295,7 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # so complex asset/bind scenes no longer overflow the model's single-response
         # output cap. Same mechanism as SingleAgent (fair); KAFarmTwin then runs its
         # typed repair loop over the emitted scene.
+        construction_path = "stepwise_llm"
         from experiments.v3.harness.stepwise_builder import stepwise_build_scene  # type: ignore
         from experiments.v3.harness.llm import ONTOLOGY_NOTE  # type: ignore
         built = stepwise_build_scene(
@@ -384,6 +392,13 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             chosen_action = (fix.get("content_json") or {}).get("action") or ""
         except Exception:
             chosen_action = ""
+        # provenance (NOT scored): record what the LLM chose so the run record can
+        # report selected repair actions truthfully.
+        selected_repair_actions.append({
+            "rule_id": _rule, "round": round_i + 1,
+            "candidate_actions": candidate_actions,
+            "chosen_action": chosen_action,
+        })
 
         # D2: execute the LLM's decision through the deterministic executor.
         # The executor never chooses — it only translates a chosen action into a
@@ -555,6 +570,8 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         "conflicts": new_conflicts,
         "new_conflict_count": len(new_conflicts),
         "repair_success": repair_ok,
+        "construction_path": construction_path,
+        "selected_repair_actions": selected_repair_actions,
         "fallback": False,
         "success": bool(plan_objects) and repair_ok,
     }

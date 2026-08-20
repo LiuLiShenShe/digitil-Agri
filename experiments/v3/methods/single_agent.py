@@ -29,6 +29,7 @@ def run_single_agent(*, task: dict[str, Any], registry: ToolRegistry,
             "answer": answer,
             "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
             "budget": budget.summary(),
+            "construction_path": "memory_query",
             "success": True,
         }
         return canonicalize_output(raw)
@@ -47,6 +48,7 @@ def run_single_agent(*, task: dict[str, Any], registry: ToolRegistry,
             "bindings": ((task.get("initial_state") or {}).get("bindings")) or [],
             "traceSteps": [],
             "budget": budget.summary(),
+            "construction_path": "bare_seed_no_repair",
             "success": bool(init_obj),
         })
 
@@ -75,6 +77,7 @@ def run_single_agent(*, task: dict[str, Any], registry: ToolRegistry,
             "bindings": bindings,
             "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
             "budget": budget.summary(),
+            "construction_path": "stepwise_llm",
             "success": bool(plan_objects),
         }
         return canonicalize_output(raw)
@@ -107,6 +110,7 @@ def run_single_agent(*, task: dict[str, Any], registry: ToolRegistry,
         "bindings": bindings,
         "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
         "budget": budget.summary(),
+        "construction_path": "stepwise_llm",
         "success": bool(plan_objects),
     }
     return canonicalize_output(raw)

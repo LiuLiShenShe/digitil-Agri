@@ -92,6 +92,13 @@ def canonicalize_output(raw: dict[str, Any]) -> dict[str, Any]:
         result["applied_patch_count"] = raw["applied_patch_count"]
     if "rollback_count" in raw:
         result["rollback_count"] = raw["rollback_count"]
+    # Construction-path + selected-repair-action provenance (NOT scored): lets the
+    # diagnostic runner report which construction mechanism ran and which repair
+    # operators the LLM selected, without affecting the CVSR scorer.
+    if "construction_path" in raw:
+        result["construction_path"] = raw["construction_path"]
+    if "selected_repair_actions" in raw:
+        result["selected_repair_actions"] = raw["selected_repair_actions"]
     # memory_query tasks produce a structured retrieval `answer`; preserve it so
     # the runner threads it into Query-CVSR. Not a graph artifact.
     if "answer" in raw:
