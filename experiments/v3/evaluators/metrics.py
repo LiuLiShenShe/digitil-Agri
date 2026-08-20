@@ -100,7 +100,8 @@ def evaluate_task(*, task: dict[str, Any], method: str,
     id_map = id_correspondence(nm["assignments"], nm.get("gen_expanded") or nodes, nm["req_expanded_ids"])
     em = match_edges(required=required_edges, generated=edges, equivalence_groups=task.get("equivalence_groups"),
                      id_map=id_map)
-    bm = match_bindings(required=required_bindings, generated=bindings, id_map=id_map)
+    bm = match_bindings(required=required_bindings, generated=bindings, id_map=id_map,
+                        prompt=task.get("prompt"))
 
     n_req = len([_expand_count(r) for r in required])
     n_req_total = sum(max(1, int(r.get("count") or 1)) for r in required)

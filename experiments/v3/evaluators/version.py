@@ -13,7 +13,7 @@ import hashlib
 import os
 from pathlib import Path
 
-EVALUATOR_VERSION = "evaluator_v2.2"
+EVALUATOR_VERSION = "evaluator_v2.3"
 
 # Scorer modules whose source contributes to the fingerprint.
 _SCORER_MODULES = (

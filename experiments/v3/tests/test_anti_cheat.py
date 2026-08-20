@@ -1323,3 +1323,220 @@ def test_T17_attach_all_rootless_batches_orphans():
     # nothing orphaned -> empty
     assert attach_all_rootless([{"id": "gh", "type": "Greenhouse"}],
                                [{"subject": "gh", "predicate": "contains", "object": "x"}]) == []
+
+
+# ---------------------------------------------------------------------------
+# 28. Phase 0.1: gold isolation — diagnostic runner must NOT pass _gold to methods.
+# ---------------------------------------------------------------------------
+
+def test_diagnostic_gold_isolated():
+    """Regression for Phase 0.1: run_asset_diagnostic previously called
+    method_fn(task=public) where public contained `_gold` (full gold record).
+    Methods must only ever see PUBLIC_FIELDS; gold belongs to the scorer."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from run_asset_diagnostic import _strip_public, PUBLIC_FIELDS
+    # Build a task the way load_split does (public + _gold attached)
+    fake_gold = {"task_id": "TN11-v2-asset", "required_nodes": [{"id": "secret"}],
+                 "goal_state": {"x": 1}, "expected_answer": "leak",
+                 "required_edges": [], "required_bindings": []}
+    public = {"task_id": "TN11-v2-asset", "task_type": "asset_routing",
+              "difficulty": "medium", "prompt": "build", "initial_state": {},
+              "_gold": fake_gold}
+    method_task = _strip_public(public)
+    # must be a strict subset of public fields
+    assert set(method_task).issubset(PUBLIC_FIELDS), \
+        f"method sees hidden fields: {set(method_task) - PUBLIC_FIELDS}"
+    for banned in ("_gold", "required_nodes", "required_edges", "required_bindings",
+                   "goal_state", "expected_output", "expected_answer", "gold_graph"):
+        assert banned not in method_task, f"method received leaked field: {banned}"
+    # category normalization is an allowed public transformation
+    assert method_task.get("category") == "asset"
+    # the scorer-side gold must remain available (unaffected)
+    assert "_gold" in public
+
+
+# ---------------------------------------------------------------------------
+# 29. Phase 0.2: repair_success must not be vacuously True.
+#    (Audited: _repair_adapter requires critical_objects + real change + no-op guard.)
+# ---------------------------------------------------------------------------
+
+def test_repair_success_not_vacuous():
+    """The scorer's repair_success must reject: empty critical set, no-op,
+    and a wrong binding that survives. Only a genuine replace_asset /
+    set_placeholder on the critical object counts."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluators"))
+    from register_adapters import _repair_adapter
+    critical = "pump_1"
+    correct_asset = "irrigation"
+    init_objects = [{"id": critical, "type": "Pump", "asset_key": "soy"}]
+    binding_wrong = [{"subject": critical, "target": "soy", "type": "asset",
+                      "metadata": {"asset_key": "tomato"}}]
+
+    goal = {"objects": [{"id": critical, "type": "Pump", "asset_key": correct_asset}]}
+
+    # (a) no critical_objects declared -> False (never vacuously True)
+    t = {"initial_state": {"objects": init_objects, "bindings": binding_wrong}}
+    ok, _ = _repair_adapter(t, {"final_state": {"objects": init_objects, "bindings": binding_wrong}})
+    assert ok is False, "empty critical_objects must fail, not vacuously pass"
+
+    # (b) no-op (final == initial) -> False
+    t = {"initial_state": {"objects": init_objects, "bindings": binding_wrong},
+         "critical_objects": [critical], "goal_state": goal}
+    ok, _ = _repair_adapter(t, {"final_state": {"objects": init_objects, "bindings": binding_wrong}})
+    assert ok is False, "no-op repair must fail"
+
+    # (c) wrong binding retained -> False
+    kept = [{"subject": critical, "target": "soy", "type": "asset",
+             "metadata": {"asset_key": "tomato"}}]
+    t = {"initial_state": {"objects": init_objects, "bindings": binding_wrong},
+         "critical_objects": [critical], "goal_state": goal}
+    ok, _ = _repair_adapter(t, {"final_state": {"objects": init_objects, "bindings": kept}})
+    assert ok is False, "retained wrong binding must fail"
+
+    # (d) genuine replace_asset -> success
+    fixed = [{"subject": critical, "target": critical, "type": "asset",
+              "metadata": {"asset_key": correct_asset}}]
+    ok, _ = _repair_adapter(t, {"final_state": {"objects": [{"id": critical, "type": "Pump",
+                                                             "asset_key": correct_asset}],
+                                                      "bindings": fixed}})
+    assert ok is True, "corrected asset_key on critical object must pass"
+
+
+# ---------------------------------------------------------------------------
+# 30. Phase 0.3: canonicalize_output must preserve provenance (conflicts)
+#    WITHOUT affecting the scored graph (nodes/edges/bindings).
+# ---------------------------------------------------------------------------
+
+def test_canonicalizer_preserves_conflicts_provenance():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "harness"))
+    from canonicalizer import canonicalize_output
+    raw = {
+        "nodes": [{"id": "g", "type": "Greenhouse", "role": "root"}],
+        "edges": [{"subject": "g", "predicate": "contains", "object": "p"}],
+        "bindings": [{"subject": "p", "target": "p", "type": "asset"}],
+        "traceSteps": [{"step": "n"}],
+        "conflicts": [{"rule_id": "R1", "status": "resolved"}],
+        "new_conflict_count": 1, "repair_ticket_count": 1,
+        "applied_patch_count": 1, "rollback_count": 0,
+    }
+    out = canonicalize_output(raw)
+    # scored graph is preserved (canonicalizer normalizes count/metadata defaults)
+    assert len(out["nodes"]) == len(raw["nodes"]) == 1
+    assert out["nodes"][0]["type"] == "Greenhouse"
+    assert out["nodes"][0]["count"] == 1
+    assert out["edges"] == raw["edges"]
+    assert {k: v for k, v in out["bindings"][0].items() if v} == dict(raw["bindings"][0])
+    # provenance preserved
+    assert out["conflicts"] == raw["conflicts"]
+    assert out["new_conflict_count"] == 1
+    assert out["repair_ticket_count"] == 1
+    assert out["rollback_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# 31. Phase 0.4: no repair operator bypasses LLM operator-selection (D2).
+#    The deterministic executor must only be reachable when the LLM chose the
+#    action from candidate_actions — never via a bare `rule_id -> patch`.
+# ---------------------------------------------------------------------------
+
+def test_no_repair_operator_bypasses_llm_selection():
+    """Static + structural guard: the only runtime entry to apply_action /
+    attach_all_rootless in the method is inside the LLM-chosen-action gate."""
+    import inspect
+    import ast
+    methods_dir = str(Path(__file__).resolve().parents[1] / "methods")
+    src = (Path(methods_dir) / "kafarmtwin_typed_repair.py").read_text()
+    tree = ast.parse(src)
+    # find the repair loop's if-statement that gates executor use
+    gate_line = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If):
+            for nchild in ast.walk(node.test):
+                if isinstance(nchild, ast.Name) and nchild.id == "chosen_action":
+                    gate_line = node.lineno
+                    break
+            if gate_line and isinstance(node.test, ast.BoolOp) and \
+               any(isinstance(v, ast.Name) and v.id == "candidate_actions"
+                   for v in ast.walk(node.test)):
+                break
+    assert gate_line is not None, "no chosen_action-in-candidate_actions gate found"
+    # candidate_actions membership means the LLM's selected action was validated
+    src_block = "\n".join(src.splitlines()[gate_line - 1:gate_line + 20])
+    assert "attach_all_rootless" in src_block or "apply_action" in src_block, \
+        "executor not reached from the gated block"
+    # R1/R4/R5/R6 must all be in candidate_actions vocabulary
+    sys.path.insert(0, methods_dir)
+    from typed_deterministic import candidate_actions_for
+    for rule, allowed_op in [("R1", "attach_to_root"), ("R4", "replace_asset"),
+                             ("R5", "fill_observes"), ("R6", "served_binding")]:
+        assert allowed_op in candidate_actions_for(rule), \
+            f"{allowed_op} not a candidate action for {rule}"
+
+
+# ---------------------------------------------------------------------------
+# 32. Phase 0.6 (evaluator_v2.3): the frozen data_binding tasks TN21-24 declare a
+#     concrete timestamp in the PUBLIC prompt ("时间戳 2026-09-01T00:00:00+08:00").
+#     The scorer must NOT silently drop it as annotation noise (that was the
+#     EVALUATOR_CONTRACT_BLOCKER): a method that omits the prompt-declared timestamp
+#     must fail BindF1. Conversely, tasks whose prompt never mentions a timestamp
+#     must NOT be penalized for not inventing one.
+# ---------------------------------------------------------------------------
+
+_BIND_TASK_PROMPT_TS = "将温室内传感器绑定到对应作物行。为关键植株绑定特征属性 growth_stage（单位 text，时间戳 2026-09-01T00:00:00+08:00）。"
+_NO_TS_PROMPT = "将温室内 2 个湿度传感器绑定到对应作物行。"
+
+
+def _ts_sensor_binding(subject: str, target: str, with_ts: bool) -> dict:
+    md = {"metrics": ["humidity"], "unit": "%"}
+    if with_ts:
+        md["timestamp"] = "2026-09-01T00:00:00+08:00"
+    return {"subject": subject, "target": target, "type": "sensor_bind", "metadata": md}
+
+
+def test_TN21_prompt_declared_timestamp_is_required():
+    """When the public prompt declares a timestamp, a binding that omits it
+    must fail BindF1 (EVALUATOR_CONTRACT_BLOCKER fix)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluators"))
+    from binding_match import match_bindings
+
+    req = [
+        {"subject": "row", "target": "row", "type": "sensor_bind",
+         "metadata": {"metrics": ["humidity"], "unit": "%",
+                      "timestamp": "2026-09-01T00:00:00+08:00"}},
+    ]
+    # generated omits the timestamp entirely -> metadata mismatch -> not matched
+    gen = [_ts_sensor_binding("row", "row", with_ts=False)]
+    m = match_bindings(required=req, generated=gen, id_map=None, prompt=_BIND_TASK_PROMPT_TS)
+    assert m["all_matched"] is False, "prompt-declared timestamp must be enforced"
+    assert m["matched"] == 0
+    assert m["missing_metadata"], "omitted timestamp must surface as metadata_mismatch"
+
+    # generated carries the correct timestamp -> matches
+    gen_ok = [_ts_sensor_binding("row", "row", with_ts=True)]
+    m2 = match_bindings(required=req, generated=gen_ok, id_map=None, prompt=_BIND_TASK_PROMPT_TS)
+    assert m2["all_matched"] is True, "correct timestamp must match"
+
+
+def test_no_ts_prompt_does_not_penalize_omission():
+    """When the prompt never mentions a timestamp, omitting it must NOT fail."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluators"))
+    from binding_match import match_bindings
+
+    req = [
+        {"subject": "row", "target": "row", "type": "sensor_bind",
+         "metadata": {"metrics": ["humidity"], "unit": "%",
+                      "timestamp": "2026-09-01T00:00:00+08:00"}},
+    ]
+    gen = [_ts_sensor_binding("row", "row", with_ts=False)]
+    m = match_bindings(required=req, generated=gen, id_map=None, prompt=_NO_TS_PROMPT)
+    assert m["all_matched"] is True, "no-ts prompt must drop timestamp as annotation noise"
+
+
+def test_prompt_declares_timestamp_heuristic():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluators"))
+    from binding_match import _prompt_declares_timestamp
+    assert _prompt_declares_timestamp(_BIND_TASK_PROMPT_TS) is True
+    assert _prompt_declares_timestamp(_NO_TS_PROMPT) is False
+    assert _prompt_declares_timestamp("build a greenhouse scene with 4 plants") is False

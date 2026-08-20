@@ -38,6 +38,15 @@ LEGACY = {"scene_construction": "scene", "asset_routing": "asset",
           "data_binding": "bind", "rule_repair": "repair", "memory_query": "mem"}
 
 
+def _strip_public(task: dict) -> dict:
+    """Return a copy with only public fields — methods must never see gold."""
+    out = {k: v for k, v in task.items() if k in PUBLIC_FIELDS}
+    tt = out.get("task_type") or out.get("category") or ""
+    if not out.get("category"):
+        out["category"] = LEGACY.get(tt, tt)
+    return out
+
+
 def load_split():
     bench = ROOT / "experiments" / "v3" / "benchmark" / "test_v2"
     gold_map = {}
@@ -78,17 +87,18 @@ def run_one(public, method_name, method_fn, llm, repeats, out_fh, task_filter=No
     for run_i in range(repeats):
         t0 = time.time()
         gold = public["_gold"]
+        method_task = _strip_public(public)  # methods see ONLY public fields; gold stays with scorer
         budget = BudgetEnforcer(BudgetConfig(max_llm_calls=30, max_tool_calls=100, max_repair_rounds=3))
         proxy = TraceProxy(task_id=public.get("task_id", ""), method=method_name)
-        ctx = make_ctx(public)
+        ctx = make_ctx(method_task)
         registry = ToolRegistry(ctx=ctx, trace_proxy=proxy, budget=budget)
         validator = ValidatorAPI()
-        if public.get("initial_state"):
-            ctx["scene_state"] = public["initial_state"]
-        if public.get("category") == "mem" and public.get("initial_state"):
-            ctx["memory_state"] = public["initial_state"]
+        if method_task.get("initial_state"):
+            ctx["scene_state"] = method_task["initial_state"]
+        if method_task.get("category") == "mem" and method_task.get("initial_state"):
+            ctx["memory_state"] = method_task["initial_state"]
         try:
-            out = method_fn(task=public, registry=registry, budget=budget, llm_call_fn=llm)
+            out = method_fn(task=method_task, registry=registry, budget=budget, llm_call_fn=llm)
         except Exception as e:
             out = {"nodes": [], "edges": [], "bindings": [], "traceSteps": [],
                    "budget": budget.summary(), "conflicts": [], "error": str(e)}

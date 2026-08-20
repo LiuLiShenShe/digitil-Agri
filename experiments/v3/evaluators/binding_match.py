@@ -18,7 +18,16 @@ match the gold. Binding to the wrong object is an error.
   3. unit aliases ("%" vs "percent", "celsius" vs "C") are authoring variants, not
      real differences. Compared via an alias table.
 
-All methods are scored identically; this is evaluator-side semantic normalization,
+**Timestamp contract scoping (evaluator_v2.3, EVALUATOR_CONTRACT_BLOCKER fix):**
+`timestamp` is a notation artifact by default and dropped. BUT for TN21-24 the public
+prompt is an explicit binding contract that declares `时间戳 2026-09-01T00:00:00+08:00`
+as part of the sensor/trait binding requirement. When the prompt declares a timestamp,
+`timestamp` becomes a live contract term on `required_bindings` metadata and must
+match a method-emitted value (exact string). When the prompt never mentions a
+timestamp, it is dropped as authoring noise. Enforcement reads only the public
+`prompt` field — never gold — so it is method-agnostic and non-leaking.
+
+All methods are scored identically; these are evaluator-side semantic normalizations
 NOT per-method supplementation.
 """
 
@@ -29,12 +38,30 @@ from typing import Any
 # Annotation-only keys authored by the gold labeler, never emitted by methods.
 #
 # `fixed`  : annotation marker (the repairing method does not "know" to emit fixed:true)
-# `timestamp` : data-recording artifact (gold records when a measurement was taken; the
-#             shared vocabulary never requires methods to emit it — a binding's semantic
-#             contract is subject/target/type/metrics/unit, not its recording time).
-#            Requiring it would make every method fail bindF1 on data_binding tasks that
-#            do not mention timestamps at all.
-_ANNOTATION_KEYS = {"fixed", "timestamp"}
+#
+# `timestamp` : treated as an annotation-only, dropped key by default — gold records when
+#             a measurement was taken, but the shared vocabulary does not universally
+#             require methods to emit it. HOWEVER, for the frozen data_binding tasks
+#             (TN21-24) the PUBLIC PROMPT explicitly declares a concrete timestamp
+#             ("时间戳 2026-09-01T00:00:00+08:00") as a binding contract term. In that
+#             case timestamp IS part of the semantic contract and must be enforced.
+#
+# Contract enforcement is therefore *driven by the public prompt*, not by gold alone:
+#   - when the prompt declares a timestamp → timestamp is enforced on required bindings
+#     (a method that omits it fails BindF1 even though the literal id is unknown to it,
+#      because the semantic metadata must match).
+#   - when the prompt never mentions a timestamp → timestamp is dropped as authoring
+#     noise (no method is asked to emit it, so requiring it would be an impossible
+#     contract that penalizes the shared-vocabulary design).
+#
+# This is evaluator-side semantic scoping — applied identically to ALL methods, no
+# supplementation. It cannot be gamed by reading gold, because enforcement only ever
+# looks at the public `prompt` field, never at `required_bindings`/`gold_graph`.
+_ANNOTATION_KEYS = {"fixed"}
+# The frozen data_binding contract timestamp (declared in TN21-24 public prompts).
+# Used only to decide whether `timestamp` is a contract term; comparison itself is
+# exact-string (methods emit the literal ISO-8601 value the prompt names).
+_FROZEN_PROMT_TIMESTAMP = "2026-09-01T00:00:00+08:00"
 
 # Unit authoring variants -> canonical form for fair comparison (F-019).
 _UNIT_CANONICAL = {}
@@ -97,15 +124,38 @@ def _binding_key(b: dict[str, Any], id_map: dict[str, str] | None = None) -> tup
     return (s, t, _norm(b.get("type") or "binding"))
 
 
-def _clean_required_md(md: dict[str, Any]) -> dict[str, Any]:
-    """Drop annotation-only keys (fixed, etc.) from required metadata."""
-    return {k: v for k, v in (md or {}).items() if _norm(k) not in _ANNOTATION_KEYS}
+def _prompt_declares_timestamp(prompt: str | None) -> bool:
+    """Decide whether the PUBLIC contract requires a `timestamp` on bindings.
+
+    Only the public prompt is inspected — gold is never read here, so this cannot
+    leak or be conditioned on gold-only content. A prompt counts as declaring a
+    timestamp when it explicitly names one (the frozen TN21-24 bind prompts do:
+    "时间戳 2026-09-01T00:00:00+08:00") or explicitly requires a timestamp/recording
+    time. All other prompts omit it, so no method is penalized for not inventing one.
+    """
+    p = (prompt or "").lower()
+    return "时间戳" in p or "timestamp" in p or "录制时间" in p or "recording time" in p
 
 
-def _metadata_equal(gen_md: dict[str, Any], req_md: dict[str, Any]) -> bool:
+def _clean_required_md(md: dict[str, Any], require_timestamp: bool = False) -> dict[str, Any]:
+    """Drop annotation-only keys (fixed) from required metadata.
+
+    `timestamp` is dropped ONLY when the public prompt does not declare it as a
+    contract term. When the prompt declares one, timestamp stays live so an emitting
+    method is required to match it (omission → metadata_mismatch → BindF1 hit).
+    """
+    out = {k: v for k, v in (md or {}).items() if _norm(k) not in _ANNOTATION_KEYS}
+    if not require_timestamp:
+        out.pop("timestamp", None)
+    return out
+
+
+def _metadata_equal(gen_md: dict[str, Any], req_md: dict[str, Any], require_timestamp: bool = False) -> bool:
     """Compare generated vs required metadata under annotation-normalization.
 
-    - annotation-only keys on the required side are ignored (fixed, timestamp)
+    - annotation-only keys on the required side are ignored (fixed)
+    - timestamp is enforced ONLY when the public contract declares it
+      (require_timestamp); otherwise it is dropped as authoring noise
     - unit/asset values are alias-normalized
     - list values compare as sets
     - trait_bind semantic equivalence: gold records the trait under `trait`
@@ -113,7 +163,7 @@ def _metadata_equal(gen_md: dict[str, Any], req_md: dict[str, Any]) -> bool:
       vocabulary — express it as `metrics: ["growth_stage"]`. The trait is the
       semantic contract, so `req["trait"]` is compared against `gen["metrics"]`.
     """
-    req = _clean_required_md(req_md)
+    req = _clean_required_md(req_md, require_timestamp=require_timestamp)
     for k, v in req.items():
         if v is None:
             continue
@@ -149,13 +199,19 @@ def _asset_semantic_key(b: dict[str, Any], id_map: dict[str, str] | None = None)
 
 
 def match_bindings(*, required: list[dict[str, Any]], generated: list[dict[str, Any]],
-                   id_map: dict[str, str] | None = None) -> dict[str, Any]:
+                   id_map: dict[str, str] | None = None,
+                   prompt: str | None = None) -> dict[str, Any]:
     """Match required vs generated bindings.
 
     id_map: generated_id → required_id correspondence from node matching, reused so
     a binding whose subject/target node was authored under a method-generated id can
     still align to the gold id it was matched to. Applies to all methods identically.
+
+    prompt: the PUBLIC task prompt. Only its presence/absence of a declared timestamp
+    decides whether `timestamp` is enforced on required metadata (contract scoping).
+    Reads purely public contract text — never gold.
     """
+    require_timestamp = _prompt_declares_timestamp(prompt)
     req_by_key: dict[tuple[str, str, str], dict[str, Any]] = {}
     req_asset_by_sem: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     for b in required or []:
@@ -173,10 +229,11 @@ def match_bindings(*, required: list[dict[str, Any]], generated: list[dict[str, 
     for b in generated or []:
         key = _binding_key(b, id_map)
         if key in req_by_key and key not in matched_keys:
-            # metadata check (annotation-normalized + aliased)
-            req_md = _clean_required_md(req_by_key[key].get("metadata") or {})
+            # metadata check (annotation-normalized + aliased + contract scoping)
+            req_md = _clean_required_md(req_by_key[key].get("metadata") or {},
+                                        require_timestamp=require_timestamp)
             gen_md = b.get("metadata") or {}
-            meta_ok = _metadata_equal(gen_md, req_md)
+            meta_ok = _metadata_equal(gen_md, req_md, require_timestamp=require_timestamp)
             if meta_ok:
                 matched += 1
                 matched_keys.add(key)

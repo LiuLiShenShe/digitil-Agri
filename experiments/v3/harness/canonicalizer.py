@@ -79,6 +79,19 @@ def canonicalize_output(raw: dict[str, Any]) -> dict[str, Any]:
     edges = [canonicalize_edge(e) for e in edges_raw]
     bindings = [canonicalize_binding(b) for b in bindings_raw]
     result = {"nodes": nodes, "edges": edges, "bindings": bindings, "trace": trace}
+    # Provenance (NOT scored): preserve conflict/repair bookkeeping so runners can
+    # report conflict_count / repair_rounds truthfully. These never feed the
+    # evaluator's CVSR — they are diagnostic records only.
+    if "conflicts" in raw:
+        result["conflicts"] = raw["conflicts"]
+    if "new_conflict_count" in raw:
+        result["new_conflict_count"] = raw["new_conflict_count"]
+    if "repair_ticket_count" in raw:
+        result["repair_ticket_count"] = raw["repair_ticket_count"]
+    if "applied_patch_count" in raw:
+        result["applied_patch_count"] = raw["applied_patch_count"]
+    if "rollback_count" in raw:
+        result["rollback_count"] = raw["rollback_count"]
     # memory_query tasks produce a structured retrieval `answer`; preserve it so
     # the runner threads it into Query-CVSR. Not a graph artifact.
     if "answer" in raw:
