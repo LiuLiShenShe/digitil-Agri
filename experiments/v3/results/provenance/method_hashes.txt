@@ -1,0 +1,9 @@
+# Method source hashes (sha256) — pinned at freeze for reproducibility
+FREEZE_ID: freeze-2026-08-20-e3e8351
+
+methods/kafarmtwin_typed_repair.py  fdbc0bc11cc49e7d6837c324b31256783dd2b983a9e8505958a01f27f1ec1453
+methods/single_agent.py             dd922f63af0aa3d2c20913c2a078257dc9a3d38bfe8940d11be4c75ede23277c
+methods/generic_repair.py           f562f72d4cc91b77dcfa2fe06ea1c72a7a83a6f5ce6e31e5620125e4cb85b862
+methods/generic_multia_agent.py     93f0359526cd1418610ab88b6a965c1d22b6ecc53a8f64295ae2bdc07534cb54
+methods/react.py                    3a03627158c37cbb157fb3bfc883202c2db0d6feb1e544328075977f0f35a5b0
+methods/typed_deterministic.py      693e88a73bdaf131c0751551460a54a78b5ecb50e669f4519e8357001c69415e

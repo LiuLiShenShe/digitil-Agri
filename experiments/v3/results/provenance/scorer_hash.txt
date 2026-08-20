@@ -1,0 +1,12 @@
+# Scorer (evaluator) fingerprint — sha256 over concatenated scorer module sources
+FREEZE_ID: freeze-2026-08-20-e3e8351
+
+EVALUATOR_VERSION: evaluator_v2.3
+SCORER_SOURCE_HASH: 8b7d4695f32523c96c79e649252f6f7b9f85eab9a7f6973a565553a740c47c5f
+
+Scorer modules (source contributing to fingerprint):
+metrics.py, node_match.py, edge_match.py, binding_match.py,
+rule_engine.py, replay.py, trace_evidence.py, state_match.py,
+query_cvsr.py, register_adapters.py, task_types.py
+
+This hash MUST match the `evaluator_hash` stamped on every run record.

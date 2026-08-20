@@ -1,0 +1,80 @@
+# experiment_manifest.yaml — KAFarmTwin v3 SOTA Gate freeze manifest
+# FREEZE_ID: freeze-2026-08-20-e3e8351
+# Frozen commit: e3e8351cefec3e82049676b57223952a96386495
+# After this freeze: only results/reports/logs may change; ANY change to
+#   methods/, evaluators/, harness/semantic_*, benchmark/, prompts/, budget,
+#   or model-config INVALIDATES the freeze and requires restarting from Phase 0.8.
+
+freeze_id: freeze-2026-08-20-e3e8351
+frozen_at: "2026-08-20T00:00:00Z"
+frozen_branch: paper/knowledge-agent-experiments
+git_commit: e3e8351cefec3e82049676b57223952a96386495
+
+benchmark:
+  name: test_v2
+  description: >
+    Frozen evaluation benchmark (development used it, so it is NOT a hidden/blind
+    benchmark — it is the frozen evaluation benchmark per the KAFarmTwin protocol).
+  n_tasks: 20
+  sha256:
+    gold:  61a48f610e051df8042c905229eb84409af4800268d652d90c93f02b193b4c61
+    public: 8321ed3dddaff902277f565c5dfa30d8652a929b9fa10b45516d10ba4fee6c9c
+  manifest_hash: f93230cb5922a75755879dec51cbf93e2d8edb37567f32a9a28adbc8b49b82ab
+
+evaluator:
+  version: evaluator_v2.3
+  source_sha256: 8b7d4695f32523c96c79e649252f6f7b9f85eab9a7f6973a565553a740c47c5f
+  scorer_modules:
+    - evaluators/metrics.py
+    - evaluators/node_match.py
+    - evaluators/edge_match.py
+    - evaluators/binding_match.py
+    - evaluators/rule_engine.py
+    - evaluators/replay.py
+    - evaluators/trace_evidence.py
+    - evaluators/state_match.py
+    - evaluators/query_cvsr.py
+    - evaluators/register_adapters.py
+    - evaluators/task_types.py
+
+model:
+  name: deepseek-ai/DeepSeek-V4-Flash
+  endpoint: https://api.siliconflow.cn/v1
+  # API key is NEVER stored in this manifest (see .env, gitignored).
+  api_key_reference: ".env (gitignored) — value NOT reproduced here"
+  inference:
+    max_tokens: 1200
+    temperature: 0.2
+    retries: 2
+    timeout_seconds: 180
+
+budget:
+  max_llm_calls: 30
+  max_tool_calls: 100
+  max_repair_rounds: 3
+
+methods:
+  KAFarmTwin-TypedRepair:
+    module: methods/kafarmtwin_typed_repair.py
+    sha256: fdbc0bc11cc49e7d6837c324b31256783dd2b983a9e8505958a01f27f1ec1453
+  SingleAgent-AllTools:
+    module: methods/single_agent.py
+    sha256: dd922f63af0aa3d2c20913c2a078257dc9a3d38bfe8940d11be4c75ede23277c
+  GenericRepair-AllTools:
+    module: methods/generic_repair.py
+    sha256: f562f72d4cc91b77dcfa2fe06ea1c72a7a83a6f5ce6e31e5620125e4cb85b862
+  GenericMultiAgent:
+    module: methods/generic_multia_agent.py
+    sha256: 93f0359526cd1418610ab88b6a965c1d22b6ecc53a8f64295ae2bdc07534cb54
+  ReAct-AllTools:
+    module: methods/react.py
+    sha256: 3a03627158c37cbb157fb3bfc883202f2db0d6feb1e544328075977f0f35a5b0
+  # shared knowledge / executor layer (not a scored method, pinned for reproducibility)
+  typed_deterministic:
+    module: methods/typed_deterministic.py
+    sha256: 693e88a73bdaf131c0751551460a54a78b5ecb50e669f4519e8357001c69415e
+
+integrity_flags:
+  gold_visible_to_method: false          # methods see only _strip_public(task)
+  prompt_declared_timestamp_enforced: true  # evaluator_v2.3 contract scoping
+  fix: gold_isolation_v23_timestamp_contract

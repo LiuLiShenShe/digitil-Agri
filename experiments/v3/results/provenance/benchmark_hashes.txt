@@ -1,0 +1,11 @@
+# Frozen benchmark hashes (test_v2) — verified against MANIFEST.sha256
+FREEZE_ID: freeze-2026-08-20-e3e8351
+
+test_v2_gold.jsonl:          61a48f610e051df8042c905229eb84409af4800268d652d90c93f02b193b4c61
+test_v2_public_inputs.jsonl: 8321ed3dddaff902277f565c5dfa30d8652a929b9fa10b45516d10ba4fee6c9c
+DATASHEET.md:                81a6c43750dd6fcf729ea0d766e0be0c8774baa4d053b721a7f145e8fd6cb859
+CHANGELOG.md:                e5c5a7923f1d65439dcee5ea1f59b258b6a5c624b69b995c5378f9fe9e7d987e
+ANNOTATION_REPORT.md:        c53724332f07301594023d6ea259712afef96045f90f70dda3cbed1442c5e9ce
+ANNOTATOR2_REVIEW.md:        63cc032354ff2dd610a5c5308ea3fdd2e43ae5d6ecc1439db117e81dc9b9d4d3
+
+Verified 2026-08-20: benchmark files NOT modified from manifest.
