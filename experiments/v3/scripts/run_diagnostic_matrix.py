@@ -52,7 +52,7 @@ METHODS = {
 
 PUBLIC_FIELDS = {"task_id", "category", "task_type", "difficulty", "prompt", "initial_state"}
 FREEZE_ID = os.environ.get("FREEZE_ID", "freeze-local")
-COMMIT = os.environ.get("FREEZE_COMMIT", "e3e8351cefec3e82049676b57223952a96386495")
+COMMIT = os.environ.get("FREEZE_COMMIT", "51beab112ff4d90082a094a6bee55f13dcf0e6f3")
 GOLD_SHA = "61a48f610e051df8042c905229eb84409af4800268d652d90c93f02b193b4c61"
 
 
