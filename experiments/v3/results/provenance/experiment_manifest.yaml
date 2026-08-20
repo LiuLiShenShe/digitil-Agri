@@ -8,7 +8,7 @@
 freeze_id: freeze-2026-08-20-e3e8351
 frozen_at: "2026-08-20T00:00:00Z"
 frozen_branch: paper/knowledge-agent-experiments
-git_commit: 78e0e67415dc0a9a8e808459e10a29ea1343d60f
+git_commit: 51beab112ff4d90082a094a6bee55f13dcf0e6f3
 
 benchmark:
   name: test_v2
