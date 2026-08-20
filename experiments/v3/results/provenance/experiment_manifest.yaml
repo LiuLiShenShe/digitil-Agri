@@ -8,7 +8,7 @@
 freeze_id: freeze-2026-08-20-e3e8351
 frozen_at: "2026-08-20T00:00:00Z"
 frozen_branch: paper/knowledge-agent-experiments
-git_commit: e3e8351cefec3e82049676b57223952a96386495
+git_commit: 51beab112ff4d90082a094a6bee55f13dcf0e6f3
 
 benchmark:
   name: test_v2
@@ -56,10 +56,10 @@ budget:
 methods:
   KAFarmTwin-TypedRepair:
     module: methods/kafarmtwin_typed_repair.py
-    sha256: fdbc0bc11cc49e7d6837c324b31256783dd2b983a9e8505958a01f27f1ec1453
+    sha256: 55ef93517d1dee9f640181197393ef6e16051c9e4d60012b1b89e87679d3c88d
   SingleAgent-AllTools:
     module: methods/single_agent.py
-    sha256: dd922f63af0aa3d2c20913c2a078257dc9a3d38bfe8940d11be4c75ede23277c
+    sha256: 1e3878243f58e5a2a0bf0890a95fea0b193eae6f146a31e86d4879fe51ae83d0
   GenericRepair-AllTools:
     module: methods/generic_repair.py
     sha256: f562f72d4cc91b77dcfa2fe06ea1c72a7a83a6f5ce6e31e5620125e4cb85b862
