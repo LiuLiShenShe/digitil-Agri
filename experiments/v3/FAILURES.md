@@ -119,3 +119,10 @@ T23 的表型指标建模为 traits[]+trait_bind 而非场景节点，原评分�
 - **根因**: 非方法概念缺陷，而是 R1 确定性执行器"一轮一对象"与修复预算（3 轮）相互作用的结构性饥饿。LLM 决策正确（选了 attach_to_root），是执行粒度问题。
 - **修复**: `typed_deterministic.py` 新增 `attach_all_rootless()`——LLM 选 attach_to_root 时在**单轮**内对所有孤儿对象批量产出 add_edge 算子（与既有 batched `{ops:[...]}` 路径一致，纯确定性结构工作，不新增 LLM 调用、不偏袒 KF）。`kafarmtwin_typed_repair.py` 修复循环在 R1+attach_to_root 时接入。单任务 TN32 复现 CVSR=T（objF1/relF1/bindF1/critR 全 1.0）。
 - **验证**: 94/94 测试全绿（+T16 fatal-first 排序回归 +T17 批量挂接回归）；最终诊断 TN31-34 KF **4/4 CVSR=T**、`repair_success=True`。
+
+## F-022 [ACTIVE] bind 任务两方法 0/8 — 共享 builder 未产出 prompt 声明的时间戳（evaluator_v2.3 暴露）
+- **状态**: ACTIVE（方法缺口，非 scorer 缺陷；两方法对称）
+- **发现**: Phase 1 80-run 中 TN21-24 bind 任务两方法均 `CVSR=0`、`fail=all_bindings`。evaluator_v2.3 正确 enforce 了 public prompt 声明的时间戳契约（`时间戳 2026-09-01T00:00:00+08:00`），但 `bindings_only_scene`/`stepwise_llm`（KF 与 SA 共享的 builder）的 metadata 模板只引导 `{metrics, unit, asset_key, policy}`，**未引导模型产出 `timestamp`** → 方法产出缺时间戳 → `matched=0/3`。
+- **根因**: 冻结前共享 builder 的提示词与 v2.2 时代的"timestamp 恒丢弃" scorer 相匹配（方法不需产出）；v2.3 收紧契约后，共享 builder 未同步。**这不是 KF 单方缺陷**——SA 用同一 builder 也 0/8。
+- **诚实定位**: bindF1 从旧恒 0 → v2.3 下 0.26-0.29（部分绑定匹配），是**改进非回归**。两方法在 bind 上对称失败。
+- **下一步**: 冻结外（Phase 2 后）若需攻克 bind，须在共享 builder 的 metadata 模板加入 timestamp 指引并重新冻结；当前冻结不修改。

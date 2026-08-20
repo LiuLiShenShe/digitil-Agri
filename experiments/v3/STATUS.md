@@ -111,3 +111,54 @@ satisfaction that neither method reaches. Hence paired CI is exactly [0.00, 0.00
 
 ### 3-way 判定：**READY_FOR_FULL_DIAGNOSTIC**
 KF 资产路径已从 0 变为稳定非零（8/8 CVSR=T，成本 ~$0.0008/run，低于 SingleAgent），KF 修复优势（4/4 vs 0/4）干净可分解，冻结集未触碰。下一步是 500-run 正式 gate（每任务×方法 5 次）在 v2.2 scorer 下重跑以重估 SOTA 判定。
+
+## Phase 0 整改 + evaluator_v2.3（2026-08-20）
+
+### Phase 0 完整性审计（0.1-0.7）全部 PASS
+- **0.1 gold isolation**: `run_asset_diagnostic.py` 方法只接收 `_strip_public(task)`；回归测试 `test_diagnostic_gold_isolated`。
+- **0.2 repair-success integrity**: `_repair_adapter` 需非空 critical + 真实修改 + 非 no-op；`test_repair_success_not_vacuous`。
+- **0.3 canonicalizer provenance**: `canonicalize_output` 保留 conflicts/repair 溯源（不参与评分）；`test_canonicalizer_preserves_conflicts_provenance`。
+- **0.4 D2 审计**: 修复算子仅经 LLM operator-selection 门控；`test_no_repair_operator_bypasses_llm_selection`（AST）。
+- **0.5 compiler path**: KF asset 走 `knowledge_compiler`（trace 记录 `construction_path`）。
+- **0.6 evaluator contract freeze → EVALUATOR_CONTRACT_BLOCKER 修复 → evaluator_v2.3**：
+  - **发现**: `binding_match._ANNOTATION_KEYS` 含 `timestamp` → TN21-24 public prompt 明确声明 `时间戳 2026-09-01T00:00:00+08:00`，但 timestamp 恒被丢弃 → 省略时间戳仍拿 BindF1 满分（scorer 合约违规）。
+  - **修复**: timestamp 契约由公共 prompt 声明驱动——prompt 声明时间戳时强制匹配，否则丢弃。`_prompt_declares_timestamp` 只读 public prompt，不读 gold。
+  - **版本**: `evaluator_v2.3`（version.py），scorer_hash `8b7d4695...`。
+  - 回归测试: `test_TN21_prompt_declared_timestamp_is_required`、`test_no_ts_prompt_does_not_penalize_omission`、`test_prompt_declares_timestamp_heuristic`。
+- **0.7 benchmark integrity**: gold `61a48f61...` / public `8321ed3d...` 与 manifest 完全一致（未触碰）。
+
+### 测试: 94 → **101/101 pass**
+
+### 冻结 (Phase 0.8)
+- **FREEZE_ID**: `freeze-2026-08-20-e3e8351`
+- **冻结代码 commit**: `51beab1`（evaluator_v2.3 + 全部 Phase 0 修复 + instrumentation）
+- `results/provenance/`: git_commit / git_status / pytest_result / environment / benchmark_hashes / scorer_hash / method_hashes / experiment_manifest.yaml（**无 API key**）
+
+## Phase 1 — 80-run clean sanity（2026-08-20，FINAL）
+
+**结果**: `results/v3_diagnostic_80_freeze-2026-08-20-e3e8351.jsonl`（80 runs，4669.8s，真实 DeepSeek-V4-Flash，冻结 commit `51beab1` + evaluator_v2.3）
+
+### 5-category 结果表（n=8 each）
+| Category | KAFarmTwin CVSR | SingleAgent CVSR | KF BindF1 | SA BindF1 | 备注 |
+|---|---|---|---|---|---|
+| scene | 0.500 | 0.500 | 0.000 | 0.000 | 平局（SA relF1 0.841 > KF 0.778） |
+| **asset** | **1.000** | 0.000 | **1.000** | 0.000 | **KF 8/8 全绿**（knowledge_compiler） |
+| bind | 0.000 | 0.000 | 0.292 | 0.260 | 两方法 0/8（见下方诚实说明） |
+| **repair** | **1.000** | 0.000 | **1.000** | 0.000 | **KF 8/8 全绿**（seeded + typed repair） |
+| mem | 1.000 | 1.000 | 0.000 | 0.000 | 两方法 8/8（确定性检索） |
+
+### Integrity（全部 80 条）
+- **API errors = 0**，eval_hash 全部匹配 `8b7d4695...`，gold hash 全部匹配 `61a48f61...`
+- KF non-mem 空节点 = 0；SA asset 空节点 3/8（方法缺陷非泄漏）
+- `run_uuid`/`construction_path`/`selected_repair_actions` 全字段齐全
+
+### 诚实说明：bind 两方法 0/8
+evaluator_v2.3 时间戳契约正确生效——但 `bindings_only_scene`/`stepwise_llm`（两方法共享 builder）的 metadata 模板未指引模型产出 prompt 声明的 timestamp → `all_bindings` 失败。这是**共享 builder 的方法缺口**（冻结前已存在，非 scorer 过严，对两方法对称），不会在冻结内修改。
+
+### 3-way 判定：**READY_FOR_FORMAL_GATE**
+- asset/repair: KF 稳定 8/8 优于 SA 0/8，KF 未重新全 0 ✓
+- scene/bind: 无方法回归（bind 从旧恒 0 提升到 bindF1 0.26-0.29，是改进）✓
+- mem: 两方法稳定 8/8 ✓
+- integrity: gold leak=0, API-failure=0, eval_hash mismatch=0, KF empty=0 ✓
+
+**下一步**: Phase 2 正式 500-run SOTA Gate（20 任务 × 5 方法 × 5 次，冻结 commit/evaluator_v2.3）。
