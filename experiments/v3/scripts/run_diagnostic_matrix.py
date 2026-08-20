@@ -193,6 +193,9 @@ def main() -> int:
                         "repair_success", "evidence_precision", "replay_success", "new_conflicts",
                         "llm_calls", "tool_calls", "repair_rounds", "tokens", "cost", "latency_ms")},
                     "first_failed_cvsr_clause": eval_result.first_failed_cvsr_clause,
+                    "n_nodes": len(out.get("nodes") or []),
+                    "n_edges": len(out.get("edges") or []),
+                    "n_bindings": len(out.get("bindings") or []),
                     "budget": budget.summary(),
                     # provenance / construction path
                     "construction_path": (out.get("construction_path") or
