@@ -126,3 +126,10 @@ T23 的表型指标建模为 traits[]+trait_bind 而非场景节点，原评分�
 - **根因**: 冻结前共享 builder 的提示词与 v2.2 时代的"timestamp 恒丢弃" scorer 相匹配（方法不需产出）；v2.3 收紧契约后，共享 builder 未同步。**这不是 KF 单方缺陷**——SA 用同一 builder 也 0/8。
 - **诚实定位**: bindF1 从旧恒 0 → v2.3 下 0.26-0.29（部分绑定匹配），是**改进非回归**。两方法在 bind 上对称失败。
 - **下一步**: 冻结外（Phase 2 后）若需攻克 bind，须在共享 builder 的 metadata 模板加入 timestamp 指引并重新冻结；当前冻结不修改。
+
+## F-023 [RESOLVED] Phase-2 SOTA Gate cost_ratio barrier
+- **状态**: RESOLVED
+- **描述**: 500-run Gate（2026-08-20→21）判定 SOTA_GATE=FAIL，1 个 condition：cost_ratio=2.0× vs SingleAgent（bar ≤1.5×）。
+- **根因**: KAFarmTwin knowledge_compiler + typed_repair 产物开销更高（$0.00060 vs SingleAgent $0.00027）。KF 在 CVSR（0.650 vs 0.280）、6/7 guardrails 全绿，唯一缺口为成本。
+- **诚实处理**: 未修改 threshold/scorer/baseline-budget/model；Gate FAIL 原样记录。KF vs 其它 baselines 成本比为 0.56×（GMA）、0.23×（ReAct）、1.68×（GRA），均不低于 SingleAgent。
+- **下一步**: Phase 3 — 优化 knowledge_compiler 去重/缓存 LLM 调用以降低 cost_ratio ≤1.5×，在冻结外重新 Gate。
