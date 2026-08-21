@@ -1,0 +1,15 @@
+task_id,method,category,cvsr,object_f1,critical_recall,relation_f1,binding_f1,repair_success,fatal_violation,evidence_precision,llm_calls,tool_calls,repair_rounds,tokens,cost_usd,latency_ms
+,,,,,,,,,,,,,,
+"--- KAFarmTwin-TypedRepair aggregates ---"
+TN01-v2-scene,KAFarmTwin-TypedRepair,scene,F,TBA,TBA,TBA,TBA,TBA,TBA,TBA,3,14,0,4042,0.000801,24458
+TN11-v2-asset,KAFarmTwin-TypedRepair,asset,T,F,T,1.0,0.0,False,True,1.0,3,15,2,5272,0.000762,24000
+TN21-v2-bind,KAFarmTwin-TypedRepair,bind,F,T,F,0.0,0.333,False,False,1.0,4,11,3,6483,0.000942,30000
+TN31-v2-repair,KAFarmTwin-TypedRepair,repair,T,T,T,T,1.0,True,False,1.0,3,7,3,3584,0.000505,20000
+TN41-v2-mem,KAFarmTwin-TypedRepair,mem,T,T,T,T,0.0,False,False,1.0,0,2,0,0,0.000000,5000
+,,,,,,,,,,,,,,
+"--- SingleAgent-AllTools aggregates ---"
+TN01-v2-scene,SingleAgent-AllTools,scene,F,TBA,TBA,TBA,TBA,TBA,TBA,TBA,3,10,0,3401,0.000603,21674
+TN11-v2-asset,SingleAgent-AllTools,asset,T,F,F,1.0,0.0,False,False,1.0,1,8,0,2786,0.000570,18000
+TN21-v2-bind,SingleAgent-AllTools,bind,F,T,F,0.0,0.333,False,False,1.0,1,5,0,1072,0.000180,8000
+TN31-v2-repair,SingleAgent-AllTools,repair,F,F,F,0.0,False,False,False,1.0,0,0,0,0,0.000000,5000
+TN41-v2-mem,SingleAgent-AllTools,mem,T,T,T,T,0.0,False,False,1.0,0,2,0,0,0.000000,5000

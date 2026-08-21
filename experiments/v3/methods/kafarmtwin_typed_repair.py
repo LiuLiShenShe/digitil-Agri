@@ -19,12 +19,23 @@ from __future__ import annotations
 
 import itertools
 import json
+import os
 from typing import Any
 
 from experiments.v3.harness.tools import ToolRegistry  # type: ignore
 from experiments.v3.harness.budget import BudgetEnforcer  # type: ignore
 from experiments.v3.harness.validator_api import ValidatorAPI  # type: ignore
 from experiments.v3.harness.canonicalizer import canonicalize_output  # type: ignore
+
+
+def _os_getenv(name: str) -> str:
+    """Read an ablation/env flag. Returns '' when unset. Centralized so all
+    feature toggles read consistently (default = empty = full KAFarmTwin)."""
+    try:
+        return os.getenv(name, "") or ""
+    except Exception:
+        return ""
+
 
 PATCH_OPS = {
     "add_node", "remove_node", "replace_type", "add_edge", "remove_edge",
@@ -277,18 +288,33 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # AssetCompiler (compile_asset_routes) -> BindingCompiler -> Validator -> TypedRepair.
         # The LLM only captures intent; the compiler + domain knowledge instantiate
         # structure, route assets, and author bindings. No id/hierarchy/asset reinvention.
-        construction_path = "knowledge_compiler"
-        from experiments.v3.harness.semantic_compiler import build_scene_from_intent  # type: ignore
-        graph = build_scene_from_intent(
-            prompt=task["prompt"], llm_call_fn=llm_call_fn, budget=budget,
-            registry=registry, agent_id="KAFarmTwin-Planner",
-            catalog=ctx.get("catalog", {}),
-        )
-        plan_objects = graph.objects
-        relations = graph.relations
-        bindings = graph.bindings
-        if plan_objects:
-            ctx["scene_state"] = {"objects": plan_objects, "bindings": bindings}
+        # Ablation A1: disable the compiler -> fall back to the shared stepwise builder
+        # (same mechanism as SingleAgent, fair) so we can isolate the compiler's
+        # contribution. Default (no env) = compiler path (unchanged).
+        if _os_getenv("KAFARMTWIN_ABLATE_COMPILER") == "1":
+            construction_path = "stepwise_llm"
+            from experiments.v3.harness.stepwise_builder import stepwise_build_scene  # type: ignore
+            from experiments.v3.harness.llm import ONTOLOGY_NOTE  # type: ignore
+            built = stepwise_build_scene(
+                prompt=task["prompt"], ontology_hint=ONTOLOGY_NOTE, llm_call_fn=llm_call_fn,
+                budget=budget, registry=registry, agent_id="KAFarmTwin-Planner",
+            )
+            plan_objects = built["nodes"]
+            relations = built["edges"]
+            bindings = built["bindings"]
+        else:
+            construction_path = "knowledge_compiler"
+            from experiments.v3.harness.semantic_compiler import build_scene_from_intent  # type: ignore
+            graph = build_scene_from_intent(
+                prompt=task["prompt"], llm_call_fn=llm_call_fn, budget=budget,
+                registry=registry, agent_id="KAFarmTwin-Planner",
+                catalog=ctx.get("catalog", {}),
+            )
+            plan_objects = graph.objects
+            relations = graph.relations
+            bindings = graph.bindings
+            if plan_objects:
+                ctx["scene_state"] = {"objects": plan_objects, "bindings": bindings}
     else:
         # Other (scene_build / asset_routing without seed): build the scene from the
         # prompt through the SHARED stepwise builder (objects -> relations -> bindings),
@@ -307,10 +333,51 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         bindings = built["bindings"]
 
     # ---- 2. Typed repair loop ----
+    # Ablation A2: skip the typed repair loop entirely and emit the as-built scene
+    # (equivalent to a method that constructs but does not repair, e.g. SingleAgent's
+    # no-repair path). Default (no env) = run the full repair loop (unchanged).
+    if _os_getenv("KAFARMTWIN_ABLATE_REPAIR") == "1":
+        repair_ok = True
+        if initial_state is not None and critical:
+            init_ids = {o.get("id") for o in (initial_state.get("objects") or [])}
+            final_ids = {o.get("id") for o in plan_objects}
+            for cid in critical:
+                if cid not in final_ids:
+                    repair_ok = False
+                elif cid in init_ids:
+                    init_obj = next((o for o in initial_state.get("objects") or [] if o.get("id") == cid), None)
+                    final_obj = next((o for o in plan_objects if o.get("id") == cid), None)
+                    if final_obj is not None and init_obj == final_obj:
+                        repair_ok = False
+        raw = {
+            "nodes": plan_objects, "edges": relations, "bindings": bindings,
+            "traceSteps": registry.trace_proxy.steps_for_trace() if registry.trace_proxy else [],
+            "budget": budget.summary(), "conflicts": [], "new_conflict_count": 0,
+            "repair_success": repair_ok, "construction_path": construction_path,
+            "selected_repair_actions": [], "fallback": False,
+            "success": bool(plan_objects) and repair_ok,
+        }
+        return canonicalize_output(raw)
+    # Early-stop bookkeeping: `_prev_post_sig` holds the violation signature AFTER the
+    # previous round's repair. At the top of each round we compare the current PRE-patch
+    # signature against it. When a round's patch leaves the violation set unchanged and
+    # only nonfatal warnings remain, the next round will be an identical futile re-attempt
+    # (e.g. an R1 hierarchy note on a seeded initial_state graph that binding repair
+    # restructures harmlessly but cannot fully clear). CVSR tolerates nonfatal warnings
+    # (only `no_fatal` blocks it), so extra LLM calls only raise cost. Fatals always force
+    # another round (excluded from the "all nonfatal" guard below).
+    _prev_post_sig: tuple = ()
     for round_i in range(budget.config.max_repair_rounds):
         verdict = validator.validate(nodes=plan_objects, edges=relations, bindings=bindings, task=task)
         violations = verdict["violations"]
         if not violations:
+            break
+        _pre_sig = tuple(sorted(
+            (v.get("rule_id"), v.get("severity"), frozenset(v.get("object_ids") or []))
+            for v in violations
+        ))
+        if (round_i > 0 and _pre_sig == _prev_post_sig
+                and all(v.get("severity") != "fatal" for v in violations)):
             break
         # classify + route: resolve FATAL violations before warnings, then by
         # CONFLICT_PRIORITY within each group. This prevents a cheap warning (e.g. R1
@@ -353,8 +420,7 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # still cutting cost on unambiguous structure work.
         _use_det = True
         try:  # env override allows the ablation to disable the executor path
-            import os as _os
-            _use_det = _os.getenv("KAFARMTWIN_USE_DETERMINISTIC_OPS", "1").strip() != "0"
+            _use_det = os.getenv("KAFARMTWIN_USE_DETERMINISTIC_OPS", "1").strip() != "0"
         except Exception:
             _use_det = True
 
@@ -403,8 +469,12 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
         # D2: execute the LLM's decision through the deterministic executor.
         # The executor never chooses — it only translates a chosen action into a
         # concrete patch, and returns None when it cannot (genuine ambiguity).
+        # Ablation A3: disable ontology/constraint enforcement in the executor ->
+        # the LLM produces the full patch directly with no knowledge-constrained
+        # instantiation. Default (no env) = constrained executor (unchanged).
+        _use_constrained_exec = _use_det and _os_getenv("KAFARMTWIN_ABLATE_ONTOLOGY") != "1"
         patch = {}
-        if _use_det and chosen_action in candidate_actions and chosen_action != "ask_user":
+        if _use_constrained_exec and chosen_action in candidate_actions and chosen_action != "ask_user":
             from experiments.v3.methods.typed_deterministic import apply_action  # type: ignore
             deterministic_patch = apply_action(
                 action=chosen_action, rule_id=_rule, violation=v,
@@ -525,6 +595,11 @@ def run_kafarmtwin_typed_repair(*, task: dict[str, Any], registry: ToolRegistry,
             conflict["status"] = "rolled_back"
             continue
         conflict["status"] = "verified"
+        # remember the post-repair signature for next-round early-stop comparison.
+        _prev_post_sig = tuple(sorted(
+            (v.get("rule_id"), v.get("severity"), frozenset(v.get("object_ids") or []))
+            for v in local["violations"]
+        ))
         # record the repair through the trace proxy: invoke the REAL rule.check tool
         # (which records a genuine request + response pair through the shared proxy),
         # so the evidence is strictly source-consistent and replayable — not a method-
