@@ -134,7 +134,57 @@ KF 资产路径已从 0 变为稳定非零（8/8 CVSR=T，成本 ~$0.0008/run，
 - **冻结代码 commit**: `51beab1`（evaluator_v2.3 + 全部 Phase 0 修复 + instrumentation）
 - `results/provenance/`: git_commit / git_status / pytest_result / environment / benchmark_hashes / scorer_hash / method_hashes / experiment_manifest.yaml（**无 API key**）
 
-## Phase 1 — 80-run clean sanity（2026-08-20，FINAL）
+## Phase 2 — 500-run Formal SOTA Gate（2026-08-20→21，FINAL）
+
+**结果**: `results/v3_runs.jsonl`（500 runs = 20 tasks × 5 methods × 5 repeats，真实 DeepSeek-V4-Flash，冻结 commit `51beab1` + evaluator_v2.3）
+
+### 运行条件
+- split=test_v2（20 tasks，frozen，gold sha `61a48f61...` 未修改）
+- evaluator: all 500 records stamped `evaluator_v2.3`/`8b7d4695f3...` — matches frozen source
+- error records: **0**；total runtime: 28196.5s (~7.8h)
+
+### SOTA_GATE = **FAIL**（1 condition）
+
+| condition | result | bar | status |
+|-----------|--------|-----|--------|
+| CVSR delta + paired bootstrap CI (KF vs SA) | Δ=+0.370, 95% CI [+0.15, +0.60] | Δ≥3pp & CI>0 | ✅ PASS |
+| pass^5 | 11/20 vs 4/20 | strictly > | ✅ PASS |
+| critical_recall | 1.000 | ≥0.95 | ✅ PASS |
+| fatal_rate | 0.000 | ≤0.01 | ✅ PASS |
+| evidence_precision | 1.000 | ≥0.95 | ✅ PASS |
+| replay_success | 1.000 | ≥0.95 | ✅ PASS |
+| **cost_ratio** | **2.00× vs SingleAgent** | ≤1.5× | ❌ **FAIL** |
+
+> cost_ratio 对比 uses the best-CVSR baseline (SingleAgent=0.280), per frozen gate logic（`run_sota_gate.py:306`）。
+> KF=$0.00060/run vs SingleAgent=$0.00027/run → 2.22×。KF vs 其它 baselines: 0.56× GMA, 0.23× ReAct, 1.68× GRA — 低于 1.5× 的只有更弱 baseline。
+
+### Evidence Table（100 runs each）
+
+| method | CVSR | pass5 | ObjF1 | CritR | RelF1 | BindF1 | Fatal | EvidP | Replay | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| KAFarmTwin-TypedRepair | **0.650** | 0.75 | 0.798 | 1.000 | 0.694 | 0.458 | 0.000 | 1.000 | 1.000 | $0.0006 |
+| SingleAgent-AllTools | 0.280 | 0.40 | 0.669 | 0.880 | 0.379 | 0.053 | 0.300 | 0.880 | 0.594 | $0.0003 |
+| GenericMultiAgent | 0.070 | 0.20 | 0.455 | 0.800 | 0.200 | 0.000 | 0.330 | 0.800 | 0.000 | $0.0011 |
+| GenericRepair-AllTools | 0.070 | 0.20 | 0.468 | 0.800 | 0.247 | 0.067 | 0.020 | 1.000 | 1.000 | $0.0004 |
+| ReAct-AllTools | 0.000 | 0.00 | 0.000 | 0.400 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | $0.0026 |
+
+### 判定：**SOTA_GATE=FAIL（honest）**
+- KAFarmTwin 在 **CVSR + 6/7 guardrails 上全面击败 SingleAgent**（Δ+0.370，CI 严格>0）。
+- 唯一失败：cost_ratio（2.0× ≤ 1.5×）。KF 的知识编译 + 类型化修复产物开销更高。
+- 宁可 Gate FAIL，绝不修改 threshold/scorer/baseline-budget。
+- **下一步**: 降低 KF 成本（knowledge-compiler 优化 / 去重 LLM 调用）以达 ≤1.5×，或在冻结外重新评估 cost_model。
+
+### per-task CVSR（KF vs SingleAgent）
+
+| task | KF | SA |
+|---|---|---|
+| TN01-04 scene | 0.4-0.6 | 0.2-0.6 |
+| TN11-14 asset | **1.0/1.0/1.0/0.8** | 0.0 |
+| TN21-24 bind | 0.0 | 0.0 |
+| TN31-34 repair | **1.0/1.0/1.0/1.0** | 0.0 |
+| TN41-44 mem | 1.0 | 1.0 |
+
+**Phase 1 — 80-run clean sanity（2026-08-20，FINAL）
 
 **结果**: `results/v3_diagnostic_80_freeze-2026-08-20-e3e8351.jsonl`（80 runs，4669.8s，真实 DeepSeek-V4-Flash，冻结 commit `51beab1` + evaluator_v2.3）
 

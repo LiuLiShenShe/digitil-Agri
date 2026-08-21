@@ -1,0 +1,7 @@
+[run_fair_baselines] split=test tasks=20 methods=['SingleAgent-AllTools', 'ReAct-AllTools', 'GenericMultiAgent-AllTools', 'GenericRepair-AllTools', 'KAFarmTwin-TypedRepair'] runs=5
+  SingleAgent-AllTools: CVSR=0.28 pass5=0.4 objF1=0.6688 critR=0.88 relF1=0.3792 bindF1=0.0533 fatal=0.3
+  ReAct-AllTools: CVSR=0.0 pass5=0.0 objF1=0.0 critR=0.4 relF1=0.0 bindF1=0.0 fatal=0.0
+  GenericMultiAgent-AllTools: CVSR=0.07 pass5=0.2 objF1=0.455 critR=0.8 relF1=0.1995 bindF1=0.0 fatal=0.33
+  GenericRepair-AllTools: CVSR=0.07 pass5=0.2 objF1=0.4683 critR=0.8 relF1=0.247 bindF1=0.0667 fatal=0.02
+  KAFarmTwin-TypedRepair: CVSR=0.65 pass5=0.75 objF1=0.7983 critR=1.0 relF1=0.6939 bindF1=0.4583 fatal=0.0
+  total runs: 500 in 28196.5s -> /data/fj/数字孪生-paper-work/experiments/v3/results
