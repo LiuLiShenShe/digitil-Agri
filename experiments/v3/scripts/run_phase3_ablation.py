@@ -12,10 +12,12 @@ added to kafarmtwin_typed_repair.py. Default (no env) is the full method.
   A3 (no ontology constraints):KAFARMTWIN_ABLATE_ONTOLOGY=1 -> LLM produces patches
       directly, no knowledge-constrained executor.
 
-Writes one file per variant (distinct from frozen v3_runs.jsonl):
+Writes one file per variant (distinct from frozen v3_runs.jsonl), APPENDING per-run
+so progress is observable and a crash loses at most the in-flight run:
   experiments/v3/results/v3_runs_ablation_A1.jsonl
   experiments/v3/results/v3_runs_ablation_A2.jsonl
   experiments/v3/results/v3_runs_ablation_A3.jsonl
+  experiments/v3/results/v3_runs_ablation_full.jsonl
 """
 import json
 import os
@@ -24,23 +26,12 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "experiments" / "v3"))
+sys.path.insert(0, str(ROOT))
 
 from experiments.v3.scripts.run_fair_baselines import (  # type: ignore
-    load_split, make_llm_call_fn, LLMClient, _rec_to_taskeval, make_ctx_for_task,
+    load_split, make_llm_call_fn, LLMClient, _rec_to_taskeval, run_one_method,
 )
 from experiments.v3.evaluators.metrics import aggregate  # type: ignore
-from experiments.v3.evaluators.version import stamp_record  # type: ignore
-import experiments.v3.scripts.run_ablation_v3 as RA  # type: ignore
-
-# We re-implement the runner here (not via run_ablation_v3.main) because that script
-# does not actually pass flags into the method. Here we set env vars that the method
-# reads, giving true component ablation.
-from experiments.v3.harness.tools import ToolRegistry  # type: ignore
-from experiments.v3.harness.budget import BudgetConfig, BudgetEnforcer  # type: ignore
-from experiments.v3.harness.trace_proxy import TraceProxy  # type: ignore
-from experiments.v3.harness.validator_api import ValidatorAPI  # type: ignore
-from experiments.v3.evaluators.metrics import evaluate_task  # type: ignore
 
 
 ABLATIONS = {
@@ -50,57 +41,51 @@ ABLATIONS = {
 }
 
 
-def _eval_dict(task, out, proxy_calls, budget):
-    """Mirror run_ablation_v3._eval_dict behavior (scored output)."""
-    te = evaluate_task(
-        predicted=out, task=task, proxy_calls=proxy_calls, budget=budget,
-        trace_steps=out.get("traceSteps", []),
-    )
-    return {
-        "cvsr": bool(te.cvsr), "object_p": te.object_p, "object_r": te.object_r,
-        "object_f1": te.object_f1, "critical_recall": te.critical_recall,
-        "exact_quantity": bool(te.exact_quantity), "relation_f1": te.relation_f1,
-        "binding_f1": te.binding_f1, "fatal_violations": te.fatal_violations,
-        "nonfatal_violations": te.nonfatal_violations,
-        "repair_success": te.repair_success, "evidence_precision": te.evidence_precision,
-        "replay_success": te.replay_success, "new_conflicts": te.new_conflicts,
-        "llm_calls": te.llm_calls, "tool_calls": te.tool_calls,
-        "repair_rounds": te.repair_rounds, "tokens": te.tokens, "cost": te.cost,
-        "latency_ms": te.latency_ms, "fallback": bool(out.get("fallback")),
-    }
-
-
-def run_variant(name, env_var, tasks, llm, runs):
-    from experiments.v3.scripts.run_fair_baselines import make_ctx_for_task  # type: ignore
+def run_variant(name, env_var, tasks, llm, runs, results_dir):
+    """Run one ablation variant via the SAME run_one_method path as the gate
+    (so memory_state seeding, canonical evaluation, gold handling are identical).
+    Only the env hook differs between variants. Writes per-run, prints progress."""
     # Clear any other ablation env, set this one.
     for ev in ABLATIONS.values():
         os.environ.pop(ev, None)
-    os.environ[env_var] = "1"
-    records = []
+    if env_var != "KAFARMTWIN_UNUSED":
+        os.environ[env_var] = "1"
+
+    out_path = results_dir / f"v3_runs_ablation_{name}.jsonl"
+    with out_path.open("w", encoding="utf-8") as fh:
+        pass
+
+    recs = []
+    t_start = time.time()
+    total = len(tasks) * runs
+    done = 0
     for task in tasks:
         for run_i in range(runs):
-            budget = BudgetEnforcer(BudgetConfig())
-            proxy = TraceProxy(task_id=task.get("task_id", ""), method=f"KAFarmTwin-{name}")
-            ctx = make_ctx_for_task(task)
-            registry = ToolRegistry(ctx=ctx, trace_proxy=proxy, budget=budget)
-            r0 = time.time()
             try:
-                out = RA.run_kafarmtwin_typed_repair(
-                    task=task, registry=registry, budget=budget, llm_call_fn=llm)
-                out = RA.canonicalize_output(out)
+                rec = run_one_method(
+                    method="KAFarmTwin-TypedRepair", task=task,
+                    llm_call_fn=llm, mock=False)
             except Exception as e:  # noqa
-                out = {"nodes": [], "edges": [], "bindings": [], "traceSteps": [],
-                       "fallback": True, "success": False}
-            rec = {
-                "task_id": task.get("task_id"), "method": f"KAFarmTwin-{name}",
-                "variant": name, "run_id": run_i + 1,
-                "latency_ms": round((time.time() - r0) * 1000, 1),
-                "construction_path": out.get("construction_path"),
-                **_eval_dict(task, out, proxy.calls(), budget),
-            }
-            rec = stamp_record(rec)
-            records.append(rec)
-    return records
+                rec = {"task_id": task.get("task_id"), "method": "KAFarmTwin-TypedRepair",
+                       "cvsr": False, "binding_f1": 0.0, "cost": 0.0,
+                       "repair_rounds": 0, "fatal_violations": 1,
+                       "object_f1": 0.0, "relation_f1": 0.0, "critical_recall": 0.0,
+                       "error": str(e)}
+            rec["variant"] = name
+            rec["run_id"] = run_i + 1
+            recs.append(rec)
+            with out_path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+            done += 1
+            print(f"  [{name}] {done}/{total} {task.get('task_id')} #{run_i+1}: "
+                  f"cvsr={rec.get('cvsr')} bindF1={rec.get('binding_f1')} "
+                  f"cost={rec.get('cost')} rounds={rec.get('repair_rounds')}", flush=True)
+    agg = aggregate([_rec_to_taskeval(r) for r in recs])
+    print(f"  [{name}] DONE in {time.time()-t_start:.1f}s: "
+          f"CVSR={agg.get('mean_cvsr',0):.4f} objF1={agg.get('object_f1',0):.4f} "
+          f"critR={agg.get('critical_recall',0):.4f} bindF1={agg.get('binding_f1',0):.4f} "
+          f"cost={agg.get('cost_mean',0):.6f}", flush=True)
+    return agg
 
 
 def main():
@@ -113,35 +98,19 @@ def main():
     runs = 5
     results_dir = ROOT / "experiments" / "v3" / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[ablation] {len(tasks)} tasks x {runs} runs, variants: "
+          f"{list(ABLATIONS.keys())} + full", flush=True)
 
     summary = {}
     for name, env_var in ABLATIONS.items():
-        print(f"[ablation] running {name} ({env_var}) ...")
-        recs = run_variant(name, env_var, tasks, llm, runs)
-        out_path = results_dir / f"v3_runs_ablation_{name}.jsonl"
-        with out_path.open("w", encoding="utf-8") as fh:
-            for r in recs:
-                fh.write(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n")
-        agg = aggregate([_rec_to_taskeval(r) for r in recs])
-        summary[name] = agg
-        print(f"  {name}: CVSR={agg.get('mean_cvsr',0):.4f} "
-              f"objF1={agg.get('object_f1',0):.4f} critR={agg.get('critical_recall',0):.4f} "
-              f"bindF1={agg.get('binding_f1',0):.4f} cost={agg.get('cost_mean',0):.6f}")
-    # Also run full (no env) for comparison.
-    print("[ablation] running full (no ablation) ...")
-    recs = run_variant("full", "KAFARMTWIN_UNUSED", tasks, llm, runs)
-    out_path = results_dir / "v3_runs_ablation_full.jsonl"
-    with out_path.open("w", encoding="utf-8") as fh:
-        for r in recs:
-            fh.write(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n")
-    agg = aggregate([_rec_to_taskeval(r) for r in recs])
-    summary["full"] = agg
-    print(f"  full: CVSR={agg.get('mean_cvsr',0):.4f} objF1={agg.get('object_f1',0):.4f} "
-          f"critR={agg.get('critical_recall',0):.4f} bindF1={agg.get('binding_f1',0):.4f} "
-          f"cost={agg.get('cost_mean',0):.6f}")
+        print(f"[ablation] >>> {name} ({env_var})", flush=True)
+        summary[name] = run_variant(name, env_var, tasks, llm, runs, results_dir)
+    print("[ablation] >>> full (no ablation)", flush=True)
+    summary["full"] = run_variant("full", "KAFARMTWIN_UNUSED", tasks, llm, runs, results_dir)
+
     with (results_dir / "v3_ablation_summary.json").open("w", encoding="utf-8") as fh:
-        json.dump(summary, fh, indent=2)
-    print(f"[ablation] done -> {results_dir}")
+        json.dump({k: {kk: vv for kk, vv in v.items()} for k, v in summary.items()}, fh, indent=2)
+    print(f"[ablation] ALL DONE -> {results_dir}", flush=True)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,5 @@
+variant,n_runs,mean_cvsr,mean_object_f1,mean_relation_f1,mean_binding_f1,mean_repair_rounds,mean_cost_usd,mean_critical_recall,mean_fatal_rate
+A1_no_compiler,100,0.3700,0.7211,0.3589,0.3292,0.57,0.000443,0.9500,0.0100
+A2_no_typed_repair,100,0.5800,0.7976,0.5369,0.3292,0.00,0.000180,1.0000,0.2200
+A3_no_ontology,100,0.5300,0.7956,0.5217,0.4525,0.68,0.000516,1.0000,0.0000
+full,100,0.5500,0.7963,0.5053,0.5292,0.69,0.000331,1.0000,0.0000

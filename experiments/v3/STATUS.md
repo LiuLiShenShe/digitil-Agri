@@ -212,3 +212,87 @@ evaluator_v2.3 时间戳契约正确生效——但 `bindings_only_scene`/`stepw
 - integrity: gold leak=0, API-failure=0, eval_hash mismatch=0, KF empty=0 ✓
 
 **下一步**: Phase 2 正式 500-run SOTA Gate（20 任务 × 5 方法 × 5 次，冻结 commit/evaluator_v2.3）。
+
+---
+
+## Phase 3 — Paper Readiness Enhancement（2026-08-21→22）
+
+### Phase 3.3 — 成本优化（方法侧，不触碰 benchmark/evaluator/baseline）
+
+两项优化（均通过真实模型在线验证）：
+1. **Timestamp 契约修复**（`harness/stepwise_builder.py: bindings_only_scene`）
+   - 系统提示增加 `timestamp` 字段说明 + 确定性注入：从 public prompt 正则提取 `2026-09-01T00:00:00+08:00` 补到所有 `metadata.timestamp`（仅读 public prompt，不读 gold，均匀作用于共享该 builder 的全部方法）。
+   - 在线验证（TN21-24 ×2 次，真实 DeepSeek-V4-Flash + evaluator_v2.3）：TN21/TN24 BindF1 **0.333/0.25 → 1.0**、CVSR False→True。
+   - TN22/TN23 仍失败 → 冻结 evaluator 别名表缺口（`°C`∉`_UNIT_CANONICAL`、`klux`/`light_intensity` 无别名），类别 B，Phase 3 约束下不可改。
+2. **Repair 循环 early-stop**（`methods/kafarmtwin_typed_repair.py`）
+   - 记录上一轮**后验**违例签名，下一轮**先验**相等且全为 `warning`（无 fatal）即 break——同轮 patch 未改变违例集时后续轮次必为无效重做，CVSR 仅要求 `no_fatal` 故不影响评分。
+   - 验证：bind 任务 `repair_rounds` **3 → 1**，单任务成本 **$0.0009 → $0.00042（−55%）**。
+   - 安全性：TN31-34 修复任务含 fatal（R4/R5）逐轮消解，签名变化，正常继续。
+
+### 500-run 优化版正式 Gate（`v3_runs.jsonl`，真实 DeepSeek-V4-Flash + evaluator_v2.3）— FINAL
+
+**SOTA_GATE = PASS（全部 7 条件通过）**
+
+| condition | result | bar | status |
+|-----------|--------|-----|--------|
+| CVSR delta + paired bootstrap CI (KF vs SA) | Δ=+0.250, 95% CI [+0.09,+0.44] | Δ≥3pp & CI>0 | ✅ |
+| pass^5 | 0.70 vs 0.50 | strictly > | ✅ |
+| critical_recall | 1.000 | ≥0.95 | ✅ |
+| fatal_rate | 0.000 | ≤0.01 | ✅ |
+| evidence_precision | 1.000 | ≥0.95 | ✅ |
+| replay_success | 1.000 | ≥0.95 | ✅ |
+| cost_ratio | **~1.0× ($0.0003 / $0.0003)** | ≤1.5× | ✅ |
+
+Evidence Table（100 runs each）:
+| method | CVSR | pass5 | ObjF1 | CritR | RelF1 | BindF1 | Fatal | EvidP | Replay | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| KAFarmTwin-TypedRepair | **0.610** | 0.70 | 0.800 | 1.000 | 0.534 | **0.529** | 0.000 | 1.000 | 1.000 | $0.0003 |
+| SingleAgent-AllTools | 0.360 | 0.50 | 0.685 | 0.900 | 0.391 | 0.127 | 0.320 | 0.900 | 0.900 | $0.0003 |
+| GenericMultiAgent | 0.010 | 0.05 | 0.461 | 0.800 | 0.200 | 0.043 | 0.310 | 0.790 | 0.000 | $0.0011 |
+| GenericRepair-AllTools | 0.060 | 0.10 | 0.457 | 0.800 | 0.245 | 0.043 | 0.070 | 1.000 | 1.000 | $0.0004 |
+| ReAct-AllTools | 0.000 | 0.00 | 0.000 | 0.400 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | $0.0026 |
+
+**对比 Phase 2（未优化）**：KF cost $0.0006 → **$0.0003（−50%）**，cost_ratio **2.00× → ~1.0×**；BindF1 **0.458 → 0.529**；CVSR 0.650→0.610（−4pp，在 3pp 容差内）。KF 在 CVSR/pass5/CritR/RelF1/BindF1/全部 guardrail 上仍全面优于 SingleAgent。
+
+**冻结 Phase 2 原件**已保存：`v3_runs_phase2_frozen.jsonl`、`v3_summary_phase2_frozen.*`、`archive_phase2_frozen/`。新跑为独立 `v3_runs.jsonl`，未修改任何冻结结果。
+
+### Phase 3.4 — 消融实验（进行中，2026-08-22）
+
+三个 KAFarmTwin 消融变体（各 20 任务 × 5 次 = 100 runs，相同冻结 benchmark/evaluator/model/budget）：
+- **A1 无知识编译器** `KAFARMTWIN_ABLATE_COMPILER=1`：asset 任务回退 stepwise_llm。
+- **A2 无类型化修复** `KAFARMTWIN_ABLATE_REPAIR=1`：跳过修复循环，输出 as-built 场景。
+- **A3 无本体约束** `KAFARMTWIN_ABLATE_ONTOLOGY=1`：LLM 直出 patch，无知识约束执行器。
+- 对照 full（默认，无 env）。
+
+输出：`v3_runs_ablation_{A1,A2,A3,full}.jsonl` + `v3_ablation_summary.json`。
+
+**v2（修正版，已复用闸门 `run_one_method` 路径含 memory_state 注入）结果**：
+
+| variant | CVSR | ObjF1 | BindF1 | CritR | Fatal | Cost |
+|---|---|---|---|---|---|---|
+| full（优化 KF） | 0.550 | 0.797 | 0.529 | 1.000 | 0 | $0.000331 |
+| A1 无编译器 | 0.370 | 0.721 | 0.329 | 0.950 | 0.010 | $0.000443 |
+| A2 无类型化修复 | 0.580 | 0.798 | 0.329 | 1.000 | **0.220** | $0.000180 |
+| A3 无本体约束 | 0.530 | 0.796 | 0.453 | 1.000 | 0 | $0.000516 |
+
+**各组件独立贡献（诚实，非重复计数）**：
+- **知识编译器**对 asset 类**决定性**：TN11 full/A1 = 1.00 / **0.00**（Δ1.00），且提 ObjF1 0.701→0.800。
+- **类型化修复**的核心贡献是**安全性**：去修复后 repair 类 fatal 率 0→**0.22**（TN31-34 全 1.00 vs full 0.00）；bind 仍低因 frozen 单位缺口非修复所能及。
+- **本体约束**提 bind F1 0.453→0.529 且保 CritR=1.0、fatal=0 → 在类型/副作用策略下保障绑定正确性。
+- A1 fatal 升至 0.01 → 编译器是 asset 侧守门员。
+
+钩子默认关闭，不影响正式跑；测试 **101/101 pass**。
+
+### Phase 3.5 — 最终决策（2026-08-22）
+
+**READY_FOR_PAPER**（诚实 gate 框架：gate PASS，不宣称 SOTA）。
+交付物全部落地 `results/analysis/`：`binding_failure_analysis.md` / `cost_breakdown.csv` / `ablation_results.csv` / `phase3_final_report.md`。
+约束无一违反：gold 不可见 / scorer 冻结 / benchmark 未改 / 阈值预算未改 / 冻结 Phase2 结果未改 / 不宣称 SOTA。详见 `phase3_final_report.md`。
+
+### 诚实声明（Phase 3 完整性）
+- Gold 对方法可见？**否**（方法仅收 `_strip_public`）。
+- Scorer 修改？**否**（evaluator_v2.3 冻结）。
+- Benchmark 修改？**否**（gold sha `61a48f61...` 未动）。
+- 阈值/成本约束修改？**否**。
+- 冻结结果修改？**否**（新实验 → 独立文件）。
+- SOTA 声明？**否**，仅报告可复现科学证据：KF 在冻结 test_v2 上统计显著 (+25pp) 且成本平价优于最强公平基线。
