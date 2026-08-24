@@ -1,7 +1,7 @@
 # Phase 3 Final Report — KAFarmTwin-TypedRepair Paper Readiness
 
-**Status: READY_FOR_PAPER** (honest gate framing — see §5)
-**Date**: 2026-08-22
+**Status: READY_FOR_PAPER** (Phase-4 audit revised: three separate judgments — CODE_GATE=PASS, OPTIMIZATION_GUARD=FAIL, PAPER_READINESS=CONDITIONAL PASS; see `phase4_evidence_audit.md`)
+**Date**: 2026-08-22; **Phase-4 corrections applied**: 2026-08-23
 **Frozen baseline (gate)**: `results/v3_runs_phase2_frozen.jsonl` — unmodified.
 **Optimized method (this round)**: `results/v3_runs.jsonl` — independent 500-run file.
 **Ablations**: `results/v3_runs_ablation_{A1_no_compiler,A2_no_typed_repair,A3_no_ontology,full}.jsonl`.
@@ -15,7 +15,7 @@
 | Criterion | Status |
 |---|---|
 | (a) Bind failure classified & documented | ✅ §2 |
-| (b) Cost 2.0× root-caused & optimized to ≤1.5× | ✅ §3 (≈1.0×) |
+| (b) Cost 2.0× root-caused & optimized to ≤1.5× | ✅ §3 (exact 1.24×) |
 | (c) Ablations show each component contributes | ✅ §4 |
 | (d) Honest SOTA-gate statement | ✅ §5 (gate PASS; no SOTA claim) |
 | (e) No integrity violations | ✅ §6 |
@@ -56,9 +56,9 @@ Root-cause stack (full per-task trace in `binding_failure_analysis.md` §6):
 | fatal_rate | 0.000 | ≤0.01 | ✅ |
 | evidence_precision | 1.000 | ≥0.95 | ✅ |
 | replay_success | 1.000 | ≥0.95 | ✅ |
-| cost_ratio | **≈1.0× ($0.0003/$0.0003)** | ≤1.5× | ✅ |
+| cost_ratio | **1.24× exact ($0.0003401/$0.0002747)** | ≤1.5× | ✅ |
 
-**SOTA_GATE = PASS (all 7 conditions).** Note this uses the *honest* gate logic — not a SOTA claim (see §5). Cost: Phase-2 unoptimized $0.0006 → $0.0003 (−50%); BindF1 0.458 → 0.529; aggregate CVSR 0.650 → 0.610 (−4 pp, within the 3 pp quality tolerance). Frozen Phase-2 artifact preserved at `v3_runs_phase2_frozen.jsonl` + `archive_phase2_frozen/`.
+**SOTA_GATE = PASS (all 7 conditions, judged by gate code only).** This is *gate logic* output — not a SOTA claim (see §5). Cost: Phase-2 unoptimized $0.0006 → **$0.0003401 exact (−43%)**; BindF1 0.458 → 0.529; aggregate CVSR 0.650 → 0.610 (**−4.0 pp regression vs Phase-2 frozen — exceeds the 3 pp optimization tolerance; see phase4_evidence_audit.md §4.2: OPTIMIZATION_GUARD = FAIL**, while the gate code itself has no such condition so CODE_GATE remains PASS). Exact cost ratio KF/SingleAgent = **1.24×** ($0.0003401 / $0.0002747, unrounded per-run costs) ≤ 1.5× bar — an earlier "≈1.0×" figure here was a 4-decimal rounding artifact (`metrics.py:351`) and is retracted. Frozen Phase-2 artifact preserved at `v3_runs_phase2_frozen.jsonl` + `archive_phase2_frozen/`.
 
 ---
 
@@ -73,9 +73,9 @@ Root-cause stack (full per-task trace in `binding_failure_analysis.md` §6):
 | A2 no typed repair | 0.580 | 0.798 | 0.329 | 1.000 | **0.220** | $0.000180 |
 | A3 no ontology | 0.530 | 0.796 | 0.453 | 1.000 | 0 | $0.000516 |
 
-**Per-component evidence (honest, no double-counting):**
-- **Knowledge compiler** is *decisive* on the asset category: TN11 full/A1 = 1.00 / **0.00** (Δ1.00). It also improves scene/object quality (asset ObjF1 0.701→0.800). → **contributes essential asset coverage**.
-- **Typed repair**'s headline contribution is **safety, not nominal CVSR**: with repair disabled (A2), the repair category becomes fatal in 22% of runs (TN31 TN32 TN33 TN34 all flip fatal=1.00/1.00/1.00/1.00 vs full's 0.00); bind F1 stays low (0.329) because repair doesn't fix the frozen unit mismatch. → **contributes fatal-elimination (guarantee of "no destructive patch applied")**, the exact property the ontology-constrained executor depends on.
+**Per-component evidence (honest, no double-counting; full vs gate-KF are INDEPENDENT runs — see phase4_evidence_audit.md §5):**
+- **Knowledge compiler** is *decisive* on the asset category: TN11 full/A1 = 1.00 / **0.00** (Δ1.00). It also lifts asset-category object quality: TN11 ObjF1 0.655 (A1) → 0.996 (full), n=5 each. → **contributes essential asset coverage**.
+- **Typed repair**'s contribution is **safety/fatal-elimination, NOT CVSR**: A2's CVSR (0.580) is actually *higher* than full (0.550) — no CVSR credit may be claimed. With repair disabled, the repair-category fatal rate jumps 0→**0.220** overall, and TN31–34 flip to fatal in **every A2 run (20/20)** while full is clean on all four tasks (paired flips: A2-fatal/full-clean=22, reverse=0). → contributes the guarantee that no destructive patch is applied — the exact property the ontology-constrained executor depends on.
 - **Ontology constraints** lift bind F1 from 0.453→0.529 (A3 vs full) on the bind category and keep CritR=1.0, at no fatal cost → **contributes binding correctness under type/side-effect policy**.
 - A1 raises fatal to 0.01 (borderline): an asset task missing the compiler can emit an un-checked asset, confirming the compiler's role as the asset-side gatekeeper.
 

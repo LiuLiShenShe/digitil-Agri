@@ -231,7 +231,7 @@ evaluator_v2.3 时间戳契约正确生效——但 `bindings_only_scene`/`stepw
 
 ### 500-run 优化版正式 Gate（`v3_runs.jsonl`，真实 DeepSeek-V4-Flash + evaluator_v2.3）— FINAL
 
-**SOTA_GATE = PASS（全部 7 条件通过）**
+**SOTA_GATE = PASS（全部 7 条件通过，仅按 Gate 代码实现判定）**
 
 | condition | result | bar | status |
 |-----------|--------|-----|--------|
@@ -241,18 +241,24 @@ evaluator_v2.3 时间戳契约正确生效——但 `bindings_only_scene`/`stepw
 | fatal_rate | 0.000 | ≤0.01 | ✅ |
 | evidence_precision | 1.000 | ≥0.95 | ✅ |
 | replay_success | 1.000 | ≥0.95 | ✅ |
-| cost_ratio | **~1.0× ($0.0003 / $0.0003)** | ≤1.5× | ✅ |
+| cost_ratio | **精确 1.24× ($0.0003401 / $0.0002747，未舍入)** | ≤1.5× | ✅ |
+
+> **Phase 4 审计修正（2026-08-23）**：此前写的 "≈1.0×" 是 `metrics.py:351` 将 cost_mean 舍入到
+> 4 位小数造成的伪影；按原始逐 run 成本重算，精确比值为 **1.24×**（余量约 0.26×，非平价）。
+> CVSR 回退 0.650→0.610 = **−4.0pp > 3pp 优化守卫容差** → **OPTIMIZATION_GUARD = FAIL**
+> （Gate 代码本身无此条件，故 CODE_GATE 仍 PASS）。三项独立判定见
+> `results/analysis/phase4_evidence_audit.md`。
 
 Evidence Table（100 runs each）:
 | method | CVSR | pass5 | ObjF1 | CritR | RelF1 | BindF1 | Fatal | EvidP | Replay | Cost |
 |---|---|---|---|---|---|---|---|---|---|---|
 | KAFarmTwin-TypedRepair | **0.610** | 0.70 | 0.800 | 1.000 | 0.534 | **0.529** | 0.000 | 1.000 | 1.000 | $0.0003 |
-| SingleAgent-AllTools | 0.360 | 0.50 | 0.685 | 0.900 | 0.391 | 0.127 | 0.320 | 0.900 | 0.900 | $0.0003 |
+| SingleAgent-AllTools | 0.360 | 0.50 | 0.685 | 0.900 | 0.391 | 0.127 | 0.320 | 0.900 | 0.607 | $0.0003 |
 | GenericMultiAgent | 0.010 | 0.05 | 0.461 | 0.800 | 0.200 | 0.043 | 0.310 | 0.790 | 0.000 | $0.0011 |
 | GenericRepair-AllTools | 0.060 | 0.10 | 0.457 | 0.800 | 0.245 | 0.043 | 0.070 | 1.000 | 1.000 | $0.0004 |
 | ReAct-AllTools | 0.000 | 0.00 | 0.000 | 0.400 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | $0.0026 |
 
-**对比 Phase 2（未优化）**：KF cost $0.0006 → **$0.0003（−50%）**，cost_ratio **2.00× → ~1.0×**；BindF1 **0.458 → 0.529**；CVSR 0.650→0.610（−4pp，在 3pp 容差内）。KF 在 CVSR/pass5/CritR/RelF1/BindF1/全部 guardrail 上仍全面优于 SingleAgent。
+**对比 Phase 2（未优化）**：KF 精确成本 $0.0006 → **$0.0003401（−43%）**，cost_ratio **2.22× → 精确 1.24×**；BindF1 **0.458 → 0.529**；CVSR 0.650→0.610（**−4pp，超出 3pp 优化守卫容差 → OPTIMIZATION_GUARD=FAIL**，如实报告该权衡）。KF 在 CVSR/pass5/CritR/RelF1/BindF1/全部 gate guardrail 上仍优于 SingleAgent。
 
 **冻结 Phase 2 原件**已保存：`v3_runs_phase2_frozen.jsonl`、`v3_summary_phase2_frozen.*`、`archive_phase2_frozen/`。新跑为独立 `v3_runs.jsonl`，未修改任何冻结结果。
 
@@ -275,24 +281,36 @@ Evidence Table（100 runs each）:
 | A2 无类型化修复 | 0.580 | 0.798 | 0.329 | 1.000 | **0.220** | $0.000180 |
 | A3 无本体约束 | 0.530 | 0.796 | 0.453 | 1.000 | 0 | $0.000516 |
 
-**各组件独立贡献（诚实，非重复计数）**：
-- **知识编译器**对 asset 类**决定性**：TN11 full/A1 = 1.00 / **0.00**（Δ1.00），且提 ObjF1 0.701→0.800。
-- **类型化修复**的核心贡献是**安全性**：去修复后 repair 类 fatal 率 0→**0.22**（TN31-34 全 1.00 vs full 0.00）；bind 仍低因 frozen 单位缺口非修复所能及。
+**各组件独立贡献（诚实，非重复计数；Phase 4 审计修订）**：
+- **知识编译器**对 asset 类**决定性**：TN11 full/A1 = 1.00 / **0.00**（Δ1.00），TN11 ObjF1 0.655→0.996。
+- **类型化修复的贡献是安全性/fatal 消除，不是 CVSR**：A2 的 CVSR（0.580）**高于** full（0.550）——不得宣称修复带来 CVSR 增益。去修复后 repair 类 fatal 率 0→**0.22**（TN31-34 在 A2 下每任务 5/5 全 fatal，full 下 0/20 配对翻转，A2-fatal/full-clean=22、反向=0）。
 - **本体约束**提 bind F1 0.453→0.529 且保 CritR=1.0、fatal=0 → 在类型/副作用策略下保障绑定正确性。
 - A1 fatal 升至 0.01 → 编译器是 asset 侧守门员。
+- **口径声明**：消融 full 与主 Gate KF 是独立随机运行（0.550 vs 0.610），不可作配对比较。
 
-钩子默认关闭，不影响正式跑；测试 **101/101 pass**。
+钩子默认关闭，不影响正式跑；当前 HEAD 测试 **101/101 pass**（2026-08-23 实跑）。
 
-### Phase 3.5 — 最终决策（2026-08-22）
+### Phase 3.5 — 最终决策（2026-08-22；Phase 4 审计修订 2026-08-23）
 
-**READY_FOR_PAPER**（诚实 gate 框架：gate PASS，不宣称 SOTA）。
-交付物全部落地 `results/analysis/`：`binding_failure_analysis.md` / `cost_breakdown.csv` / `ablation_results.csv` / `phase3_final_report.md`。
-约束无一违反：gold 不可见 / scorer 冻结 / benchmark 未改 / 阈值预算未改 / 冻结 Phase2 结果未改 / 不宣称 SOTA。详见 `phase3_final_report.md`。
+**READY_FOR_PAPER（条件性）**——三项独立判定：
+- **CODE_GATE = PASS**（仅按 `run_sota_gate.py` 实现的 7 条件，含精确成本比 1.24×≤1.5×）
+- **OPTIMIZATION_GUARD = FAIL**（CVSR 回退 4.0pp > 3pp 容差，如实报告权衡）
+- **PAPER_READINESS = CONDITIONAL PASS**（Phase 4 修正后：成本比、回退、消融口径、test_v2 表述均已纠正）
 
-### 诚实声明（Phase 3 完整性）
+交付物全部落地 `results/analysis/`：`binding_failure_analysis.md` / `cost_breakdown.csv` / `ablation_results.csv` / `phase3_final_report.md` / `phase4_evidence_audit.md` / `paper_claim_evidence_matrix.csv`。
+约束无一违反：gold 不可见 / scorer 冻结 / benchmark 未改 / 阈值预算未改 / 冻结 Phase2 结果未改 / 不宣称 SOTA。
+
+### Phase 4 — 证据冻结与审计（2026-08-23）
+
+- 从原始 JSONL 重算全部指标：精确成本比 **1.24×**（"≈1.0×" 为舍入伪影，已撤回）；CVSR 回退 **−4.0pp > 3pp 守卫**（此前"在容差内"表述错误，已撤回）；asset ObjF1 修正为 TN11 **0.655→0.996**（原 "0.701→0.800" 有误）。
+- 三项独立判定 CODE_GATE=PASS / OPTIMIZATION_GUARD=FAIL / PAPER_READINESS=CONDITIONAL PASS，见 `phase4_evidence_audit.md`。
+- 新增 `provenance/phase3_manifest.yaml`（git HEAD、环境、代码/结果 SHA-256、模型披露、命令、当前 HEAD 测试结果 101 passed @ 8975753）。
+- 论文初稿全面同步到 v3 证据（旧 30-task/step-3.5-flash 一代实验移入历史对照节，不与 v3 混写）。
+
+### 诚实声明（Phase 3/4 完整性）
 - Gold 对方法可见？**否**（方法仅收 `_strip_public`）。
 - Scorer 修改？**否**（evaluator_v2.3 冻结）。
 - Benchmark 修改？**否**（gold sha `61a48f61...` 未动）。
 - 阈值/成本约束修改？**否**。
 - 冻结结果修改？**否**（新实验 → 独立文件）。
-- SOTA 声明？**否**，仅报告可复现科学证据：KF 在冻结 test_v2 上统计显著 (+25pp) 且成本平价优于最强公平基线。
+- SOTA 声明？**否**。test_v2 是 **frozen evaluation benchmark（研发期间接触，非 hidden/blind/独立测试集）**。报告可复现证据：KF 在冻结 test_v2 上配对 +25pp CI[+9,+44] 优于最强公平基线，精确成本比 1.24×≤1.5×；CVSR 相对 Phase2 回退 −4pp 超出优化守卫，已如实报告。

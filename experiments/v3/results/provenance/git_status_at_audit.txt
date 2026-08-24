@@ -1,0 +1,9 @@
+ M experiments/v3/harness/__pycache__/stepwise_builder.cpython-313.pyc
+ M experiments/v3/methods/__pycache__/kafarmtwin_typed_repair.cpython-313.pyc
+ M experiments/v3/results/analysis/phase3_final_report.md
+ M experiments/v3/scripts/__pycache__/run_sota_gate.cpython-313.pyc
+?? experiments/v3/results/provenance/git_status_at_audit.txt
+?? experiments/v3/results/provenance/phase3_manifest.yaml
+?? experiments/v3/scripts/__pycache__/run_ablation_v3.cpython-313.pyc
+?? experiments/v3/scripts/__pycache__/run_phase3_ablation.cpython-313.pyc
+?? experiments/v3/scripts/__pycache__/validate_bind_fix.cpython-313.pyc

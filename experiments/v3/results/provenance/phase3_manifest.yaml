@@ -1,0 +1,128 @@
+# Phase 3/4 Evidence Provenance Manifest
+# Generated: 2026-08-23 (Phase 4 audit)
+# Scope: the optimized 500-run gate (v3_runs.jsonl), frozen Phase-2 baseline
+#        (v3_runs_phase2_frozen.jsonl), and the 4 ablation files.
+# All SHA-256 values computed at current HEAD on 2026-08-23.
+
+manifest_version: "phase4-2026-08-23"
+audit_date: "2026-08-23"
+
+git:
+  branch: "paper/knowledge-agent-experiments"
+  head_commit: "89757530855e2334cad4f816e45c65c797f2666a"
+  expected_baseline_commit: "89757530855e2334cad4f816e45c65c797f2666a"  # matches HEAD
+  dirty_status: |
+    Only __pycache__/*.pyc noise (5 entries) — no tracked source/results modified
+    before this Phase-4 documentation pass. See git_status_at_audit.txt.
+
+environment:
+  python: "3.13.12"
+  os: "Linux 6.17.0-40-generic x86_64 GNU/Linux"
+  key_dependencies:
+    requests: "2.34.2"
+    PyYAML: "6.0.3"
+    numpy: "2.4.6"
+    scipy: "1.18.0"
+
+model:
+  name: "deepseek-ai/DeepSeek-V4-Flash"
+  endpoint: "SiliconFlow OpenAI-compatible chat-completions"
+  model_version_disclosure: >
+    The served model is identified only by its catalog id; SiliconFlow does not
+    expose an immutable per-request model snapshot/version hash through the API,
+    so exact-weight version cannot be pinned. This is recorded as a known
+    limitation (uncertain) rather than fabricated.
+
+benchmark:
+  split: "test_v2 (20 tasks: TN01-04 scene, TN11-14 asset, TN21-24 bind, TN31-34 repair, TN41-44 mem)"
+  description: "FROZEN EVALUATION BENCHMARK — NOT a hidden/blind/independent test set."
+  gold_sha256: "61a48f610e051df8042c905229eb84409af4800268d652d90c93f02b193b4c61"
+  public_sha256: "8321ed3dddaff902277f565c5dfa30d8652a929b9fa10b45516d10ba4fee6c9c"
+  schema_sha256: "f26130774f77d2a1e206b37af50151876b9501f021fdd0f6c0745d36a31027b1"
+  benchmark_manifest: "experiments/v3/benchmark/benchmark_manifest.json (v2-sealed)"
+
+evaluator:
+  version: "evaluator_v2.3 (FROZEN)"
+  scorer_hash_prefix: "8b7d4695..."
+  key_modules_sha256:
+    metrics.py: "48c572302802b8fe5411959bf66da5263eb0f5ae551d521f992528eef1b51793"
+    binding_match.py: "af64a8ee1f800dcf76db03d8ed24bfe1a8fed6790b9c3526417bce08029dc048"
+    node_match.py: "f2fb602ac299cef1873027a9700f1a8d02fd0dc3ab0cc2d0e0d139b370815371"
+    edge_match.py: "2d8894d2d54ffb05676d72daab2425ba973731957d0371191550c10a47805f01"
+    query_cvsr.py: "124a06a9d820a35c7040110c146f683f8924864222eb3bdedff4862e546392ac"
+    version.py: "e574a13c04a2ed89d2b6c83a8d51955c2ef439872e7e812e631542be15b657f5"
+
+method_code_sha256:
+  kafarmtwin_typed_repair.py: "839643ecfb59725b0964f455df183d178bbcd1ce7251928d332e583e01237f21"
+  single_agent.py: "1e3878243f58e5a2a0bf0890a95fea0b193eae6f146a31e86d4879fe51ae83d0"
+  stepwise_builder.py: "6d86617f41ea6edcf8e2d6cdfca852bc3c6a406a9d76f0467bb2109258add00a"
+  tools.py: "c0a37342ddcd9ae9d183693a10d77ecb13dbcea78b0d3c1feb3c42b25232a2fc"
+  budget.py: "72570613718b1a24fc5c1fff8f7afca25b17472b2da81ff79832891814cc9aae"
+  canonicalizer.py: "b6668ab497048290da04e9cef2a276832f568e7901bc0b912350be42d1a2a2ea"
+  llm.py: "709cac3c5e9fae10468576cf1aab74acfa27f5977e4390d442df99a55a0b4693"
+  run_fair_baselines.py: "4cf6aae36201628abebb8d699a6c063603e2a74350a6d147cdbaa6f0b6172da2"
+  run_sota_gate.py: "115b6d523ae9796201209386d7b39a32628495436f2172e2b2978e7f8cedabbf"
+  run_phase3_ablation.py: "7845c4e8e08c35f54fee10e3d106ec60200a4883c5a57c7ce5c69a586d5a7290"
+
+experiment_design:
+  main_gate:
+    file: "results/v3_runs.jsonl"
+    n_tasks: 20
+    n_methods: 5
+    repeats_per_task_method: 5
+    total_runs: 500
+    budget_config: "BudgetConfig(max_llm_calls=30, max_tool_calls=100, max_repair_rounds=3) — identical for all methods"
+    seed_policy: >
+      random.seed(20260804) in run_fair_baselines.py; gate bootstrap seed fixed in
+      run_sota_gate.py RANDOM_SEED; LLM sampling temperature=0.2 (non-zero → runs are
+      stochastic at the model layer even with a fixed script seed).
+  phase2_frozen_baseline:
+    file: "results/v3_runs_phase2_frozen.jsonl"
+    note: "Unmodified Phase-2 500-run artifact (pre-optimization method code)."
+  ablations:
+    files:
+      A1_no_compiler: "results/v3_runs_ablation_A1_no_compiler.jsonl"
+      A2_no_typed_repair: "results/v3_runs_ablation_A2_no_typed_repair.jsonl"
+      A3_no_ontology: "results/v3_runs_ablation_A3_no_ontology.jsonl"
+      full: "results/v3_runs_ablation_full.jsonl"
+    n_per_variant: "100 runs = 20 tasks x 5 repeats"
+    independent_runs_note: >
+      The ablation 'full' variant and the main-gate KAFarmTwin arm are INDEPENDENT
+      stochastic runs of the same code+benchmark. They must not be treated as paired
+      samples; full CVSR=0.550 vs gate KF CVSR=0.610 differ by LLM sampling variance
+      (documented in phase4_evidence_audit.md §Ablations).
+
+raw_results_sha256:
+  v3_runs.jsonl: "15aebd7231045fe068f17dce66c3d2ca43fedd386e52435b2d6d99c3d956fc89"
+  v3_runs_phase2_frozen.jsonl: "678fc728ba5bbd69214df3142fec6234b3029d5df78492a481daea7c378cda04"
+  v3_runs_ablation_A1.jsonl: "6052a90b5e793b91634b6a245cfff934950737bb59a54e4e45acae478ec6d448"
+  v3_runs_ablation_A2.jsonl: "92e6d3421fe056d503797e9ba26518b3d2c666eb76e2902b2b67718fc1a1ddd7"
+  v3_runs_ablation_A3.jsonl: "72f7d4c1272b3c5d60efc7f592a346b94d15bfb06be9994dd14dad9fa234f5af"
+  v3_runs_ablation_full.jsonl: "d3f205469c2bd61439e407b22f1f9ca4c4015c9402089ad2e706f9242e0e5158"
+
+commands:
+  main_gate_run: >
+    set -a && . ./.env && set +a && nohup python3 experiments/v3/scripts/run_fair_baselines.py
+    --split test --runs 5 > logs/phase3opt.log 2>&1
+  sota_gate: "python3 experiments/v3/scripts/run_sota_gate.py 2>&1 | tee logs/phase3opt_sota_gate.log"
+  ablation_runner: >
+    python3 experiments/v3/scripts/run_phase3_ablation.py  (env hooks:
+    KAFARMTWIN_ABLATE_COMPILER / _REPAIR / _ONTOLOGY set internally per variant;
+    routes every variant through run_one_method incl. memory_state seeding)
+  tests: "python3 -m pytest experiments/v3/tests/ -q"
+
+test_results_at_current_head:
+  command: "python3 -m pytest experiments/v3/tests/ -q"
+  date: "2026-08-23"
+  commit: "89757530855e2334cad4f816e45c65c797f2666a"
+  result: "101 passed in 57.96s"
+  note: "Run fresh at current HEAD during Phase 4 — not inherited from any prior commit."
+
+integrity_constraints_honored:
+  benchmark_modified: false
+  gold_modified: false
+  evaluator_or_thresholds_modified: false
+  baseline_budget_modified: false
+  frozen_phase2_results_modified: false
+  sota_claimed: false
+  test_v2_described_as: "frozen evaluation benchmark (developed against; NOT hidden/blind)"

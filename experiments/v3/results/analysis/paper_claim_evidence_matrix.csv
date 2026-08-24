@@ -1,0 +1,18 @@
+claim_id,paper_section,claim,supporting_artifact,metric_or_code_reference,status,caveat
+C01,摘要/贡献,KAFarmTwin 在冻结 test_v2(20任务×5方法×5重复)上 CVSR=0.610 高于最强公平基线 SingleAgent 0.360,results/v3_runs.jsonl;logs/phase3opt_sota_gate.log,CVSR mean over 100 runs/method (evaluators/metrics.py aggregate),verified,温度0.2下模型随机性存在; 独立重跑会有方差
+C02,实验-主结果,配对 CVSR 差 +25pp 95%CI[+9pp+44pp](KF−SingleAgent 20任务配对bootstrap),results/v3_runs.jsonl,run_sota_gate.paired_bootstrap_ci (seed固定 10000次),verified,任务级配对 n=20
+C03,实验-成本,精确成本比 KF/SingleAgent = 1.24x ($0.0003401/$0.0002747) ≤1.5x 门限,results/v3_runs.jsonl 原始逐run cost字段,metrics.py:351 cost_mean 舍入到4位小数——必须用原始值计算,corrected,Phase3 报告的 ≈1.0x 为舍入伪影 已撤回; 余量约0.26x 非平价
+C04,实验-优化权衡,相对 Phase2 冻结基线 KF CVSR 0.650→0.610 回退 4.0pp 超出 3pp 优化守卫,results/v3_runs_phase2_frozen.jsonl vs results/v3_runs.jsonl,两代独立500-run 文件,corrected,Gate代码无此条件 CODE_GATE仍PASS; 但 OPTIMIZATION_GUARD=FAIL 必须如实报告
+C05,消融-编译器,知识编译器对 asset 类决定性: TN11 CVSR full/A1=1.00/0.00 ObjF1 0.996→0.655,v3_runs_ablation_full.jsonl vs v3_runs_ablation_A1_no_compiler.jsonl,n=5/task/variant,verified,A1 还使 CritR 降至0.95 fatal 升至0.01
+C06,消融-类型化修复,类型化修复的贡献是安全性而非CVSR: 去修复后 repair 类 fatal 率 0→0.22 (TN31-34 每5/5全fatal),v3_runs_ablation_A2_no_typed_repair.jsonl vs full,paired flips: A2-fatal/full-clean=22 反向=0,verified,A2 CVSR(0.580)高于full(0.550) — 不得宣称修复带来CVSR增益
+C07,消融-本体约束,本体约束提升 bind F1 0.4525→0.5292 且 CritR/fatal 不劣化,v3_runs_ablation_A3_no_ontology.jsonl vs full,n=100 each,verified,TN23 受冻结evaluator别名缺口限制 上限非1.0
+C08,消融口径,消融 full 与主 Gate KF 是独立随机运行(0.550 vs 0.610) 不可作配对比较,两个独立JSONL文件,温度0.2采样方差,verified,论文中须显式说明二者关系
+C09,绑定失败分析,TN21/TN24 方法侧 timestamp 修复验证 BindF1 0.333/0.25→1.0,results/analysis/binding_failure_analysis.md §6,live run 记录 validate_bind_fix.py,verified,
+C10,绑定失败分析,TN22/TN23 受冻结 evaluator _UNIT_CANONICAL 别名缺口限制(°C/klux/light_intensity) 属 benchmark 契约局限,binding_match.py:74 (frozen);binding_failure_analysis.md §4-6,类别B,verified,冻结约束下不可修 论文作为诚实边界报告
+C11,评测协议,test_v2 是 frozen evaluation benchmark(研发期间接触) 不是 hidden/blind/独立测试集,benchmark/benchmark_manifest.json; provenance/phase3_manifest.yaml,gold sha 61a48f61...,verified,禁止 hidden/blind/SOTA 表述
+C12,方法边界,D2: LLM 选择类型化修复算子 知识约束的确定性执行器实例化并应用允许参数(执行器不做任意语义决策但按规则实例化参数),methods/kafarmtwin_typed_repair.py; typed_deterministic.apply_action,AST测试 test_no_repair_operator_bypasses_llm_selection,verified,不得写成"执行器完全无语义决策"
+C13,guardrails,Critical Recall=1.000 Fatal=0.000 Evidence Precision=1.000 Replay=1.000 全部满足绝对门限,results/v3_runs.jsonl,run_sota_gate.py 条件5-8,verified,
+C14,pass@k,pass@1/3/5: KF 0.610/0.735/0.700 vs SA 0.360/0.500/0.500,results/v3_runs.jsonl,metrics.py pass_k 分组口径,verified,pass@5 口径为每task-method连续5次任一通过(仓库定义)
+C15,可复现性,当前 HEAD 测试 101 passed (2026-08-23 实跑),provenance/phase3_manifest.yaml,pytest experiments/v3/tests/ -q 57.96s,verified,非沿用旧提交结果
+C16,模型披露,模型为 deepseek-ai/DeepSeek-V4-Flash(SiliconFlow) 服务端不暴露不可变权重快照版本,provenance/phase3_manifest.yaml model 段,catalog id only,uncertain,已标记不确定 不得虚构版本号
+C17,威胁有效性,开发期间接触 test_v2; 缺少真正 private 外部测试; 单位别名覆盖与模型随机性为主要威胁,phase4_evidence_audit.md §4-5,TODO: private held-out set 方案见最终报告,open,投稿前须在 limitation 中明示
