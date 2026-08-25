@@ -29,10 +29,7 @@ jobs:
       - name: Install minimal offline deps
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
-          # requests/other deps are NOT needed for the offline checks below;
-          # if a test module imports a missing package, we record it and continue
-          # so the environment is never silently broken.
+          pip install pytest requests
 
       - name: Pytest suite (offline tests only)
         run: |
