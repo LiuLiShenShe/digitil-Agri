@@ -1,0 +1,185 @@
+{
+ "run_id": "ext300_formal_20260825",
+ "sealed_raw_sha256": "b52f00c4bee3b43723689c3556300e0754a8ab9564b96341d05e88b591d40d91",
+ "verification": {
+  "records": 600,
+  "unique_pairs": 600,
+  "tasks": 300,
+  "seal_match": true
+ },
+ "by_method": {
+  "KAFarmTwin-TypedRepair": {
+   "n": 300,
+   "overall_cvsr": 0.7167,
+   "object_f1": 0.6896,
+   "relation_f1": 0.6995,
+   "binding_f1": 0.5939,
+   "critical_recall": 1.0,
+   "fatal_violation_rate": 0.0,
+   "evidence_precision": 1.0,
+   "replay_success": 0.8083,
+   "tokens_total": 668769,
+   "cost_total_usd": 0.1035,
+   "latency": {
+    "all_tasks": {
+     "n": 300,
+     "include_zero_latency_deterministic_tasks": true,
+     "p50_s": 2.52,
+     "p95_s": 9.59
+    },
+    "llm_invoking_tasks": {
+     "n": 240,
+     "include_zero_latency_deterministic_tasks": false,
+     "p50_s": 2.82,
+     "p95_s": 10.01
+    }
+   },
+   "technical_failures": 0,
+   "by_type": {
+    "asset_routing": {
+     "n": 60,
+     "mean_cvsr": 0.0833,
+     "object_f1": 0.4543,
+     "relation_f1": 0.7828,
+     "binding_f1": 0.9694,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    },
+    "data_binding": {
+     "n": 60,
+     "mean_cvsr": 1.0,
+     "object_f1": 1.0,
+     "relation_f1": 1.0,
+     "binding_f1": 1.0,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    },
+    "memory_query": {
+     "n": 60,
+     "mean_cvsr": 1.0,
+     "object_f1": 0.0,
+     "relation_f1": 0.0,
+     "binding_f1": 0.0,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    },
+    "rule_repair": {
+     "n": 60,
+     "mean_cvsr": 1.0,
+     "object_f1": 1.0,
+     "relation_f1": 1.0,
+     "binding_f1": 1.0,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    },
+    "scene_construction": {
+     "n": 60,
+     "mean_cvsr": 0.5,
+     "object_f1": 0.9939,
+     "relation_f1": 0.7149,
+     "binding_f1": 0.0,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    }
+   }
+  },
+  "SingleAgent-AllTools": {
+   "n": 300,
+   "overall_cvsr": 0.48,
+   "object_f1": 0.6351,
+   "relation_f1": 0.379,
+   "binding_f1": 0.2,
+   "critical_recall": 0.95,
+   "fatal_violation_rate": 0.25,
+   "evidence_precision": 0.9467,
+   "replay_success": 0.4553,
+   "tokens_total": 472722,
+   "cost_total_usd": 0.0854,
+   "latency": {
+    "all_tasks": {
+     "n": 300,
+     "include_zero_latency_deterministic_tasks": true,
+     "p50_s": 2.06,
+     "p95_s": 12.52
+    },
+    "llm_invoking_tasks": {
+     "n": 180,
+     "include_zero_latency_deterministic_tasks": false,
+     "p50_s": 6.72,
+     "p95_s": 15.45
+    }
+   },
+   "technical_failures": 0,
+   "by_type": {
+    "asset_routing": {
+     "n": 60,
+     "mean_cvsr": 0.0,
+     "object_f1": 0.182,
+     "relation_f1": 0.2293,
+     "binding_f1": 0.0,
+     "fatal_violation_rate": 0.15,
+     "critical_recall": 0.75
+    },
+    "data_binding": {
+     "n": 60,
+     "mean_cvsr": 1.0,
+     "object_f1": 1.0,
+     "relation_f1": 1.0,
+     "binding_f1": 1.0,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    },
+    "memory_query": {
+     "n": 60,
+     "mean_cvsr": 1.0,
+     "object_f1": 0.0,
+     "relation_f1": 0.0,
+     "binding_f1": 0.0,
+     "fatal_violation_rate": 0.0,
+     "critical_recall": 1.0
+    },
+    "rule_repair": {
+     "n": 60,
+     "mean_cvsr": 0.0,
+     "object_f1": 1.0,
+     "relation_f1": 0.0,
+     "binding_f1": 0.0,
+     "fatal_violation_rate": 1.0,
+     "critical_recall": 1.0
+    },
+    "scene_construction": {
+     "n": 60,
+     "mean_cvsr": 0.4,
+     "object_f1": 0.9933,
+     "relation_f1": 0.6659,
+     "binding_f1": 0.0,
+     "fatal_violation_rate": 0.1,
+     "critical_recall": 1.0
+    }
+   }
+  }
+ },
+ "token_ratio_kf_over_sa": 1.4147,
+ "cost_ratio_kf_over_sa": 1.2119,
+ "paired_statistics": {
+  "n_paired_tasks": 300,
+  "point_delta": 0.2367,
+  "ci95_low": 0.1833,
+  "ci95_high": 0.29,
+  "mcnemar_b": 77,
+  "mcnemar_c": 6,
+  "mcnemar_p_display": "p<1e-6 (exact tail 8.45e-17, b=77, c=6)",
+  "mcnemar_p_float": 8.445814568882953e-17
+ },
+ "quantile_algorithm": "nearest-rank on sorted values (index ceil(q*n)-1)",
+ "latency_note": "all_tasks includes deterministic zero/low-latency tasks; llm_invoking_tasks excludes them. Both scopes reported.",
+ "provenance_files": [
+  "EXECUTION_SOURCE_PROVENANCE_POSTHOC.json",
+  "REVIEW_PROVENANCE_CORRECTION.json",
+  "PROTOCOL_DEVIATION_EXTERNAL300.md"
+ ],
+ "consistency_gate": {
+  "all_pass": true,
+  "failed": []
+ }
+}

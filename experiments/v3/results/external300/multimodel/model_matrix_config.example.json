@@ -1,0 +1,50 @@
+{
+  "_comment": "TEMPLATE ONLY - no real model IDs configured. Fill model_family_1/2 and set status=FROZEN, then obtain MULTIMODEL_RUN_APPROVED from the user before ANY API call. Never put API keys in this file.",
+  "status": "TEMPLATE_AWAITING_MODEL_IDS",
+  "preregistration_version": "multimodel-v1",
+  "date_created": "2026-08-25",
+  "design": {
+    "purpose": "Cross-model generalization of the KF-vs-SA comparison after the completed DeepSeek-V4-Flash main experiment. Because main results have already been viewed, NO post-hoc subset selection is permitted: both new families run the FULL 300 tasks x 2 methods.",
+    "models_required": 2,
+    "model_families_must_differ": true,
+    "tasks": "same external300_public_inputs.jsonl (SHA 0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7)",
+    "order_table": "results/external300/order_table_v1.json (fixed, tamper-evident)",
+    "executions_per_model": 600,
+    "one_logical_execution_per_task_method": true
+  },
+  "models": {
+    "family_1": {
+      "provider": "<TO FILL>",
+      "model_catalog_id": "<TO FILL>",
+      "immutable_snapshot_available": false,
+      "api_base_url_env": "AGNES_BASE_URL",
+      "temperature": 0.2
+    },
+    "family_2": {
+      "provider": "<TO FILL>",
+      "model_catalog_id": "<TO FILL>",
+      "immutable_snapshot_available": false,
+      "api_base_url_env": "AGNES_BASE_URL",
+      "temperature": 0.2
+    }
+  },
+  "fairness_within_each_model": {
+    "same_model_for_both_methods": true,
+    "budget_policy": {"max_llm_calls": 30, "max_tool_calls": 100, "max_repair_rounds": 3},
+    "tool_permissions": "identical for KF and SA"
+  },
+  "failure_policy": "API technical failures: LLMClient built-in retries=2 exponential backoff only; logical failures never retried; exhausted retries recorded technical_failure=true and kept.",
+  "sealing_and_reporting": {
+    "seal_per_model_run": true,
+    "raw_sha_recorded_in_seal": true,
+    "keep_all_results_regardless_of_direction": true,
+    "report_granularity": "method x model x task_type",
+    "direction_consistency_check": "KF-SA CVSR delta sign must be reported across all three models (DeepSeek + family_1 + family_2); most-favorable-model-only reporting forbidden",
+    "disclosure_requirements": ["author-reviewed benchmark", "no SOTA claims", "provider snapshot uncertainty if applicable"]
+  },
+  "gates_before_any_api_call": [
+    "both model_catalog_id fields filled with real distinct-family IDs",
+    "status set to FROZEN",
+    "explicit user reply MULTIMODEL_RUN_APPROVED"
+  ]
+}

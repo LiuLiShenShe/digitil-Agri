@@ -572,11 +572,30 @@ def cmd_freeze_check(_args) -> int:
 
     import re as _re
     qrows = list(csv.DictReader((BENCH_DIR / "external300_review_queue.csv").open(encoding="utf-8")))
-    approved = sum(1 for q in qrows if q.get("final_status") == "approved"
-                   and q.get("freeze_eligible") == "true"
-                   and q.get("reviewer_a_decision") and q.get("reviewer_b_decision"))
-    add("review_queue_independently_reviewed", approved == len(qrows) == 300,
-        f"{approved}/{len(qrows)} rows fully reviewed+approved+freeze_eligible")
+    # Review-identity semantics (corrected 2026-08-25): the queue's reviewer_a/b and
+    # adjudicator columns were all filled from ONE author confirmation ("unified
+    # execution directive"), so they must NOT be read as independent human review.
+    # Gating is split into three checks:
+    #   review_records_complete        - structural completeness of the 300 rows
+    #   author_confirmation_present    - a single author/user confirmation exists
+    #   independent_human_review_evidence - named independent reviewers + adjudicator;
+    #                                     must stay FAIL/NOT_ESTABLISHED unless real
+    #                                     independent review records exist.
+    complete = sum(1 for q in qrows if q.get("final_status") == "approved"
+                   and q.get("freeze_eligible") == "true")
+    add("review_records_complete", complete == len(qrows) == 300,
+        f"{complete}/{len(qrows)} rows approved+freeze_eligible (structural completeness only)")
+    confirmed = sum(1 for q in qrows if "unified execution directive" in (q.get("reviewer_a_comments") or ""))
+    add("author_confirmation_present", confirmed == len(qrows) == 300,
+        f"{confirmed}/{len(qrows)} rows carry the single author confirmation "
+        f"(human_review_mode=author_confirmation, reviewer_count=1, NOT double-blind)")
+    distinct = {q.get("reviewer_a_comments") for q in qrows} | {q.get("reviewer_b_comments") for q in qrows}
+    has_independent = len({c for c in distinct if c}) >= 2 or any(
+        "independent" in (q.get("adjudicator_comments") or "").lower() for q in qrows)
+    add("independent_human_review_evidence", False,
+        "NOT_ESTABLISHED: all reviewer/adjudicator entries derive from one author "
+        "confirmation; benchmark is author-generated/author-reviewed controlled only. "
+        "This check can only pass with named independent Reviewer A/B + adjudicator records.")
 
     man = json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
     files = man.get("files", {})

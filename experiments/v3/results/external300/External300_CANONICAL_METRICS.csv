@@ -1,0 +1,13 @@
+binding_f1,cost_total_usd,critical_recall,evidence_precision,fatal_violation_rate,latency_all_p50_s,latency_all_p95_s,latency_llm_p50_s,latency_llm_p95_s,method,n,object_f1,overall_cvsr,relation_f1,replay_success,task_type,tokens_total
+0.5939,0.1035,1.0,1.0,0.0,2.52,9.59,2.82,10.01,KAFarmTwin-TypedRepair,300,0.6896,0.7167,0.6995,0.8083,,668769
+0.9694,,1.0,,0.0,,,,,KAFarmTwin-TypedRepair,60,0.4543,0.0833,0.7828,,asset_routing,
+1.0,,1.0,,0.0,,,,,KAFarmTwin-TypedRepair,60,1.0,1.0,1.0,,data_binding,
+0.0,,1.0,,0.0,,,,,KAFarmTwin-TypedRepair,60,0.0,1.0,0.0,,memory_query,
+1.0,,1.0,,0.0,,,,,KAFarmTwin-TypedRepair,60,1.0,1.0,1.0,,rule_repair,
+0.0,,1.0,,0.0,,,,,KAFarmTwin-TypedRepair,60,0.9939,0.5,0.7149,,scene_construction,
+0.2,0.0854,0.95,0.9467,0.25,2.06,12.52,6.72,15.45,SingleAgent-AllTools,300,0.6351,0.48,0.379,0.4553,,472722
+0.0,,0.75,,0.15,,,,,SingleAgent-AllTools,60,0.182,0.0,0.2293,,asset_routing,
+1.0,,1.0,,0.0,,,,,SingleAgent-AllTools,60,1.0,1.0,1.0,,data_binding,
+0.0,,1.0,,0.0,,,,,SingleAgent-AllTools,60,0.0,1.0,0.0,,memory_query,
+0.0,,1.0,,1.0,,,,,SingleAgent-AllTools,60,1.0,0.0,0.0,,rule_repair,
+0.0,,1.0,,0.1,,,,,SingleAgent-AllTools,60,0.9933,0.4,0.6659,,scene_construction,

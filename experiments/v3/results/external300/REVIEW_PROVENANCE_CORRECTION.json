@@ -1,0 +1,39 @@
+{
+  "correction_id": "REVIEW_PROVENANCE_CORRECTION_v1",
+  "date": "2026-08-25",
+  "subject": "External300 human-review identity correction (author-reviewed, NOT independent double-blind)",
+  "what_happened": {
+    "fact": "On 2026-08-24 a single user instruction ('unified execution directive 2026-08-24 (user)') was written into the reviewer_a_decision, reviewer_b_decision AND adjudicator_decision columns of all 300 rows of external300_review_queue.csv.",
+    "consequence": "The freeze-check output at that time reported 'review_queue_independently_reviewed: 300/300 PASS', which wrongly implies two independent reviewers plus an adjudicator examined the tasks."
+  },
+  "corrected_interpretation": {
+    "human_review_mode": "author_confirmation",
+    "human_reviewer_count": 1,
+    "double_human_review": false,
+    "independent_review": false,
+    "gold_standard": false,
+    "benchmark_role": "author-reviewed controlled benchmark",
+    "admissible_labels": ["author-generated", "author-reviewed", "controlled benchmark"],
+    "inadmissible_labels": ["independent review", "double-blind", "private held-out", "gold standard", "external blind evaluation"]
+  },
+  "what_is_and_is_not_affected": {
+    "unchanged": [
+      "the 300 tasks and their content",
+      "external300_public_inputs.jsonl and external300_gold_draft.jsonl (bytes unchanged)",
+      "all method outputs in ext300_formal_20260825/raw/runs.jsonl (sealed, SHA b52f00c4bee3b43723689c3556300e0754a8ab9564b96341d05e88b591d40d91)",
+      "all performance metrics derived from scoring"
+    ],
+    "changed_only": [
+      "the semantic LABEL attached to the review process",
+      "freeze-check gating semantics (split into review_records_complete / author_confirmation_present / independent_human_review_evidence)"
+    ]
+  },
+  "artifacts": {
+    "original_review_queue_preserved": "experiments/v3/benchmark/external300_candidate/external300_review_queue.csv (NOT rewritten to fake independent review)",
+    "archived_pre_run_freeze_check": "experiments/v3/results/external300/archive/FREEZE_CHECK_pre_run_20260825.json",
+    "archived_freeze_check_sha256": "2c7ddb098d6362ead6d58ddd380db1f11fc468078ec29e303073274026511e94",
+    "corrected_post_run_freeze_check": "experiments/v3/results/external300/FREEZE_CHECK_POSTRUN_CORRECTED.json",
+    "protocol_deviation_record": "experiments/v3/results/external300/PROTOCOL_DEVIATION_EXTERNAL300.md"
+  },
+  "paper_language_rule": "Any publication must state: tasks were generated and reviewed by the authors; a single author/user confirmation closed the review; no independent or double-blind human review was performed. External300 is an author-generated, author-reviewed controlled benchmark used for direction-consistency checks on a larger task set, not an independent external evaluation."
+}

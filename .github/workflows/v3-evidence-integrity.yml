@@ -1,0 +1,98 @@
+name: v3-evidence-integrity
+
+# Offline-only evidence integrity checks for the KAFarmTwin v3 experiments.
+# NO model API calls, NO paid services: everything runs against sealed local artifacts.
+on:
+  push:
+    branches: [main, "paper/**"]
+    paths:
+      - "experiments/v3/**"
+      - "计算机研究与发展专题投稿初稿.md"
+      - ".github/workflows/v3-evidence-integrity.yml"
+  pull_request:
+    paths:
+      - "experiments/v3/**"
+      - "计算机研究与发展专题投稿初稿.md"
+  workflow_dispatch:
+
+jobs:
+  evidence-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install minimal offline deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          # requests/other deps are NOT needed for the offline checks below;
+          # if a test module imports a missing package, we record it and continue
+          # so the environment is never silently broken.
+
+      - name: Pytest suite (offline tests only)
+        run: |
+          python -m pytest experiments/v3/tests/ -q
+
+      - name: Sealed raw SHA-256 check
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+          raw = Path("experiments/v3/results/external300/ext300_formal_20260825/raw/runs.jsonl")
+          seal = json.loads(Path("experiments/v3/results/external300/ext300_formal_20260825/SEAL.json").read_text())
+          expected = "b52f00c4bee3b43723689c3556300e0754a8ab9564b96341d05e88b591d40d91"
+          actual = hashlib.sha256(raw.read_bytes()).hexdigest()
+          if actual != seal.get("raw_runs_sha256") or actual != expected:
+              sys.exit(f"[FAIL] sealed raw SHA mismatch: {actual}")
+          print("[OK] sealed raw SHA matches SEAL.json and expected constant")
+          PY
+
+      - name: Canonical recomputation from sealed raw
+        run: |
+          python3 experiments/v3/scripts/recompute_external300_canonical.py
+
+      - name: Public/gold structure check
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          bench = Path("experiments/v3/benchmark/external300_candidate")
+          pub = [json.loads(l) for l in (bench / "external300_public_inputs.jsonl").read_text().splitlines() if l.strip()]
+          gold = [json.loads(l) for l in (bench / "external300_gold_draft.jsonl").read_text().splitlines() if l.strip()]
+          assert len(pub) == 300 and len(gold) == 300, f"public={len(pub)} gold={len(gold)}"
+          assert {p["task_id"] for p in pub} == {g["task_id"] for g in gold}, "public/gold id sets diverge"
+          # public inputs must not leak gold answers
+          leaked = [p["task_id"] for p in pub if any(k in p for k in ("gold", "answer_key", "expected_bindings_gold"))]
+          assert not leaked, f"possible gold leakage in public inputs: {leaked[:5]}"
+          print("[OK] public/gold structure: 300/300 aligned, no gold fields in public inputs")
+          PY
+
+      - name: Forbidden-word scan of paper draft (claim-style usage only)
+        run: |
+          python3 - <<'PY'
+          import re, sys
+          text = open("计算机研究与发展专题投稿初稿.md", encoding="utf-8").read()
+          forbidden = [
+              r"完成了独立外部验证", r"独立外部验证已完成", r"通过.{0,6}双盲评审",
+              r"五类全面领先", r"全部温室需求泛化", r"多模型泛化已证",
+              r"已证明.{0,8}泛化能力", r"p\s*=\s*0(?![.\d])",
+              r"independently reviewed PASS",
+          ]
+          hits = []
+          for pat in forbidden:
+              for mobj in re.finditer(pat, text):
+                  window = text[max(0, mobj.start() - 60):mobj.start()]
+                  if re.search(r"(不|未|非|缺少|neither|not)\s*$", window) or "不宣称" in window or "不作" in window:
+                      continue
+                  hits.append((pat, mobj.group(0)))
+          if hits:
+              for pat, g in hits:
+                  print(f"[FORBIDDEN] pattern={pat} match={g!r}")
+              sys.exit(1)
+          print("[OK] no claim-style forbidden wording in paper draft")
+          PY

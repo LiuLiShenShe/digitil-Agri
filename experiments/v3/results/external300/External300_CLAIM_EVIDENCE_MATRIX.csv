@@ -1,0 +1,12 @@
+claim,evidence_source,status
+KF overall CVSR 0.7167 on External300,"CANONICAL_METRICS.by_method.KF.overall_cvsr (=0.7167, recomputed from sealed raw)",VERIFIED
+SA overall CVSR 0.4800 on External300,CANONICAL_METRICS.by_method.SA.overall_cvsr (=0.4800),VERIFIED
+"paired improvement +23.67pp, CI [18.33,29.00]pp","CANONICAL_METRICS.paired_statistics.point_delta/ci95 (10k bootstrap, seed 20260804)",VERIFIED
+"McNemar exact b=77,c=6,p<1e-6",CANONICAL_METRICS.paired_statistics.mcnemar_p_display='p<1e-6 (exact tail 8.45e-17)',VERIFIED
+KF fatal violation rate 0,CANONICAL_METRICS.by_method.KF.fatal_violation_rate (=0.0),VERIFIED
+SA fatal violation rate 0.25,CANONICAL_METRICS.by_method.SA.fatal_violation_rate (=0.25),VERIFIED
+"KF tokens 668,769 / ratio ~1.415",raw runs.jsonl sum; CANONICAL_METRICS.token_ratio_kf_over_sa=1.4147,VERIFIED
+KF cost $0.1035 / ratio ~1.212,raw cost sum; CANONICAL_METRICS.cost_ratio_kf_over_sa=1.2119,VERIFIED
+independent/double-blind external evaluation,"REVIEW_PROVENANCE_CORRECTION.json: human_review_mode=author_confirmation, reviewer_count=1",REFUTED - forbidden claim
+multi-model generalization demonstrated,multimodel/MULTIMODEL_PREREGISTRATION.md: not yet run,NOT_ESTABLISHED - pending
+SOTA,none; controlled two-method comparison only,FORBIDDEN CLAIM

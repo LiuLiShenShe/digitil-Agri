@@ -1,0 +1,72 @@
+{
+ "document": "EXECUTION_SOURCE_PROVENANCE_POSTHOC",
+ "date": "2026-08-25",
+ "purpose": "Reconstruct as far as possible the exact source state of the formal run ext300_formal_20260825. Honest disclosure: the run started from a dirty tree; the archival commit cannot be proven identical to that tree.",
+ "original_run_git_head": "b7d760f0cbf7517d92d7a98f4d46653d0dcc978c",
+ "original_git_dirty_declared": "7 dirty entries (non-pycache)",
+ "archival_commit": "5ad8e2db69ad25b6af0b7992a6f745591a934ddb",
+ "current_git_tree": {
+  "dirty_entries_excluding_pycache": [
+   " M experiments/v3/results/external300/FREEZE_CHECK_latest.json",
+   " M experiments/v3/scripts/run_external300.py",
+   "?? experiments/v3/benchmark/external300_candidate/PREREGISTRATION_POSTRUN_ADDENDUM.md",
+   "?? experiments/v3/results/external300/FREEZE_CHECK_POSTRUN_CORRECTED.json",
+   "?? experiments/v3/results/external300/PROTOCOL_DEVIATION_EXTERNAL300.md",
+   "?? experiments/v3/results/external300/REVIEW_PROVENANCE_CORRECTION.json",
+   "?? experiments/v3/results/external300/REVIEW_PROVENANCE_CORRECTION.md",
+   "?? experiments/v3/results/external300/archive/"
+  ],
+  "is_clean": false
+ },
+ "exact_dirty_tree_reconstruction": "uncertain",
+ "reconstruction_note": "The formal run executed at git_head b7d760f with 7 dirty entries (uncommitted new files: runner, tests, fixtures, results). The archival commit 5ad8e2d was created AFTER the run and includes those files plus post-run documents. We CANNOT prove byte-exact equality between the dirty tree at run time and any commit. Authoritative binding is the per-file SHA-256 below, which match what the run recorded where overlapping (methods, public inputs); harness/evaluator hashes are recorded post-hoc from the current tree.",
+ "file_sha256": {
+  "scripts/run_external300.py": "a735523ca884409f9a8d37669f445d80588727e182a9c81c766ae76f16f4ebde",
+  "harness/semantic_compiler.py": "282c2a1c99618d4228b8d2458ff7a1690aa88a28980185968a801c8b829dc8ca",
+  "harness/llm.py": "709cac3c5e9fae10468576cf1aab74acfa27f5977e4390d442df99a55a0b4693",
+  "methods/kafarmtwin_typed_repair.py": "839643ecfb59725b0964f455df183d178bbcd1ce7251928d332e583e01237f21",
+  "methods/single_agent.py": "1e3878243f58e5a2a0bf0890a95fea0b193eae6f146a31e86d4879fe51ae83d0",
+  "evaluators/__init__.py": "314dc745009a18697bdf8a67941639fa5e439a44359864cd9ccaa1ecf547eab6",
+  "evaluators/binding_match.py": "af64a8ee1f800dcf76db03d8ed24bfe1a8fed6790b9c3526417bce08029dc048",
+  "evaluators/edge_match.py": "2d8894d2d54ffb05676d72daab2425ba973731957d0371191550c10a47805f01",
+  "evaluators/gold_audit.py": "974d59dc0b7b2e630cdd14c88ac4ef3728ad01b0b544b07f333268de45ef1b79",
+  "evaluators/metrics.py": "48c572302802b8fe5411959bf66da5263eb0f5ae551d521f992528eef1b51793",
+  "evaluators/node_match.py": "f2fb602ac299cef1873027a9700f1a8d02fd0dc3ab0cc2d0e0d139b370815371",
+  "evaluators/query_cvsr.py": "124a06a9d820a35c7040110c146f683f8924864222eb3bdedff4862e546392ac",
+  "evaluators/register_adapters.py": "7faa4e81ceaff3ddb8d53ba4e789c86acbadd6391c54b9832d217d402333727c",
+  "evaluators/replay.py": "53ace55f6c1adb2af6a9d0a96c3f9f91ccf14594676a1f0bc1dbb54bd86c571f",
+  "evaluators/rule_engine.py": "2d8d7ae2221f03afcbd7c6515fde10e5d12f4779882acd670cfc8d53ef463703",
+  "evaluators/state_match.py": "5f5cf937aa65ac365a6c0ff90c90de66652e08bdf933f906c05eef457748cbef",
+  "evaluators/statistical_tests.py": "23976b5cfabc8d04a1ce2f6fdd0c772da78c5aac30c2780ee733df801717c2b2",
+  "evaluators/task_types.py": "cee7a830f88c0d20ef16c759889d5eb2d6e74268a776b5e30181c5df987b0e9c",
+  "evaluators/trace_evidence.py": "95d20a654d6552adf6ff50daa69816720c28f37d31b75483407fc7a493545bcb",
+  "evaluators/version.py": "e574a13c04a2ed89d2b6c83a8d51955c2ef439872e7e812e631542be15b657f5",
+  "benchmark/external300_public_inputs.jsonl": "0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7"
+ },
+ "method_hashes_recorded_at_run_time": {
+  "KAFarmTwin-TypedRepair": "839643ecfb59725b0964f455df183d178bbcd1ce7251928d332e583e01237f21",
+  "SingleAgent-AllTools": "1e3878243f58e5a2a0bf0890a95fea0b193eae6f146a31e86d4879fe51ae83d0"
+ },
+ "public_sha256_recorded_at_run_time": "0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7",
+ "ontology_note_sha256": "4f2df016e4111c65827207e32b2b105151e202f186d64cb81eb9dd241481b5d8",
+ "model_catalog_id_at_run": "deepseek-ai/DeepSeek-V4-Flash",
+ "temperature": 0.2,
+ "budget_policy": {
+  "max_llm_calls": 30,
+  "max_tool_calls": 100,
+  "max_repair_rounds": 3
+ },
+ "environment": {
+  "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:13:31) [GCC 14.3.0]",
+  "platform": "Linux-6.17.0-40-generic-x86_64-with-glibc2.39",
+  "packages": {
+   "pytest": "8.3.4",
+   "requests": "2.34.2"
+  }
+ },
+ "cross_check": {
+  "kf_method_current_matches_run_record": true,
+  "sa_method_current_matches_run_record": true,
+  "public_inputs_current_matches_run_record": true
+ }
+}
