@@ -340,6 +340,7 @@ def bind_scene(graph: TypedObjectGraph, ir: IntentIR,
         nt = str(n.get("type") or "")
         if nt not in DEVICE_ASSET_CLASSES:
             continue
+        oid = str(n.get("id") or "")
         # served object: use declared target, else a plant contained by the device's parent
         target = None
         if isinstance(ir.devices, list):

@@ -1,0 +1,36 @@
+{
+ "checks": [
+  {
+   "check": "preregistration_no_placeholders",
+   "status": "PASS",
+   "detail": "0 '[待填]' placeholders remain"
+  },
+  {
+   "check": "review_queue_independently_reviewed",
+   "status": "PASS",
+   "detail": "300/300 rows fully reviewed+approved+freeze_eligible"
+  },
+  {
+   "check": "manifest_hashes_match_disk",
+   "status": "PASS",
+   "detail": "14 hashed files, drift=[]"
+  },
+  {
+   "check": "public_gold_id_sets_match",
+   "status": "PASS",
+   "detail": "public=300 gold=300"
+  },
+  {
+   "check": "balanced_order_table_exists",
+   "status": "PASS",
+   "detail": "/data/fj/数字孪生-paper-work/experiments/v3/results/external300/order_table_v1.json"
+  },
+  {
+   "check": "no_formal_run_without_approval",
+   "status": "PASS",
+   "detail": "formal run additionally requires explicit FORMAL_RUN_APPROVED from user"
+  }
+ ],
+ "all_pass": true,
+ "generated_at_utc": "2026-08-25T00:05:23.979187+00:00"
+}

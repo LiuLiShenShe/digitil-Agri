@@ -74,6 +74,27 @@ def _binom_tail(k: int, n: int) -> float:
     return sum(comb(n, i) * 0.5 ** n for i in range(k, n + 1))
 
 
+def mcnemar_exact(method_flags: Sequence[bool], baseline_flags: Sequence[bool]) -> dict[str, Any]:
+    """Exact McNemar test on paired binary outcomes (two-sided).
+
+    Uses only the discordant pairs (method win b, baseline win c); under H0,
+    b ~ Binomial(b+c, 0.5). The two-sided p-value is min(1, 2 * P(X >= max(b,c))).
+    Statistically equivalent to the exact sign test but reported under the
+    McNemar name as preregistered for the External300 confirmatory protocol.
+    Purely additive — existing functions are untouched.
+    """
+    b = sum(1 for m, s in zip(method_flags, baseline_flags) if m and not s)
+    c = sum(1 for m, s in zip(method_flags, baseline_flags) if s and not m)
+    n_discordant = b + c
+    if n_discordant == 0:
+        return {"b": b, "c": c, "n_discordant": 0, "p_value": 1.0,
+                "odds_ratio": None}
+    tail = _binom_tail(max(b, c), n_discordant)
+    return {"b": b, "c": c, "n_discordant": n_discordant,
+            "p_value": round(min(1.0, 2.0 * tail), 6),
+            "odds_ratio": round(b / c, 4) if c > 0 else None}
+
+
 def wilcoxon_paired(a: Sequence[float], b: Sequence[float]) -> dict[str, Any]:
     """Wilcoxon signed-rank test on paired continuous values (approximate)."""
     diffs = [x - y for x, y in zip(a, b)]

@@ -1,0 +1,133 @@
+{
+  "benchmark_name": "External300 candidate",
+  "benchmark_version": "external300-candidate-v0.1",
+  "status": "CANDIDATE_NOT_FROZEN_NOT_EVALUATED",
+  "generated_at": "2026-08-24T12:35:30.208473+08:00",
+  "generator": "generate_external300.py",
+  "generator_sha256": "40a436dbea20b7d2980449d39bc1c4f0afe950e86ee0af75d745543a6c298f26",
+  "task_count": 300,
+  "counts_by_type": {
+    "asset_routing": 60,
+    "data_binding": 60,
+    "memory_query": 60,
+    "rule_repair": 60,
+    "scene_construction": 60
+  },
+  "difficulty_by_type": {
+    "scene_construction": {
+      "easy": 15,
+      "hard": 15,
+      "medium": 30
+    },
+    "asset_routing": {
+      "easy": 15,
+      "hard": 15,
+      "medium": 30
+    },
+    "data_binding": {
+      "easy": 15,
+      "hard": 15,
+      "medium": 30
+    },
+    "rule_repair": {
+      "easy": 15,
+      "hard": 15,
+      "medium": 30
+    },
+    "memory_query": {
+      "easy": 15,
+      "hard": 15,
+      "medium": 30
+    }
+  },
+  "annotation_version": "v2",
+  "review_status": "author_approved_unified_directive_2026-08-24",
+  "method_execution_status": "NOT_RUN",
+  "legacy_test_v2_exact_prompt_overlap_count": 0,
+  "legacy_test_v2_exact_prompt_overlap_hashes": [],
+  "record_provenance": {
+    "memory_timeseries": "deterministic synthetic; public-dataset scenario informed; not copied raw WUR observations",
+    "semantic_sources": {
+      "semantic_core": [
+        "SAREF4AGRI-v2.1.1",
+        "W3C-SOSA-SSN-2017"
+      ],
+      "greenhouse_schema": [
+        "FIWARE-SmartDataModels-AgriGreenhouse"
+      ],
+      "scenario_basis": [
+        "WUR-AGC-2018-cucumber",
+        "WUR-AGC-2019-cherry-tomato",
+        "WUR-AGC-2022-lettuce",
+        "WUR-AGC-2024-dwarf-tomato"
+      ]
+    }
+  },
+  "files": {
+    "external300_public_inputs.jsonl": {
+      "sha256": "0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7",
+      "bytes": 507786
+    },
+    "external300_gold_draft.jsonl": {
+      "sha256": "a07964f6d3cc03f2561d51a9d097596ad52fd3345cde2e0ef317001c87c88891",
+      "bytes": 1498786
+    },
+    "external300_catalog.csv": {
+      "sha256": "38f30b128684c5399de490cd71ed18d39ef1e87c8f3a0347b4f6d9f0a4d0e786",
+      "bytes": 38619
+    },
+    "external300_review_queue.csv": {
+      "sha256": "e2b7a9691bb3326a167b244580ba5433809f2b945ea0f6fc336a2f42104e1d78",
+      "bytes": 66158
+    },
+    "external300_schema.json": {
+      "sha256": "f1d2a45ec7e1eeaf433c459d8eac8377b7f4e69cafb13215e76961259eb7dcd5",
+      "bytes": 4410
+    },
+    "validate_external300.py": {
+      "sha256": "032a5110048f39f7fd32d5a79772b0b81517828635cedcadd6b8327720ce1e4d",
+      "bytes": 23479
+    },
+    "audit_gold_satisfiability.py": {
+      "sha256": "aac25224d06b70c8850c0708dcfc1d89df1c9e4594f20e577cdb6fc0af74b363",
+      "bytes": 3895
+    },
+    "README.md": {
+      "sha256": "cf4013bccf4043a1d23105e19789c14059b5c164b521ae1beef9df08ebd627eb",
+      "bytes": 3882
+    },
+    "SOURCES.md": {
+      "sha256": "fe674501360fec08317d704427aaaedf87b37bea39fadfacbace77aec0608084",
+      "bytes": 3234
+    },
+    "ANNOTATION_GUIDELINE.md": {
+      "sha256": "882271fffe427f985c52bb388f96c541b35e7834a36aefb638f2687e71feacbd",
+      "bytes": 3756
+    },
+    "PREREGISTRATION_DRAFT.md": {
+      "sha256": "e0617b657f554f0f51b65df2b7792043d40fcc79a9334872894e377ebbd69afb",
+      "bytes": 8130
+    },
+    "PUBLIC_DATA_IMPORT_PLAN.md": {
+      "sha256": "62f1994b865df91b36154afed37dd2ec10b7f9b2b8db965b6d44642e82eb8ddd",
+      "bytes": 1873
+    },
+    "PHASE5_EXECUTION_PROMPT.md": {
+      "sha256": "453979b769da063b771236438535a9cba06e2d8df0048b194487b2ff4b002289",
+      "bytes": 1931
+    },
+    "public_data_registry.csv": {
+      "sha256": "04b8de25c1d1161d74f0d944a272d84e6437b0c43dd50344613d5b176afd6f47",
+      "bytes": 1361
+    }
+  },
+  "freeze_requirements": [
+    "two independent reviewers complete every row",
+    "disagreements adjudicated by a third person",
+    "all accepted gold rows set to approved",
+    "public and gold files regenerated and sealed with SHA-256",
+    "methods, prompts, model/provider, budget and evaluator frozen before first run",
+    "no method output inspected during annotation"
+  ],
+  "review_note": "Per user unified directive 2026-08-24: all 300 tasks approved by the author (content verification previously completed; reviewer/adjudicator fields filled 'approved' citing this directive). NOT independent double-blind review; publications must state author-reviewed only."
+}

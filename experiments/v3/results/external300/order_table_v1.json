@@ -1,0 +1,1812 @@
+{
+ "artifact": "external300_execution_order_table",
+ "version": 1,
+ "seed": 20260804,
+ "public_sha256_at_generation": "0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7",
+ "n_tasks": 300,
+ "kf_first_count": 150,
+ "sa_first_count": 150,
+ "schedule": [
+  {
+   "seq": 1,
+   "task_id": "EXT-MQ-047",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 2,
+   "task_id": "EXT-DB-003",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 3,
+   "task_id": "EXT-AR-013",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 4,
+   "task_id": "EXT-SC-031",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 5,
+   "task_id": "EXT-DB-048",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 6,
+   "task_id": "EXT-RR-011",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 7,
+   "task_id": "EXT-DB-052",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 8,
+   "task_id": "EXT-RR-058",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 9,
+   "task_id": "EXT-DB-006",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 10,
+   "task_id": "EXT-SC-034",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 11,
+   "task_id": "EXT-RR-031",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 12,
+   "task_id": "EXT-MQ-018",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 13,
+   "task_id": "EXT-AR-028",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 14,
+   "task_id": "EXT-DB-043",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 15,
+   "task_id": "EXT-DB-057",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 16,
+   "task_id": "EXT-AR-048",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 17,
+   "task_id": "EXT-DB-008",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 18,
+   "task_id": "EXT-SC-005",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 19,
+   "task_id": "EXT-SC-054",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 20,
+   "task_id": "EXT-SC-042",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 21,
+   "task_id": "EXT-DB-015",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 22,
+   "task_id": "EXT-MQ-060",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 23,
+   "task_id": "EXT-RR-059",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 24,
+   "task_id": "EXT-DB-040",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 25,
+   "task_id": "EXT-AR-009",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 26,
+   "task_id": "EXT-RR-030",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 27,
+   "task_id": "EXT-AR-019",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 28,
+   "task_id": "EXT-SC-029",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 29,
+   "task_id": "EXT-SC-011",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 30,
+   "task_id": "EXT-RR-016",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 31,
+   "task_id": "EXT-AR-040",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 32,
+   "task_id": "EXT-RR-014",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 33,
+   "task_id": "EXT-DB-059",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 34,
+   "task_id": "EXT-DB-005",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 35,
+   "task_id": "EXT-DB-014",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 36,
+   "task_id": "EXT-SC-049",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 37,
+   "task_id": "EXT-RR-048",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 38,
+   "task_id": "EXT-SC-050",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 39,
+   "task_id": "EXT-MQ-039",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 40,
+   "task_id": "EXT-AR-002",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 41,
+   "task_id": "EXT-RR-042",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 42,
+   "task_id": "EXT-AR-059",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 43,
+   "task_id": "EXT-AR-021",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 44,
+   "task_id": "EXT-AR-041",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 45,
+   "task_id": "EXT-DB-026",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 46,
+   "task_id": "EXT-DB-024",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 47,
+   "task_id": "EXT-AR-008",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 48,
+   "task_id": "EXT-SC-046",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 49,
+   "task_id": "EXT-MQ-029",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 50,
+   "task_id": "EXT-MQ-008",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 51,
+   "task_id": "EXT-RR-052",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 52,
+   "task_id": "EXT-DB-021",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 53,
+   "task_id": "EXT-RR-003",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 54,
+   "task_id": "EXT-RR-029",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 55,
+   "task_id": "EXT-RR-038",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 56,
+   "task_id": "EXT-RR-009",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 57,
+   "task_id": "EXT-SC-051",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 58,
+   "task_id": "EXT-RR-037",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 59,
+   "task_id": "EXT-RR-034",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 60,
+   "task_id": "EXT-SC-022",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 61,
+   "task_id": "EXT-MQ-032",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 62,
+   "task_id": "EXT-DB-037",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 63,
+   "task_id": "EXT-RR-056",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 64,
+   "task_id": "EXT-RR-021",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 65,
+   "task_id": "EXT-MQ-004",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 66,
+   "task_id": "EXT-AR-045",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 67,
+   "task_id": "EXT-AR-054",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 68,
+   "task_id": "EXT-MQ-043",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 69,
+   "task_id": "EXT-RR-004",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 70,
+   "task_id": "EXT-DB-019",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 71,
+   "task_id": "EXT-SC-008",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 72,
+   "task_id": "EXT-AR-052",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 73,
+   "task_id": "EXT-SC-019",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 74,
+   "task_id": "EXT-SC-007",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 75,
+   "task_id": "EXT-RR-033",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 76,
+   "task_id": "EXT-AR-016",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 77,
+   "task_id": "EXT-RR-013",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 78,
+   "task_id": "EXT-DB-027",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 79,
+   "task_id": "EXT-DB-017",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 80,
+   "task_id": "EXT-DB-016",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 81,
+   "task_id": "EXT-MQ-025",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 82,
+   "task_id": "EXT-AR-060",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 83,
+   "task_id": "EXT-DB-002",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 84,
+   "task_id": "EXT-MQ-049",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 85,
+   "task_id": "EXT-MQ-051",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 86,
+   "task_id": "EXT-RR-060",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 87,
+   "task_id": "EXT-DB-032",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 88,
+   "task_id": "EXT-SC-060",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 89,
+   "task_id": "EXT-AR-030",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 90,
+   "task_id": "EXT-DB-056",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 91,
+   "task_id": "EXT-SC-059",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 92,
+   "task_id": "EXT-SC-033",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 93,
+   "task_id": "EXT-RR-020",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 94,
+   "task_id": "EXT-MQ-024",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 95,
+   "task_id": "EXT-DB-060",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 96,
+   "task_id": "EXT-MQ-013",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 97,
+   "task_id": "EXT-MQ-042",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 98,
+   "task_id": "EXT-DB-023",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 99,
+   "task_id": "EXT-SC-015",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 100,
+   "task_id": "EXT-MQ-020",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 101,
+   "task_id": "EXT-SC-001",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 102,
+   "task_id": "EXT-DB-007",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 103,
+   "task_id": "EXT-DB-022",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 104,
+   "task_id": "EXT-AR-005",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 105,
+   "task_id": "EXT-RR-039",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 106,
+   "task_id": "EXT-AR-007",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 107,
+   "task_id": "EXT-SC-026",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 108,
+   "task_id": "EXT-AR-022",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 109,
+   "task_id": "EXT-SC-003",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 110,
+   "task_id": "EXT-AR-025",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 111,
+   "task_id": "EXT-MQ-048",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 112,
+   "task_id": "EXT-SC-010",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 113,
+   "task_id": "EXT-SC-017",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 114,
+   "task_id": "EXT-RR-041",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 115,
+   "task_id": "EXT-AR-027",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 116,
+   "task_id": "EXT-SC-021",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 117,
+   "task_id": "EXT-DB-009",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 118,
+   "task_id": "EXT-SC-044",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 119,
+   "task_id": "EXT-RR-022",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 120,
+   "task_id": "EXT-AR-053",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 121,
+   "task_id": "EXT-SC-027",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 122,
+   "task_id": "EXT-DB-035",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 123,
+   "task_id": "EXT-AR-039",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 124,
+   "task_id": "EXT-RR-023",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 125,
+   "task_id": "EXT-AR-035",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 126,
+   "task_id": "EXT-MQ-045",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 127,
+   "task_id": "EXT-SC-002",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 128,
+   "task_id": "EXT-DB-036",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 129,
+   "task_id": "EXT-RR-049",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 130,
+   "task_id": "EXT-MQ-031",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 131,
+   "task_id": "EXT-MQ-035",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 132,
+   "task_id": "EXT-RR-054",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 133,
+   "task_id": "EXT-SC-040",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 134,
+   "task_id": "EXT-DB-018",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 135,
+   "task_id": "EXT-RR-008",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 136,
+   "task_id": "EXT-MQ-009",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 137,
+   "task_id": "EXT-MQ-040",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 138,
+   "task_id": "EXT-DB-058",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 139,
+   "task_id": "EXT-DB-046",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 140,
+   "task_id": "EXT-DB-011",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 141,
+   "task_id": "EXT-SC-018",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 142,
+   "task_id": "EXT-AR-056",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 143,
+   "task_id": "EXT-RR-055",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 144,
+   "task_id": "EXT-SC-058",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 145,
+   "task_id": "EXT-MQ-016",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 146,
+   "task_id": "EXT-MQ-041",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 147,
+   "task_id": "EXT-MQ-007",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 148,
+   "task_id": "EXT-AR-036",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 149,
+   "task_id": "EXT-DB-049",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 150,
+   "task_id": "EXT-MQ-005",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 151,
+   "task_id": "EXT-DB-001",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 152,
+   "task_id": "EXT-MQ-003",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 153,
+   "task_id": "EXT-AR-051",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 154,
+   "task_id": "EXT-RR-015",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 155,
+   "task_id": "EXT-MQ-015",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 156,
+   "task_id": "EXT-AR-001",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 157,
+   "task_id": "EXT-SC-030",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 158,
+   "task_id": "EXT-RR-019",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 159,
+   "task_id": "EXT-DB-041",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 160,
+   "task_id": "EXT-DB-047",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 161,
+   "task_id": "EXT-MQ-058",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 162,
+   "task_id": "EXT-DB-033",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 163,
+   "task_id": "EXT-RR-046",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 164,
+   "task_id": "EXT-MQ-006",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 165,
+   "task_id": "EXT-MQ-056",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 166,
+   "task_id": "EXT-SC-004",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 167,
+   "task_id": "EXT-AR-018",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 168,
+   "task_id": "EXT-SC-024",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 169,
+   "task_id": "EXT-MQ-038",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 170,
+   "task_id": "EXT-AR-042",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 171,
+   "task_id": "EXT-SC-041",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 172,
+   "task_id": "EXT-SC-043",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 173,
+   "task_id": "EXT-SC-006",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 174,
+   "task_id": "EXT-RR-025",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 175,
+   "task_id": "EXT-DB-055",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 176,
+   "task_id": "EXT-MQ-052",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 177,
+   "task_id": "EXT-RR-036",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 178,
+   "task_id": "EXT-AR-004",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 179,
+   "task_id": "EXT-RR-050",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 180,
+   "task_id": "EXT-AR-043",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 181,
+   "task_id": "EXT-MQ-014",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 182,
+   "task_id": "EXT-AR-026",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 183,
+   "task_id": "EXT-DB-039",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 184,
+   "task_id": "EXT-SC-052",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 185,
+   "task_id": "EXT-SC-025",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 186,
+   "task_id": "EXT-MQ-050",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 187,
+   "task_id": "EXT-AR-050",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 188,
+   "task_id": "EXT-DB-029",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 189,
+   "task_id": "EXT-MQ-011",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 190,
+   "task_id": "EXT-SC-037",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 191,
+   "task_id": "EXT-RR-043",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 192,
+   "task_id": "EXT-MQ-017",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 193,
+   "task_id": "EXT-SC-014",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 194,
+   "task_id": "EXT-SC-013",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 195,
+   "task_id": "EXT-RR-012",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 196,
+   "task_id": "EXT-DB-012",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 197,
+   "task_id": "EXT-RR-044",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 198,
+   "task_id": "EXT-DB-004",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 199,
+   "task_id": "EXT-SC-047",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 200,
+   "task_id": "EXT-RR-005",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 201,
+   "task_id": "EXT-AR-046",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 202,
+   "task_id": "EXT-AR-057",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 203,
+   "task_id": "EXT-AR-015",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 204,
+   "task_id": "EXT-RR-018",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 205,
+   "task_id": "EXT-MQ-030",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 206,
+   "task_id": "EXT-MQ-022",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 207,
+   "task_id": "EXT-RR-053",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 208,
+   "task_id": "EXT-AR-024",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 209,
+   "task_id": "EXT-MQ-034",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 210,
+   "task_id": "EXT-AR-049",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 211,
+   "task_id": "EXT-SC-016",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 212,
+   "task_id": "EXT-DB-020",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 213,
+   "task_id": "EXT-AR-020",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 214,
+   "task_id": "EXT-RR-010",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 215,
+   "task_id": "EXT-RR-006",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 216,
+   "task_id": "EXT-AR-010",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 217,
+   "task_id": "EXT-SC-012",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 218,
+   "task_id": "EXT-RR-032",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 219,
+   "task_id": "EXT-SC-055",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 220,
+   "task_id": "EXT-RR-045",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 221,
+   "task_id": "EXT-DB-051",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 222,
+   "task_id": "EXT-DB-044",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 223,
+   "task_id": "EXT-DB-042",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 224,
+   "task_id": "EXT-AR-003",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 225,
+   "task_id": "EXT-DB-038",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 226,
+   "task_id": "EXT-RR-057",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 227,
+   "task_id": "EXT-AR-023",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 228,
+   "task_id": "EXT-MQ-053",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 229,
+   "task_id": "EXT-AR-033",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 230,
+   "task_id": "EXT-RR-047",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 231,
+   "task_id": "EXT-MQ-002",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 232,
+   "task_id": "EXT-RR-027",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 233,
+   "task_id": "EXT-AR-006",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 234,
+   "task_id": "EXT-MQ-027",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 235,
+   "task_id": "EXT-DB-034",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 236,
+   "task_id": "EXT-MQ-055",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 237,
+   "task_id": "EXT-AR-011",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 238,
+   "task_id": "EXT-RR-007",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 239,
+   "task_id": "EXT-AR-034",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 240,
+   "task_id": "EXT-MQ-036",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 241,
+   "task_id": "EXT-SC-038",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 242,
+   "task_id": "EXT-MQ-054",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 243,
+   "task_id": "EXT-MQ-046",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 244,
+   "task_id": "EXT-DB-053",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 245,
+   "task_id": "EXT-MQ-012",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 246,
+   "task_id": "EXT-SC-048",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 247,
+   "task_id": "EXT-SC-039",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 248,
+   "task_id": "EXT-SC-045",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 249,
+   "task_id": "EXT-MQ-026",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 250,
+   "task_id": "EXT-DB-010",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 251,
+   "task_id": "EXT-SC-028",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 252,
+   "task_id": "EXT-SC-035",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 253,
+   "task_id": "EXT-SC-053",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 254,
+   "task_id": "EXT-RR-002",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 255,
+   "task_id": "EXT-MQ-059",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 256,
+   "task_id": "EXT-RR-026",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 257,
+   "task_id": "EXT-AR-038",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 258,
+   "task_id": "EXT-SC-056",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 259,
+   "task_id": "EXT-DB-030",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 260,
+   "task_id": "EXT-AR-031",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 261,
+   "task_id": "EXT-MQ-037",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 262,
+   "task_id": "EXT-SC-057",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 263,
+   "task_id": "EXT-SC-020",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 264,
+   "task_id": "EXT-MQ-021",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 265,
+   "task_id": "EXT-RR-051",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 266,
+   "task_id": "EXT-SC-032",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 267,
+   "task_id": "EXT-DB-031",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 268,
+   "task_id": "EXT-MQ-019",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 269,
+   "task_id": "EXT-RR-035",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 270,
+   "task_id": "EXT-SC-036",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 271,
+   "task_id": "EXT-RR-017",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 272,
+   "task_id": "EXT-MQ-023",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 273,
+   "task_id": "EXT-RR-040",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 274,
+   "task_id": "EXT-DB-045",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 275,
+   "task_id": "EXT-AR-029",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 276,
+   "task_id": "EXT-AR-047",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 277,
+   "task_id": "EXT-AR-032",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 278,
+   "task_id": "EXT-AR-044",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 279,
+   "task_id": "EXT-AR-014",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 280,
+   "task_id": "EXT-AR-037",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 281,
+   "task_id": "EXT-AR-017",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 282,
+   "task_id": "EXT-DB-013",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 283,
+   "task_id": "EXT-MQ-057",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 284,
+   "task_id": "EXT-MQ-044",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 285,
+   "task_id": "EXT-DB-025",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 286,
+   "task_id": "EXT-SC-009",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 287,
+   "task_id": "EXT-AR-012",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 288,
+   "task_id": "EXT-MQ-001",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 289,
+   "task_id": "EXT-AR-055",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 290,
+   "task_id": "EXT-MQ-010",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 291,
+   "task_id": "EXT-SC-023",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 292,
+   "task_id": "EXT-DB-050",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 293,
+   "task_id": "EXT-MQ-033",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 294,
+   "task_id": "EXT-RR-024",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 295,
+   "task_id": "EXT-DB-028",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 296,
+   "task_id": "EXT-RR-001",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 297,
+   "task_id": "EXT-MQ-028",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 298,
+   "task_id": "EXT-RR-028",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  },
+  {
+   "seq": 299,
+   "task_id": "EXT-DB-054",
+   "first_method": "KAFarmTwin-TypedRepair",
+   "second_method": "SingleAgent-AllTools"
+  },
+  {
+   "seq": 300,
+   "task_id": "EXT-AR-058",
+   "first_method": "SingleAgent-AllTools",
+   "second_method": "KAFarmTwin-TypedRepair"
+  }
+ ],
+ "self_sha256": "1e36c935c1724415c35baa79a40526f71d399899d175afe76a685b9f4a3d2650"
+}

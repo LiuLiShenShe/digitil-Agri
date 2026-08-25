@@ -1,0 +1,9 @@
+{
+ "status": "VOIDED_BEFORE_SEAL_OR_SCORE",
+ "reason": "harness defect: semantic_compiler.py bind_scene() referenced unassigned 'oid' (NameError) -> 5 KF asset_routing tasks (EXT-AR-047/050/056/059/060) recorded technical_failure=true zero-score through NO fault of the method. Defect is KF-path-only => systematically unfair.",
+ "voided_at": "2026-08-25",
+ "voided_by": "user decision (作废+修复+完整重跑)",
+ "integrity": "no seal was created; score never ran; NO performance metrics were viewed - only the error field was inspected. Re-run does not constitute post-result adjustment.",
+ "replacement_run_id": "ext300_formal_20260825",
+ "raw_preserved": true
+}

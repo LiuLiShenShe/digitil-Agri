@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "External300 candidate task schema",
+  "description": "Candidate-only schema. Passing this schema does not approve or freeze a task.",
+  "type": "object",
+  "required": [
+    "task_id",
+    "task_type",
+    "difficulty",
+    "prompt",
+    "annotation_version",
+    "review_status",
+    "initial_state",
+    "expected_outcome",
+    "required_nodes",
+    "required_edges",
+    "required_bindings",
+    "critical_objects",
+    "fatal_constraints",
+    "allowed_side_effects",
+    "forbidden_side_effects"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^EXT-(SC|AR|DB|RR|MQ)-[0-9]{3}$"
+    },
+    "task_type": {
+      "enum": [
+        "scene_construction",
+        "asset_routing",
+        "data_binding",
+        "rule_repair",
+        "memory_query"
+      ]
+    },
+    "difficulty": {
+      "enum": ["easy", "medium", "hard"]
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 20
+    },
+    "annotation_version": {
+      "const": "v2"
+    },
+    "review_status": {
+      "enum": ["pending", "needs_revision", "approved", "rejected"]
+    },
+    "initial_state": {
+      "type": "object"
+    },
+    "goal_state": {
+      "type": "object"
+    },
+    "query_spec": {
+      "type": ["object", "null"]
+    },
+    "expected_answer": {
+      "type": ["object", "null"]
+    },
+    "expected_evidence": {
+      "type": ["object", "null"]
+    },
+    "expected_outcome": {
+      "type": "object"
+    },
+    "required_nodes": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/node"}
+    },
+    "required_edges": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/edge"}
+    },
+    "required_bindings": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/binding"}
+    },
+    "critical_objects": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "fatal_constraints": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "allowed_side_effects": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "forbidden_side_effects": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "equivalence_groups": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "allowed_variants": {
+      "type": "array",
+      "items": {"type": "object"}
+    }
+  },
+  "definitions": {
+    "node": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "role": {"enum": ["root", "entity", "focus", "background"]},
+        "count": {"type": "integer", "minimum": 1},
+        "parent": {"type": "string"},
+        "key_attrs": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["subject", "predicate", "object"],
+      "properties": {
+        "subject": {"type": "string"},
+        "predicate": {"type": "string"},
+        "object": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "binding": {
+      "type": "object",
+      "required": ["subject", "target", "type", "metadata"],
+      "properties": {
+        "subject": {"type": "string"},
+        "target": {"type": "string"},
+        "type": {"enum": ["asset", "asset_job", "sensor_bind", "trait_bind"]},
+        "metadata": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"task_type": {"const": "memory_query"}}},
+      "then": {
+        "required": ["query_spec", "expected_answer", "expected_evidence"],
+        "properties": {
+          "query_spec": {"type": "object"},
+          "expected_answer": {"type": "object"},
+          "expected_evidence": {"type": "object"},
+          "required_nodes": {"maxItems": 0},
+          "required_edges": {"maxItems": 0},
+          "required_bindings": {"maxItems": 0}
+        }
+      },
+      "else": {
+        "properties": {
+          "required_nodes": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"task_type": {"const": "rule_repair"}}},
+      "then": {
+        "required": ["goal_state"],
+        "properties": {
+          "critical_objects": {"minItems": 1},
+          "goal_state": {"type": "object"}
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}
