@@ -1,0 +1,362 @@
+{
+ "artifact": "MULTIMODEL_CANONICAL_STATISTICS_v2",
+ "blocks": {
+  "DeepSeek-V4-Flash (frozen baseline)": {
+   "run_id": "ext300_formal_20260825",
+   "sealed_raw_sha256": "b52f00c4bee3b43723689c3556300e0754a8ab9564b96341d05e88b591d40d91",
+   "n": 300,
+   "KAFarmTwin-TypedRepair": {
+    "cvsr": 0.7167,
+    "object_f1": 0.6896,
+    "relation_f1": 0.6995,
+    "binding_f1": 0.5939,
+    "critical_recall": 1.0,
+    "fatal_rate": 0.0,
+    "evidence_precision": 1.0,
+    "replay_success": 0.8083,
+    "tokens_total": 668769,
+    "cost_usd_total": 0.1035,
+    "latency_p50_s_all": 2.52,
+    "latency_p95_s_all": 9.59,
+    "llm_invoking_n": 240,
+    "latency_p50_s_llm": 2.82,
+    "latency_p95_s_llm": 10.01,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0833,
+     "data_binding": 1.0,
+     "memory_query": 1.0,
+     "rule_repair": 1.0,
+     "scene_construction": 0.5
+    },
+    "cost_cny_total_harness": 0.6974
+   },
+   "SingleAgent-AllTools": {
+    "cvsr": 0.48,
+    "object_f1": 0.6351,
+    "relation_f1": 0.379,
+    "binding_f1": 0.2,
+    "critical_recall": 0.95,
+    "fatal_rate": 0.25,
+    "evidence_precision": 0.9467,
+    "replay_success": 0.4553,
+    "tokens_total": 472722,
+    "cost_usd_total": 0.0854,
+    "latency_p50_s_all": 2.06,
+    "latency_p95_s_all": 12.52,
+    "llm_invoking_n": 180,
+    "latency_p50_s_llm": 6.72,
+    "latency_p95_s_llm": 15.45,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 1.0,
+     "memory_query": 1.0,
+     "rule_repair": 0.0,
+     "scene_construction": 0.4
+    },
+    "cost_cny_total_harness": 0.5755
+   },
+   "paired": {
+    "delta": 0.2367,
+    "ci95_low": 0.1833,
+    "ci95_high": 0.29,
+    "mcnemar_b": 77,
+    "mcnemar_c": 6,
+    "mcnemar_display": "p<1e-6 (exact tail 8.45e-17, b=77, c=6)"
+   }
+  },
+  "Pro/moonshotai/Kimi-K2.6": {
+   "run_id": "ext300_mm1_kimi_20260825",
+   "sealed_raw_sha256": "1e4586f8571215722d98712a4f86c75b22ad90c45ad703fb380023c5dddd347e",
+   "n": 300,
+   "KAFarmTwin-TypedRepair": {
+    "cvsr": 0.6733,
+    "object_f1": 0.6566,
+    "relation_f1": 0.7587,
+    "binding_f1": 0.5967,
+    "critical_recall": 1.0,
+    "fatal_rate": 0.0,
+    "evidence_precision": 1.0,
+    "replay_success": 0.8083,
+    "tokens_total": 616047,
+    "cost_usd_total": 0.0976,
+    "latency_p50_s_all": 3.79,
+    "latency_p95_s_all": 24.44,
+    "llm_invoking_n": 240,
+    "latency_p50_s_llm": 4.57,
+    "latency_p95_s_llm": 25.35,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 0.95,
+     "memory_query": 1.0,
+     "rule_repair": 1.0,
+     "scene_construction": 0.4167
+    },
+    "cost_cny_total_harness": 0.6577
+   },
+   "SingleAgent-AllTools": {
+    "cvsr": 0.4933,
+    "object_f1": 0.6219,
+    "relation_f1": 0.4185,
+    "binding_f1": 0.1978,
+    "critical_recall": 0.9467,
+    "fatal_rate": 0.29,
+    "evidence_precision": 0.9333,
+    "replay_success": 0.442,
+    "tokens_total": 495961,
+    "cost_usd_total": 0.0937,
+    "latency_p50_s_all": 4.59,
+    "latency_p95_s_all": 41.09,
+    "llm_invoking_n": 180,
+    "latency_p50_s_llm": 19.85,
+    "latency_p95_s_llm": 43.1,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 0.9667,
+     "memory_query": 1.0,
+     "rule_repair": 0.0,
+     "scene_construction": 0.5
+    },
+    "cost_cny_total_harness": 0.6314
+   },
+   "paired": {
+    "delta": 0.18,
+    "ci95_low": 0.13,
+    "ci95_high": 0.2333,
+    "mcnemar_b": 63,
+    "mcnemar_c": 9,
+    "mcnemar_display": "p<1e-6 (exact tail 4.18e-11, b=63, c=9)"
+   }
+  },
+  "MiniMaxAI/MiniMax-M2.5": {
+   "run_id": "ext300_mm2_minimax_20260825",
+   "sealed_raw_sha256": "54659bbad58d58429b2de0ee4a89fc20b7898b995807cda27cccf4b7f13c351c",
+   "n": 300,
+   "KAFarmTwin-TypedRepair": {
+    "cvsr": 0.6067,
+    "object_f1": 0.7045,
+    "relation_f1": 0.7111,
+    "binding_f1": 0.529,
+    "critical_recall": 1.0,
+    "fatal_rate": 0.0033,
+    "evidence_precision": 0.99,
+    "replay_success": 0.7983,
+    "tokens_total": 973198,
+    "cost_usd_total": 0.1938,
+    "latency_p50_s_all": 20.09,
+    "latency_p95_s_all": 105.74,
+    "llm_invoking_n": 240,
+    "latency_p50_s_llm": 23.41,
+    "latency_p95_s_llm": 119.23,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.1333,
+     "data_binding": 0.2667,
+     "memory_query": 1.0,
+     "rule_repair": 1.0,
+     "scene_construction": 0.6333
+    },
+    "cost_cny_total_harness": 1.3059
+   },
+   "SingleAgent-AllTools": {
+    "cvsr": 0.35,
+    "object_f1": 0.5947,
+    "relation_f1": 0.4171,
+    "binding_f1": 0.1397,
+    "critical_recall": 0.9733,
+    "fatal_rate": 0.2933,
+    "evidence_precision": 0.9567,
+    "replay_success": 0.4753,
+    "tokens_total": 726072,
+    "cost_usd_total": 0.1579,
+    "latency_p50_s_all": 14.49,
+    "latency_p95_s_all": 131.25,
+    "llm_invoking_n": 179,
+    "latency_p50_s_llm": 45.67,
+    "latency_p95_s_llm": 202.0,
+    "technical_failures": 1,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 0.2167,
+     "memory_query": 1.0,
+     "rule_repair": 0.0,
+     "scene_construction": 0.5333
+    },
+    "cost_cny_total_harness": 1.064
+   },
+   "paired": {
+    "delta": 0.2567,
+    "ci95_low": 0.1967,
+    "ci95_high": 0.3167,
+    "mcnemar_b": 91,
+    "mcnemar_c": 14,
+    "mcnemar_display": "p<1e-6 (exact tail 5.32e-15, b=91, c=14)"
+   }
+  },
+  "Qwen/Qwen3.6-27B": {
+   "run_id": "ext300_mm3_qwen_20260825",
+   "sealed_raw_sha256": "eaeefdbdc14ad5de364fc1a15d042a1cf5eea8a5f1f337c77d1416397fa0a642",
+   "n": 300,
+   "KAFarmTwin-TypedRepair": {
+    "cvsr": 0.6967,
+    "object_f1": 0.6582,
+    "relation_f1": 0.7706,
+    "binding_f1": 0.6,
+    "critical_recall": 1.0,
+    "fatal_rate": 0.0,
+    "evidence_precision": 1.0,
+    "replay_success": 0.8083,
+    "tokens_total": 649910,
+    "cost_usd_total": 0.1041,
+    "latency_p50_s_all": 10.26,
+    "latency_p95_s_all": 49.28,
+    "llm_invoking_n": 240,
+    "latency_p50_s_llm": 13.37,
+    "latency_p95_s_llm": 51.44,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 1.0,
+     "memory_query": 1.0,
+     "rule_repair": 1.0,
+     "scene_construction": 0.4833
+    },
+    "cost_cny_total_harness": 0.7015
+   },
+   "SingleAgent-AllTools": {
+    "cvsr": 0.48,
+    "object_f1": 0.6349,
+    "relation_f1": 0.4678,
+    "binding_f1": 0.2,
+    "critical_recall": 0.9633,
+    "fatal_rate": 0.25,
+    "evidence_precision": 0.9533,
+    "replay_success": 0.4583,
+    "tokens_total": 515325,
+    "cost_usd_total": 0.095,
+    "latency_p50_s_all": 15.78,
+    "latency_p95_s_all": 64.81,
+    "llm_invoking_n": 180,
+    "latency_p50_s_llm": 37.45,
+    "latency_p95_s_llm": 75.4,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 1.0,
+     "memory_query": 1.0,
+     "rule_repair": 0.0,
+     "scene_construction": 0.4
+    },
+    "cost_cny_total_harness": 0.6402
+   },
+   "paired": {
+    "delta": 0.2167,
+    "ci95_low": 0.1667,
+    "ci95_high": 0.2667,
+    "mcnemar_b": 69,
+    "mcnemar_c": 4,
+    "mcnemar_display": "p<1e-6 (exact tail 2.44e-16, b=69, c=4)"
+   }
+  },
+  "zai-org/GLM-5.2": {
+   "run_id": "ext300_mm4_glm_20260825",
+   "sealed_raw_sha256": "378474f46a6deeec51e8448830d8a473d68fb3cfeaacf3b068305270c5073ddc",
+   "n": 300,
+   "KAFarmTwin-TypedRepair": {
+    "cvsr": 0.7367,
+    "object_f1": 0.7147,
+    "relation_f1": 0.7171,
+    "binding_f1": 0.5739,
+    "critical_recall": 1.0,
+    "fatal_rate": 0.0,
+    "evidence_precision": 0.9967,
+    "replay_success": 0.805,
+    "tokens_total": 632982,
+    "cost_usd_total": 0.1028,
+    "latency_p50_s_all": 5.09,
+    "latency_p95_s_all": 29.49,
+    "llm_invoking_n": 240,
+    "latency_p50_s_llm": 5.99,
+    "latency_p95_s_llm": 30.68,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.1833,
+     "data_binding": 0.8667,
+     "memory_query": 1.0,
+     "rule_repair": 1.0,
+     "scene_construction": 0.6333
+    },
+    "cost_cny_total_harness": 0.6927
+   },
+   "SingleAgent-AllTools": {
+    "cvsr": 0.4933,
+    "object_f1": 0.619,
+    "relation_f1": 0.3677,
+    "binding_f1": 0.1881,
+    "critical_recall": 0.8833,
+    "fatal_rate": 0.2267,
+    "evidence_precision": 0.8533,
+    "replay_success": 0.3829,
+    "tokens_total": 452299,
+    "cost_usd_total": 0.0868,
+    "latency_p50_s_all": 5.64,
+    "latency_p95_s_all": 31.76,
+    "llm_invoking_n": 180,
+    "latency_p50_s_llm": 20.45,
+    "latency_p95_s_llm": 36.87,
+    "technical_failures": 0,
+    "pass5_note": "single execution per task-method on External300; pass@5 not defined in this protocol",
+    "by_type_cvsr": {
+     "asset_routing": 0.0,
+     "data_binding": 0.8167,
+     "memory_query": 1.0,
+     "rule_repair": 0.0,
+     "scene_construction": 0.65
+    },
+    "cost_cny_total_harness": 0.5849
+   },
+   "paired": {
+    "delta": 0.2433,
+    "ci95_low": 0.1833,
+    "ci95_high": 0.3033,
+    "mcnemar_b": 88,
+    "mcnemar_c": 15,
+    "mcnemar_display": "p<1e-6 (exact tail 9.65e-14, b=88, c=15)"
+   }
+  }
+ },
+ "generalization_verdict": {
+  "rule_source": "preregistered in MULTIMODEL_PREREGISTRATION_v2.md §6",
+  "per_model_delta": {
+   "Pro/moonshotai/Kimi-K2.6": 0.18,
+   "MiniMaxAI/MiniMax-M2.5": 0.2567,
+   "Qwen/Qwen3.6-27B": 0.2167,
+   "zai-org/GLM-5.2": 0.2433
+  },
+  "per_model_ci_lower_positive": {
+   "Pro/moonshotai/Kimi-K2.6": true,
+   "MiniMaxAI/MiniMax-M2.5": true,
+   "Qwen/Qwen3.6-27B": true,
+   "zai-org/GLM-5.2": true
+  },
+  "verdict": "MODEL_GENERALIZATION_PASS"
+ },
+ "cross_model_aggregate_exploratory": {
+  "note": "the same 300 tasks are reused across models; values are NOT 1200 independent pairs. Cluster bootstrap by task_id, 2000 resamples, mean of the four new models' per-task KF-SA differences.",
+  "point": 0.2242,
+  "ci95_low": 0.1792,
+  "ci95_high": 0.27
+ }
+}

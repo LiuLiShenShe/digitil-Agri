@@ -1,0 +1,9 @@
+{
+ "run_id": "ext300_mm4_glm_20260825",
+ "sealed_at_utc": "2026-08-26T10:44:53.229856+00:00",
+ "records": 600,
+ "unique_task_method_pairs": 600,
+ "technical_failures": 0,
+ "raw_runs_sha256": "378474f46a6deeec51e8448830d8a473d68fb3cfeaacf3b068305270c5073ddc",
+ "problems": []
+}

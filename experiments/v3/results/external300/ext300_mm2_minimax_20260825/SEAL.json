@@ -1,0 +1,9 @@
+{
+ "run_id": "ext300_mm2_minimax_20260825",
+ "sealed_at_utc": "2026-08-25T13:02:44.284985+00:00",
+ "records": 600,
+ "unique_task_method_pairs": 600,
+ "technical_failures": 1,
+ "raw_runs_sha256": "54659bbad58d58429b2de0ee4a89fc20b7898b995807cda27cccf4b7f13c351c",
+ "problems": []
+}

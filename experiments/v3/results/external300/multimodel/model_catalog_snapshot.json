@@ -1,0 +1,46 @@
+{
+ "artifact": "model_catalog_snapshot",
+ "version": 2,
+ "queried_at_utc": "2026-08-25T05:10:24.352826+00:00",
+ "endpoint": "https://api.siliconflow.cn/v1/models",
+ "endpoint_billing": "none (free metadata listing)",
+ "total_models_listed": 95,
+ "targets": {
+  "zai-org/GLM-5.2": {
+   "exact_id_found": true,
+   "metadata": {
+    "id": "zai-org/GLM-5.2",
+    "object": "model",
+    "created": 0,
+    "owned_by": ""
+   }
+  },
+  "Qwen/Qwen3.6-27B": {
+   "exact_id_found": true,
+   "metadata": {
+    "id": "Qwen/Qwen3.6-27B",
+    "object": "model",
+    "created": 0,
+    "owned_by": ""
+   }
+  },
+  "Pro/moonshotai/Kimi-K2.6": {
+   "exact_id_found": true,
+   "metadata": {
+    "id": "Pro/moonshotai/Kimi-K2.6",
+    "object": "model",
+    "created": 0,
+    "owned_by": ""
+   }
+  },
+  "MiniMaxAI/MiniMax-M2.5": {
+   "exact_id_found": true,
+   "metadata": {
+    "id": "MiniMaxAI/MiniMax-M2.5",
+    "object": "model",
+    "created": 0,
+    "owned_by": ""
+   }
+  }
+ }
+}

@@ -1,0 +1,9 @@
+{
+ "run_id": "ext300_mm3_qwen_20260825",
+ "sealed_at_utc": "2026-08-26T09:11:35.360834+00:00",
+ "records": 600,
+ "unique_task_method_pairs": 600,
+ "technical_failures": 0,
+ "raw_runs_sha256": "eaeefdbdc14ad5de364fc1a15d042a1cf5eea8a5f1f337c77d1416397fa0a642",
+ "problems": []
+}

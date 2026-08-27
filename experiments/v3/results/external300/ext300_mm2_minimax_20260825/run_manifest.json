@@ -1,0 +1,25 @@
+{
+ "run_id": "ext300_mm2_minimax_20260825",
+ "mode": "real_model_confirmatory_candidate",
+ "git_head": "3ad70bc8552e79d8fea4d6b4a5514036b87c540b",
+ "git_dirty": "10 dirty entries (non-pycache)",
+ "public_inputs_sha256": "0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7",
+ "gold_file_never_opened_by_run": true,
+ "order_table_sha256": "1e36c935c1724415c35baa79a40526f71d399899d175afe76a685b9f4a3d2650",
+ "methods": {
+  "KAFarmTwin-TypedRepair": "839643ecfb59725b0964f455df183d178bbcd1ce7251928d332e583e01237f21",
+  "SingleAgent-AllTools": "1e3878243f58e5a2a0bf0890a95fea0b193eae6f146a31e86d4879fe51ae83d0"
+ },
+ "model_catalog_id": "MiniMaxAI/MiniMax-M2.5",
+ "model_immutable_snapshot": "uncertain (provider does not expose immutable snapshot)",
+ "temperature": 0.2,
+ "seed": 20260804,
+ "budget_policy": {
+  "max_llm_calls": 30,
+  "max_tool_calls": 100,
+  "max_repair_rounds": 3
+ },
+ "retry_policy": "API technical failures only (timeout/HTTP 5xx/429/rate limit): LLMClient.call built-in retries=2 with exponential backoff. Logical failures (invalid output, budget exhaustion by method behavior, wrong scene): NO retry, record preserved. A task-method whose retries exhaust gets technical_failure=true and is kept.",
+ "ontology_note_sha256": "4f2df016e4111c65827207e32b2b105151e202f186d64cb81eb9dd241481b5d8",
+ "started_at_utc": "2026-08-25T07:23:39.718473+00:00"
+}

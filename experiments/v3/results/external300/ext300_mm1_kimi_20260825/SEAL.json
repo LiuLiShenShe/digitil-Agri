@@ -1,0 +1,9 @@
+{
+ "run_id": "ext300_mm1_kimi_20260825",
+ "sealed_at_utc": "2026-08-25T07:16:30.543596+00:00",
+ "records": 600,
+ "unique_task_method_pairs": 600,
+ "technical_failures": 0,
+ "raw_runs_sha256": "1e4586f8571215722d98712a4f86c75b22ad90c45ad703fb380023c5dddd347e",
+ "problems": []
+}

@@ -1,0 +1,158 @@
+{
+ "artifact": "model_matrix_config_v2",
+ "version": 2,
+ "status": "PREREGISTERED_AWAITING_SMOKE_APPROVAL",
+ "created_at_cst": "2026-08-25T13:19:31.249476+08:00",
+ "preregistration_md": "MULTIMODEL_PREREGISTRATION_v2.md",
+ "api": {
+  "base_url": "https://api.siliconflow.cn/v1",
+  "interface": "OpenAI-compatible /chat/completions",
+  "provider_note": "all five model families called via the same SiliconFlow interface; family generalization only, NO provider generalization claimable",
+  "auth_env_vars": [
+   "AGNES_API_KEY",
+   "AGNES_BASE_URL",
+   "AGNES_MODEL"
+  ],
+  "key_handling": "read from environment/.env into memory only; NEVER printed, logged, or written to any file/manifest/report"
+ },
+ "models_in_block_order": [
+  "Pro/moonshotai/Kimi-K2.6",
+  "MiniMaxAI/MiniMax-M2.5",
+  "Qwen/Qwen3.6-27B",
+  "zai-org/GLM-5.2"
+ ],
+ "models_catalog": {
+  "zai-org/GLM-5.2": {
+   "exact_id_required": true
+  },
+  "Qwen/Qwen3.6-27B": {
+   "exact_id_required": true
+  },
+  "Pro/moonshotai/Kimi-K2.6": {
+   "exact_id_required": true,
+   "tier_note": "Pro tier"
+  },
+  "MiniMaxAI/MiniMax-M2.5": {
+   "exact_id_required": true
+  }
+ },
+ "model_substitution_forbidden": "if any exact ID is unavailable at run time: STOP and report; never substitute a similar model",
+ "generation_params": {
+  "temperature": 0.2,
+  "max_tokens_per_call": 1200,
+  "thinking_or_reasoning_switches": {
+   "policy": "query SiliconFlow docs per model before smoke; if a public OpenAI-compatible field is documented for a model, freeze the actual value in an addendum BEFORE smoke; otherwise use provider default and record it; per-model tuning to improve scores forbidden",
+   "deepseek_baseline_note": "the frozen DeepSeek run used top-level enable_thinking=false on this gateway (documented in harness/llm.py); equivalent switches for new models are NOT assumed portable and follow the policy above"
+  },
+  "same_params_within_model": "KF and SA use byte-identical model-level params on the same model"
+ },
+ "budget_identical_to_frozen_run": {
+  "max_llm_calls": 30,
+  "max_tool_calls": 100,
+  "max_repair_rounds": 3,
+  "max_tokens": 500000,
+  "max_cost_usd_per_task_run": 10.0,
+  "request_timeout_seconds": 180,
+  "task_timeout_seconds": 300
+ },
+ "task_set_and_order": {
+  "tasks": 300,
+  "public_inputs": "experiments/v3/benchmark/external300_candidate/external300_public_inputs.jsonl",
+  "public_inputs_sha256": "0ede96ecb3c7e49c33e591c9d21c729db287dd5bd17148e7ca2d815f72d0e3d7",
+  "gold": "experiments/v3/benchmark/external300_candidate/external300_gold_draft.jsonl",
+  "gold_sha256": "a07964f6d3cc03f2561d51a9d097596ad52fd3345cde2e0ef317001c87c88891",
+  "order_table": "results/external300/order_table_v1.json",
+  "order_table_sha256": "fceca2f6818c117327c12baf2d569fe49072ab0d8fc61cb2d7f30da6267bfa39",
+  "order_table_self_sha256_recorded": "1e36c935c1724415c35baa79a40526f71d399899d175afe76a685b9f4a3d2650",
+  "pairing_rule": "per-task KF/SA order fixed by schedule (150 KF-first / 150 SA-first); identical pairing reused for every model block"
+ },
+ "code_frozen_sha256": {
+  "runner": {
+   "path": "scripts/run_external300.py",
+   "sha256": "a735523ca884409f9a8d37669f445d80588727e182a9c81c766ae76f16f4ebde"
+  },
+  "llm_client": {
+   "path": "harness/llm.py",
+   "sha256": "709cac3c5e9fae10468576cf1aab74acfa27f5977e4390d442df99a55a0b4693"
+  },
+  "budget": {
+   "path": "harness/budget.py",
+   "sha256": "72570613718b1a24fc5c1fff8f7afca25b17472b2da81ff79832891814cc9aae"
+  },
+  "method_kf": {
+   "path": "methods/kafarmtwin_typed_repair.py",
+   "sha256": "839643ecfb59725b0964f455df183d178bbcd1ce7251928d332e583e01237f21"
+  },
+  "method_sa": {
+   "path": "methods/single_agent.py",
+   "sha256": "1e3878243f58e5a2a0bf0890a95fea0b193eae6f146a31e86d4879fe51ae83d0"
+  },
+  "semantic_compiler": {
+   "path": "harness/semantic_compiler.py",
+   "sha256": "282c2a1c99618d4228b8d2458ff7a1690aa88a28980185968a801c8b829dc8ca"
+  },
+  "evaluator_node_match": {
+   "path": "evaluators/node_match.py",
+   "sha256": "f2fb602ac299cef1873027a9700f1a8d02fd0dc3ab0cc2d0e0d139b370815371"
+  },
+  "evaluator_edge_match": {
+   "path": "evaluators/edge_match.py",
+   "sha256": "2d8894d2d54ffb05676d72daab2425ba973731957d0371191550c10a47805f01"
+  },
+  "evaluator_binding_match": {
+   "path": "evaluators/binding_match.py",
+   "sha256": "af64a8ee1f800dcf76db03d8ed24bfe1a8fed6790b9c3526417bce08029dc048"
+  },
+  "evaluator_rule_engine": {
+   "path": "evaluators/rule_engine.py",
+   "sha256": "2d8d7ae2221f03afcbd7c6515fde10e5d12f4779882acd670cfc8d53ef463703"
+  },
+  "evaluator_version": {
+   "path": "evaluators/version.py",
+   "sha256": "e574a13c04a2ed89d2b6c83a8d51955c2ef439872e7e812e631542be15b657f5"
+  },
+  "ontology_note_text": {
+   "source": "harness/llm.py:ONTOLOGY_NOTE",
+   "sha256": "4f2df016e4111c65827207e32b2b105151e202f186d64cb81eb9dd241481b5d8"
+  }
+ },
+ "execution_policy": {
+  "executions_total_new": 2400,
+  "per_model": 600,
+  "one_logical_execution_per_task_method": true,
+  "retry_policy": "API technical failures only: retries=2 exponential backoff (harness built-in); logical failures NEVER retried; exhausted retries recorded technical_failure=true and kept",
+  "throttle_429_5xx_timeout": "same exponential backoff path; if a task still fails technically it is kept as-is; no selective rerun of failed tasks beyond the ledger-resume rule",
+  "resume_policy": "--resume skips completed (task_id, method) pairs already present with consistent hashes in the run ledger; successful records are never resampled",
+  "start_condition": "MULTIMODEL_SMOKE_APPROVED then smoke pass, then MULTIMODEL_RUN_APPROVED MAX_TOTAL_CNY=<limit>",
+  "end_condition": "each model block closed by: freeze raw writes -> SHA-256 -> seal -> manifest -> offline scoring; research ends when all four blocks sealed",
+  "no_performance_based_stopping": "during a run only completion/error/cost/technical counters may be inspected; CVSR or any performance metric MUST NOT be viewed until seal; no early stop or selective rerun based on performance",
+  "incomplete_rule": "if funds run short, pause only at a model-block boundary and mark the whole study INCOMPLETE; never choose the stopping point by observed performance",
+  "keep_all_results": true
+ },
+ "generalization_verdict_preregistered": {
+  "MODEL_GENERALIZATION_PASS": "all four new models have KF-SA CVSR delta > 0 AND >= 3 models' 95% CI lower bound > 0 (10k task-level paired bootstrap)",
+  "MODEL_GENERALIZATION_PARTIAL": ">= 3 new models delta > 0 but PASS criteria not met",
+  "MODEL_GENERALIZATION_FAIL": ">= 2 new models delta <= 0",
+  "side_results_note": "Fatal rate, Binding-F1 and cost reported independently; must NOT replace the primary verdict post hoc",
+  "aggregation_rule": "cross-model aggregation must NOT treat the reused 300 tasks as 1500 independent samples; use cluster bootstrap clustered by task_id keeping all model results, or label explicitly exploratory",
+  "scope_limit": "conclusions limited to cross-MODEL-FAMILY robustness; all calls via one SiliconFlow interface -> provider generalization NOT demonstrated; no SOTA / leaderboard / private-held-out claims"
+ },
+ "smoke_test_plan": {
+  "gate": "requires explicit MULTIMODEL_SMOKE_APPROVED from user",
+  "budget": "16 method-runs max = 4 models x 2 DEV tasks x 2 methods",
+  "dev_tasks": "two clearly DEV-marked fixtures OUTSIDE External300 covering structured output + repair path",
+  "checks": [
+   "HTTP/API compat",
+   "structured output parsing",
+   "content/reasoning_content/tool_calls",
+   "usage token fields",
+   "finish_reason",
+   "timeout & throttling",
+   "returned model id",
+   "cache fields",
+   "per-request cost"
+  ],
+  "results_use": "never enters paper main results; never used to tune formal prompts",
+  "compat_fixes": "model-agnostic harness fixes only; each fix requires a test + disclosure; exact-ID substitution forbidden"
+ }
+}

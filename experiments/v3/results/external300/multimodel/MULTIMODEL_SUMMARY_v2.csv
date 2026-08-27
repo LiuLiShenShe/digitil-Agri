@@ -1,0 +1,11 @@
+model,method,cvsr,object_f1,relation_f1,binding_f1,critical_recall,fatal_rate,evidence_precision,replay,tokens_total,cost_usd,lat_p50_all_s,lat_p95_all_s,tech_failures
+DeepSeek-V4-Flash (frozen baseline),KAFarmTwin-TypedRepair,0.7167,0.6896,0.6995,0.5939,1.0,0.0,1.0,0.8083,668769,0.1035,2.52,9.59,0
+DeepSeek-V4-Flash (frozen baseline),SingleAgent-AllTools,0.48,0.6351,0.379,0.2,0.95,0.25,0.9467,0.4553,472722,0.0854,2.06,12.52,0
+Pro/moonshotai/Kimi-K2.6,KAFarmTwin-TypedRepair,0.6733,0.6566,0.7587,0.5967,1.0,0.0,1.0,0.8083,616047,0.0976,3.79,24.44,0
+Pro/moonshotai/Kimi-K2.6,SingleAgent-AllTools,0.4933,0.6219,0.4185,0.1978,0.9467,0.29,0.9333,0.442,495961,0.0937,4.59,41.09,0
+MiniMaxAI/MiniMax-M2.5,KAFarmTwin-TypedRepair,0.6067,0.7045,0.7111,0.529,1.0,0.0033,0.99,0.7983,973198,0.1938,20.09,105.74,0
+MiniMaxAI/MiniMax-M2.5,SingleAgent-AllTools,0.35,0.5947,0.4171,0.1397,0.9733,0.2933,0.9567,0.4753,726072,0.1579,14.49,131.25,1
+Qwen/Qwen3.6-27B,KAFarmTwin-TypedRepair,0.6967,0.6582,0.7706,0.6,1.0,0.0,1.0,0.8083,649910,0.1041,10.26,49.28,0
+Qwen/Qwen3.6-27B,SingleAgent-AllTools,0.48,0.6349,0.4678,0.2,0.9633,0.25,0.9533,0.4583,515325,0.095,15.78,64.81,0
+zai-org/GLM-5.2,KAFarmTwin-TypedRepair,0.7367,0.7147,0.7171,0.5739,1.0,0.0,0.9967,0.805,632982,0.1028,5.09,29.49,0
+zai-org/GLM-5.2,SingleAgent-AllTools,0.4933,0.619,0.3677,0.1881,0.8833,0.2267,0.8533,0.3829,452299,0.0868,5.64,31.76,0

@@ -1,0 +1,40 @@
+{
+ "artifact": "price_snapshot",
+ "version": 2,
+ "captured_at_cst": "2026-08-25T13:14:27.386363+08:00",
+ "source_url": "https://www.siliconflow.cn/pricing",
+ "source_note": "官方模型价格中心，表头：输入价格（M Tokens）/ 输出价格（M Tokens）/ 缓存价格（M Tokens），货币为人民币（¥）。Pro/ 前缀为 Pro 档。页面标注实时价格同步。",
+ "currency": "CNY",
+ "unit": "per 1M tokens",
+ "models": {
+  "zai-org/GLM-5.2": {
+   "input": 8.0,
+   "output": 28.0,
+   "cache_hit": 2.0
+  },
+  "Qwen/Qwen3.6-27B": {
+   "input": 3.0,
+   "output": 18.0,
+   "cache_hit": null,
+   "cache_note": "pricing page shows '-' (no cache price listed)"
+  },
+  "Pro/moonshotai/Kimi-K2.6": {
+   "input": 6.5,
+   "output": 27.0,
+   "cache_hit": 1.1,
+   "tier_note": "Pro tier (Pro/ prefix)"
+  },
+  "MiniMaxAI/MiniMax-M2.5": {
+   "input": 2.1,
+   "output": 8.4,
+   "cache_hit": 0.21
+  },
+  "deepseek-ai/DeepSeek-V4-Flash (baseline, page)": {
+   "input": 1.0,
+   "output": 2.0,
+   "cache_hit": 0.02
+  }
+ },
+ "cny_to_usd_rate_at_capture": 0.148398,
+ "cny_to_usd_source": "https://open.er-api.com/v6/latest/CNY (fetched 2026-08-25 CST)"
+}
