@@ -80,7 +80,7 @@ McNemar 显示规则执行：无任何 "p=0" 表述，全部给出精确尾概�
 4. catalog 快照与价格为 2026-08-25 时点数据，硅基流动目录/价格可变，非不可变承诺。
 5. 所有模型结果无论好坏均保留：MiniMax 的 data_binding 退化、asset_routing 的普遍低分均在报告中。
 
-## 7. 工件清单（本阶段新增，均未 commit）
+## 7. 工件清单（已提交于 commit 753b455）
 
 - `multimodel/MULTIMODEL_CANONICAL_STATISTICS_v2.json`（全指标机器可读）
 - `multimodel/MULTIMODEL_SUMMARY_v2.csv`（10 行汇总表）
