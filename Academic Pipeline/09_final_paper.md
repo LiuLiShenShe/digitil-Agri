@@ -66,11 +66,11 @@ Long-term-memory research highlights persistent state (Park et al., 2023; Shinn 
 
 ### 2.5. Constrained structured generation
 
-A growing body of work addresses LLM output conformance to formal schemas. Grammar-constrained decoding (e.g., XGrammar; Dong et al., 2024) restricts token sampling to tokens that keep the output within a context-free grammar. CRANE (Wang et al., 2025) combines constrained generation with reasoning verification. These methods enforce syntactic validity at the token level but do not address domain-specific semantic constraints — a JSON object can be syntactically valid while violating an agricultural ontology (e.g., assigning a camera role to an irrigation device). KAFarmTwin operates at a higher semantic level: the Knowledge Compiler enforces ontological type compatibility, binding contracts, and asset-routing policies that grammar constraints cannot express.
+A growing body of work addresses LLM output conformance to formal schemas. Grammar-constrained decoding (e.g., XGrammar; Dong et al., 2024) restricts token sampling to tokens that keep the output within a context-free grammar. CRANE (Banerjee et al., 2025) combines constrained generation with reasoning verification. These methods enforce syntactic validity at the token level but do not address domain-specific semantic constraints — a JSON object can be syntactically valid while violating an agricultural ontology (e.g., assigning a camera role to an irrigation device). KAFarmTwin operates at a higher semantic level: the Knowledge Compiler enforces ontological type compatibility, binding contracts, and asset-routing policies that grammar constraints cannot express.
 
 ### 2.6. Neurosymbolic agent execution
 
-Neurosymbolic architectures separate neural perception from symbolic reasoning (d'Avila Garcez and Lamb, 2023; Garcez et al., 2019). Recent work applies this separation to LLM agents: state-machine prompting (Wang et al., 2025b) constrains agent behavior to a finite-state transition system; neuro-symbolic-causal architectures (Chen et al., 2025) combine symbolic planning with neural policy learning. Program-of-thought prompting (Chen et al., 2023) delegates structured computation to a Python interpreter. KAFarmTwin shares the principle of separating interpretation from execution but adds domain-specific compiled transformations (ontology expansion, binding normalization, asset routing) rather than generic programmatic delegation. The deterministic executor operates on domain-specific typed operators, not general-purpose code.
+Neurosymbolic architectures separate neural perception from symbolic reasoning (d'Avila Garcez and Lamb, 2023). Recent work applies this separation to LLM agents: state-machine prompting (Qi et al., 2025) constrains agent behavior to a finite-state transition system; neuro-symbolic-causal architectures (Akarlar, 2025) combine symbolic planning with neural policy learning. KAFarmTwin shares the principle of separating interpretation from execution but adds domain-specific compiled transformations (ontology expansion, binding normalization, asset routing) rather than generic programmatic delegation. The deterministic executor operates on domain-specific typed operators, not general-purpose code.
 
 ### 2.7. Scene graph construction
 
@@ -78,7 +78,7 @@ Scene graph generation from images has been extensively studied in computer visi
 
 ### 2.8. Knowledge-graph and ontology-based digital-twin construction
 
-Knowledge-graph-based digital twins use ontologies to structure entity relationships and enable semantic queries (Bourzig et al., 2021; Hubbard et al., 2023). Recent work applies LLMs to ontology-grounded knowledge-graph construction under schema constraints (Li et al., 2024). Ontologies in digital twins have been systematically surveyed (Panzer and Leymann, 2023), revealing that most implementations use ontologies for query-time reasoning rather than construction-time enforcement. KAFarmTwin compiles the ontology into executable construction transformations, making it an active constraint during scene assembly rather than a passive query-time resource.
+Knowledge-graph-based digital twins use ontologies to structure entity relationships and enable semantic queries (Akroyd et al., 2021). Recent work applies LLMs to ontology-grounded knowledge-graph construction under schema constraints (Feng et al., 2024). Ontologies in digital twins have been systematically surveyed (Karabulut et al., 2023), revealing that most implementations use ontologies for query-time reasoning rather than construction-time enforcement. KAFarmTwin compiles the ontology into executable construction transformations, making it an active constraint during scene assembly rather than a passive query-time resource.
 
 ### 2.9. Differentiation summary
 
@@ -410,29 +410,23 @@ The LLM produces correct objects (Object-F1 = 1.0) and relations (Relation-F1 = 
 
 ## References
 
-Bourzig, C., Tlili, A., Blot, J., et al., 2021. Universal digital twin — a dynamic knowledge graph. Data-Centric Eng. 2, e10.
+Akarlar, G.A., 2025. Beyond prompt engineering: neuro-symbolic-causal architecture for robust multi-objective AI agents. arXiv preprint arXiv:2510.23682.
 
-Chen, A., Durrett, G., Ernst, M., et al., 2023. Program-of-thoughts prompting: bootstrapping complex reasoning with program generation. arXiv preprint arXiv:2310.09310.
-
-Chen, Y., Li, Z., Wang, X., et al., 2025. Beyond prompt engineering: neuro-symbolic-causal architecture for robust multi-objective AI agents. arXiv preprint arXiv:2510.23682.
+Akroyd, J., Mosbach, S., Bhave, A., Kraft, M., 2021. Universal digital twin — a dynamic knowledge graph. Data-Centric Eng. 2, e10.
 
 Compton, M., Barnaghi, P., Bermudez, L., et al., 2012. The SSN ontology of the W3C semantic sensor network incubator group. J. Web Semant. 17, 25–32.
 
 d'Avila Garcez, A., Lamb, L.C., 2023. Neurosymbolic AI: the 3rd wave. Artif. Intell. Rev. 56 (11), 12387–12406.
 
-Dong, Y., Zhu, H., Yu, T., et al., 2024. XGrammar: achieving efficient, flexible, and portable structured generation. arXiv preprint arXiv:2411.15124.
+Dong, Y., Ruan, C.F., Cai, Y., et al., 2024. XGrammar: flexible and efficient structured generation engine for large language models. arXiv preprint arXiv:2411.15100.
 
 Efron, B., Tibshirani, R.J., 1993. An Introduction to the Bootstrap. Chapman & Hall/CRC, New York.
-
-Garcez, A.A., Gori, M., Lamb, L.C., et al., 2019. Neural-symbolic computing: an effective methodology for principled integration of machine learning and reasoning. J. Appl. Log. 17 (4), 611–631.
 
 Gao, Y., Xiong, Y., Gao, X., et al., 2023. Retrieval-augmented generation for large language models: a survey. arXiv preprint arXiv:2312.10997.
 
 Grieves, M., 2014. Digital Twin: Manufacturing Excellence through Virtual Factory Replication. White paper.
 
 Hogan, A., Blomqvist, E., Cochez, M., et al., 2021. Knowledge graphs. ACM Comput. Surv. 54 (4), 1–37.
-
-Hubbard, T., Chen, H., Liu, J., et al., 2023. Digital twins using knowledge graphs for semantic interoperability. Eng. Appl. Artif. Intell. 126, 106948.
 
 Janowicz, K., Haller, A., Cox, S.J.D., et al., 2019. SOSA: a lightweight ontology for sensors, observations, samples, and actuators. J. Web Semant. 56, 1–10.
 
@@ -450,13 +444,13 @@ Lewis, P., Perez, E., Piktus, A., et al., 2020. Retrieval-augmented generation f
 
 Li, G., Hammoud, H., Itani, H., et al., 2023. CAMEL: communicative agents for mind exploration of large language model society. NeurIPS 36, 51991–52008.
 
-Li, J., Wang, S., Zhang, Y., et al., 2024. Ontology-grounded automatic knowledge graph construction by LLM under Wikidata schema. arXiv preprint arXiv:2412.20942.
+Feng, X., Wu, X., Meng, H., 2024. Ontology-grounded automatic knowledge graph construction by LLM under Wikidata schema. arXiv preprint arXiv:2412.20942.
 
 Liakos, K.G., Busato, P., Moshou, D., et al., 2018. Machine learning in agriculture: a review. Sensors 18 (8), 2674.
 
 McNemar, Q., 1947. Note on the sampling error of the difference between correlated proportions or percentages. Psychometrika 12, 153–157.
 
-Panzer, M., Leymann, F., 2023. Ontologies in digital twins: a systematic literature review. arXiv preprint arXiv:2308.15168.
+Karabulut, E., Pileggi, S.F., Groth, P., Degeler, V., 2023. Ontologies in digital twins: a systematic literature review. arXiv preprint arXiv:2308.15168.
 
 Park, J.S., O'Brien, J., Cai, C.J., et al., 2023. Generative agents: interactive simulacra of human behavior. UIST, pp. 1–22.
 
@@ -478,9 +472,9 @@ Walter, A., Finger, R., Huber, R., Buchmann, N., 2017. Smart farming is key to d
 
 Wang, L., Ma, C., Feng, X., et al., 2023. A survey on large language model based autonomous agents. arXiv preprint arXiv:2308.11432.
 
-Wang, Y., Li, Z., Zhang, H., et al., 2025. CRANE: reasoning with constrained LLM generation. arXiv preprint arXiv:2502.09061.
+Banerjee, D., Suresh, T., Ugare, S., Misailovic, S., Singh, G., 2025. CRANE: reasoning with constrained LLM generation. arXiv preprint arXiv:2502.09061.
 
-Wang, Y., Chen, S., Liu, X., et al., 2025b. Memory-augmented state machine prompting: a novel LLM agent framework for real-time strategy games. arXiv preprint arXiv:2510.18395.
+Qi, R., Ni, Y., Jiang, L., Li, Z., Huang, K., Guo, X., 2025b. Memory-augmented state machine prompting: a novel LLM agent framework for real-time strategy games. arXiv preprint arXiv:2510.18395.
 
 Wei, J., Wang, X., Schuurmans, D., et al., 2022. Chain-of-thought prompting elicits reasoning in large language models. NeurIPS 35, 24824–24837.
 
