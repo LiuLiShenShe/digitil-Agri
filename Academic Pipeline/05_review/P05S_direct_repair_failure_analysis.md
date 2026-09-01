@@ -9,9 +9,9 @@
 SingleAgent-DirectRepair (unconstrained LLM, no typed operators, no Knowledge Compiler) achieves CVSR=0/60 on 60 rule_repair tasks. However, this zero pass rate masks a critical distinction:
 
 - **Semantic Structure Preservation Rate = 100%** — the LLM preserves all objects (Object F1 = 1.000) and all relations (Relation F1 = 1.000) across all 60 tasks
-- **Structured Execution Success Rate = 10%** — only 6/60 tasks produce complete structured output (nodes + edges + bindings + execution evidence)
+- **Structured Completion Success Rate = 10%** — only 6/60 tasks produce complete structured output (nodes + edges + bindings + execution evidence)
 
-The failure is NOT in understanding WHAT to repair, but in producing the structured output format required by the evaluator.
+The failure is NOT in WHAT to repair (structure preservation), but in producing the structured output format required by the evaluator.
 
 ## 2. Runner Bug Discovery
 
@@ -38,10 +38,10 @@ After passing the gold record (which contains `required_nodes`, `required_edges`
 
 | Category | Count | % | Description |
 |----------|------:|--:|:------------|
-| A: Semantically complete, evidence fail | 6 | 10% | Correct nodes + edges + bindings, but no execution trace |
+| A: Structurally complete, evidence fail | 6 | 10% | Correct nodes + edges + bindings, but no execution trace |
 | C: LLM omits bindings | 54 | 90% | Correct nodes + edges, but outputs empty bindings array |
 
-### Category A: Semantically Complete, Evidence Fail (6 tasks)
+### Category A: Structurally Complete, Evidence Fail (6 tasks)
 
 Tasks: EXT-RR-003, -007, -009, -011, -015, -019 (and others matching pattern)
 
@@ -67,7 +67,7 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 | Metric | Value | Interpretation |
 |--------|------:|:---------------|
 | CVSR | 0/60 | Still 0 (bindings + evidence required) |
-| Semantic Understanding Rate | 100% | LLM correctly repairs all objects and relations |
+| Semantic Structure Preservation Rate | 100% | LLM output preserves all objects and relations |
 | Binding Production Rate | 10% | LLM produces bindings in only 6/60 tasks |
 | Evidence Production Rate | 0% | LLM produces no execution traces |
 | Object F1 | 1.000 | Perfect object matching |
@@ -78,21 +78,21 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 
 | Metric | KAFarmTwin | DirectRepair | Interpretation |
 |--------|-----------|-------------|:---------------|
-| Object F1 | 1.000 | 1.000 | Both understand objects |
-| Relation F1 | 1.000 | 1.000 | Both understand relations |
+| Object F1 | 1.000 | 1.000 | Both preserve object structure |
+| Relation F1 | 1.000 | 1.000 | Both preserve relation structure |
 | Binding F1 | 1.000 | 0.100 | **KF's typed operators produce bindings; LLM cannot** |
 | CVSR | 1.000 (60/60) | 0.000 | KF's typed repair + deterministic execution produces valid scenes; DirectRepair cannot |
 | Evidence Precision | 1.000 | 0.000 | **KF's executor generates real traces; LLM fabricates nothing** |
 
-**The gap between DirectRepair and KAFarmTwin is NOT in understanding — it is in structured execution.** The LLM understands what needs to change but cannot reliably produce the schema-compliant output (especially bindings and execution evidence) that the evaluator requires.
+**The gap between DirectRepair and KAFarmTwin is NOT in structure preservation — it is in structured execution.** The LLM output preserves what needs to change but cannot reliably produce the schema-compliant output (especially bindings and execution evidence) that the evaluator requires.
 
 ## 6. Implications for Paper
 
 ### What This Proves
-1. The LLM has sufficient understanding to repair all rule violations in all 60 tasks
-2. The bottleneck is NOT semantic understanding but structured output production
+1. The LLM output has sufficient structure preservation to repair all rule violations in all 60 tasks
+2. The bottleneck is NOT structure preservation but structured output production
 3. KAFarmTwin's typed operators and deterministic executor bridge this exact gap
-4. The Knowledge Compiler's role is to translate semantic understanding into structured actions
+4. The Knowledge Compiler's role is to translate structure preservation into structured actions
 
 ### What This Does NOT Prove
 1. That the LLM "understands" in a deep sense — it may be pattern-matching
@@ -100,9 +100,9 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 3. That KAFarmTwin is optimal — only that it outperforms unconstrained LLM on structured output
 
 ### Paper Claims to Update
-- ~~"DirectRepair achieves 0/60 CVSR — LLM cannot repair"~~ → "DirectRepair achieves 0/60 CVSR despite 100% semantic understanding; failure is in structured output production"
+- ~~"DirectRepair achieves 0/60 CVSR — LLM cannot repair"~~ → "DirectRepair achieves 0/60 CVSR despite 100% structure preservation; failure is in structured output production"
 - Add: "Semantic Structure Preservation Rate = 100%" as a diagnostic metric
-- Add: "Structured Execution Success Rate = 10%" as a complementary metric
+- Add: "Structured Completion Success Rate = 10%" as a complementary metric
 
 ## 7. Output Files
 

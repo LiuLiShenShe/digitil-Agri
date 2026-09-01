@@ -18,8 +18,11 @@
       "directrepair_obj_f1": 1.000,
       "directrepair_rel_f1": 1.000,
       "directrepair_bind_f1": 0.100,
-      "sspr": 1.000, "sesr": 0.100,
+      "sspr": 1.000, "sscr": 0.100,
       "category_a": 6, "category_c": 54,
+      "binding_omission_fatal": 43, "binding_omission_clean": 11,
+      "has_bindings_fatal": 0, "has_bindings_clean": 6,
+      "fatal_r6": 29, "fatal_r2": 14,
       "difficulty": "D1_all_60_tasks"
     },
     "asset_routing": {

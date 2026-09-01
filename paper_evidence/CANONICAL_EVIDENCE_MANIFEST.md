@@ -30,9 +30,11 @@ This document is the single source of truth for all numerical claims in the pape
 | Relation-F1 | 1.000 | — | 1.000 | 同上 |
 | Binding-F1 | 1.000 | — | 0.100 | 同上 |
 | SSPR (Semantic Structure Preservation Rate) | 1.000 | — | 1.000 | = 1[Obj-F1=1 ∧ Rel-F1=1]; all 60 tasks preserve structure |
-| SESR (Structured Execution Success Rate) | 1.000 | — | 0.100 | = 1[Obj-F1=1 ∧ Rel-F1=1 ∧ Bind-F1>0.5]; only 6/60 DirectRepair tasks have complete bindings |
-| Category A (correct structure, no execution trace) | — | — | 6 | Correct nodes + edges + bindings; missing execution evidence |
+| SSCR (Structured Completion Success Rate) | 1.000 | — | 0.100 | = 1[Obj-F1=1 ∧ Rel-F1=1 ∧ Bind-F1>0.5]; only 6/60 DirectRepair tasks have complete bindings |
+| Category A (structurally complete, no execution trace) | — | — | 6 | Correct nodes + edges + bindings; missing execution evidence |
 | Category C (correct structure, omits bindings) | — | — | 54 | Correct nodes + edges; empty bindings array → R6 fatal |
+
+**Cross-tab (binding omission × fatal violations):** Of 54 binding-omission tasks, 43 had fatal findings (29 R6, 14 R2) and 11 had no fatal finding. Of 6 tasks with correct bindings, 0 had fatal findings.
 
 **Provenance:** DirectRepair was RE-SCORED ONLY (no new LLM calls). The original runner passed the `public` task dict (lacking `required_nodes`) to `evaluate_task()`, masking correct output. After re-scoring with gold records, Object-F1=1.000, Rel-F1=1.000 confirmed. All values are from canonical statistics after re-scoring. D1 subset = rule_repair tasks only (no D2-D4 difficulty tiers tested).
 
@@ -76,7 +78,7 @@ This document is the single source of truth for all numerical claims in the pape
 ## 3. Provenance Notes
 
 ### 3.1 DirectRepair Runner Bug Fix (RE-SCORING ONLY; NO MODEL RERUN)
-The DirectRepair baseline (single-agent with repair prompt but no typed repair loop) was initially scored with a bug: the runner passed the `public` task dict (lacking `required_nodes`) to `evaluate_task()`, causing empty required lists and misleadingly zero Object-F1. **Existing DirectRepair outputs were loaded and RE-SCORED with gold records. No new LLM calls were made.** The corrected values show DirectRepair CVSR = 0.000 on rule_repair (same as SA), but Object-F1 = 1.000 and Rel-F1 = 1.000 — confirming that DirectRepair preserves semantic structure but fails on structured output production (SESR = 10%). Typed repair's value is in the *type system and deterministic executor*, not just having a repair loop.
+The DirectRepair baseline (single-agent with repair prompt but no typed repair loop) was initially scored with a bug: the runner passed the `public` task dict (lacking `required_nodes`) to `evaluate_task()`, causing empty required lists and misleadingly zero Object-F1. **Existing DirectRepair outputs were loaded and RE-SCORED with gold records. No new LLM calls were made.** The corrected values show DirectRepair CVSR = 0.000 on rule_repair (same as SA), but Object-F1 = 1.000 and Rel-F1 = 1.000 — confirming that DirectRepair preserves structure but fails on structured output production (SSCR = 10%). Typed repair's value is in the *type system and deterministic executor*, not just having a repair loop.
 
 ### 3.2 ID-Invariant Audit for Asset Routing
 Asset routing CVSR is extremely low for both methods (KF 0.083, SA 0.000). To understand whether the failure is in structural binding or asset identification, an ID-invariant evaluation was conducted:
