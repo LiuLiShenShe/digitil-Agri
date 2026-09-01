@@ -44,11 +44,13 @@
 
 | Type | KF | SA | Δ | 读数 |
 |---|---:|---:|---:|---|
-| rule_repair | **1.00** | 0.00 | +1.00 | KF 完全修复，SA 完全失败 |
+| rule_repair | **1.00** | 0.00 | +1.00 | KF 完全修复，SA 完全失败；D1 难度（单条 R4 违规，prompt 给出明确修复目标） |
 | data_binding | 1.00 | 1.00 | 0.00 | 天花板效应 |
 | memory_query | 1.00 | 1.00 | 0.00 | 确定性合成数据，天花板 |
 | scene_construction | 0.50 | 0.40 | +0.10 | 有限提升 |
-| asset_routing | 0.083 | 0.00 | +0.083 | 绝对水平低 |
+| asset_routing | 0.083 | 0.00 | +0.083 | 绝对水平低；78.2% 失败为 asset-routing policy errors（非命名不匹配） |
+
+排除 rule_repair 后，KF-SA 差异缩小至 +4.6pp（KF 0.646 vs SA 0.600，n=240）。
 
 ## 6. Safety / Fatal 行为
 
@@ -73,6 +75,19 @@
 | R5 | SingleAgent (asset) | 3 |
 
 KF 在所有 rule 类型上零失败。
+
+**DirectRepair 诊断（rule_repair, D1 难度, 60 任务）**：
+
+| Metric | DirectRepair | 说明 |
+|---|---:|---|
+| CVSR | 0.000 | 与 SA 相同，0/60 通过 |
+| Object-F1 | 1.000 | LLM 正确修复所有对象 |
+| Relation-F1 | 1.000 | LLM 正确修复所有关系 |
+| Binding-F1 | 0.100 | 54/60 任务省略 bindings 数组，6/60 有 bindings 但缺执行证据 |
+| SRRR（语义修复识别率） | 100% | LLM 完全理解修复语义 |
+| SESR（结构化执行成功率） | 10% | 无法产生 schema-compliant 输出 |
+
+DirectRepair 的 SRRR=100% vs SESR=10% 揭示了核心机制：LLM 理解修复语义但无法可靠生成 binding records 和 execution evidence。KAFarmTwin 的 typed operators + deterministic executor 桥接了这一差距。
 
 ## 8. 成本与延迟
 

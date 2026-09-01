@@ -43,11 +43,15 @@
 | GenericMultiAgent | 100 | 0.010 | 0.010 | 0.050 | 0.4613 | 0.1999 | 0.0433 | 0.310 | 0.790 | 0.0000 | $0.0011 |
 | GenericRepair | 100 | 0.060 | 0.060 | 0.100 | 0.4566 | 0.2453 | 0.0425 | 0.070 | 1.000 | 1.0000 | $0.0004 |
 
-test_v2 配对统计（KF vs strongest fair baseline SA）：Δ=+0.25pp，95% CI [+0.09, +0.44]，n=20 tasks × 5 repeats。
+test_v2 配对统计（KF vs SingleAgent）：Δ=+0.25pp，95% CI [+0.09, +0.44]，n=20 tasks × 5 repeats。
 
 ## 主实验支撑的 central claim
 
-**Claim M1**：KAFarmTwin 在 External300 上的完整有效场景率（CVSR 0.717）显著高于最强公平基线 SingleAgent（0.480），配对提升 +23.7pp（p<10⁻⁶）。
+**Claim M1**：KAFarmTwin 在 External300 上的完整有效场景率（CVSR 0.717）显著高于 SingleAgent（0.480），配对提升 +23.7pp（p<10⁻⁶）。
+
+**Claim M1-qual**：优势集中于 rule_repair 类（60 of 71 额外成功），所有 rule_repair 任务均为 D1 难度（单条 R4 违规，prompt 中给出明确修复目标）。排除 rule_repair 后，KF-SA 差异缩小至 +4.6pp（KF 0.646 vs SA 0.600，n=240）。
+
+**Claim M1-directrepair**：SingleAgent-DirectRepair（无类型化修复但有修复 prompt）在 60 个 rule_repair 任务上 CVSR=0.000，但 SRRR=100%（语义修复识别率：Obj-F1=1.000, Rel-F1=1.000），SESR=10%（结构化执行成功率：Bind-F1=0.100）。LLM 理解修复语义但无法产生 schema-compliant 的结构化输出，这是 KAFarmTwin typed repair + deterministic executor 的核心价值。
 
 **Claim M2**：优势的核心来源是约束安全性——KF 致命违例率 0.000 对 SA 0.250，证据精确率 1.000 对 0.947，重放成功率 0.808 对 0.455。
 

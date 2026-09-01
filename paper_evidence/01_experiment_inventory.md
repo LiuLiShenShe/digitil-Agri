@@ -17,9 +17,22 @@
 
 - **Frozen result**：E1 (test_v2)、E2 (External300 DeepSeek) — raw 数据已冻结，不可重跑
 - **Sealed result**：E2、E4–E7 — 各含 `SEAL.json`，raw SHA-256 已校验
-- **Canonical result**：E2 由 `External300_CANONICAL_METRICS.json`；E4–E7 由 `MULTIMODEL_CANONICAL_STATISTICS_v2.json`；E1 由 `v3_summary.json`；E3 由 `ablation_results.csv`
+- **Canonical result**：E2 由 `External300_CANONICAL_METRICS.json`；E4–E7 由 `MULTIMODEL_CANONICAL_STATISTICS_v2.json`；E1 由 `v3_summary.json`；E3 由 `ablation_results.csv`；E2-DirectRepair 由 `p05r_summary_v2.json`（re-scored after runner bug fix）
 - **Archived (stale)**：`archive_formal_20260817*`、`archive_stale_20260817*`、`archive_phase2_frozen*` — 已被后续版本替代，论文不可引用
 - **Exploratory**：`cost_breakdown.csv` 中的 GenericMulti/GenericRepair/ReAct 为 test_v2 基线数据（非 canonical）
+
+## 额外基线与审计（非主实验）
+
+| # | 实验 | 任务数 | 方法 | 指标 | 关键发现 |
+|---|---|---|---|---|---|
+| E9 | DirectRepair 诊断（rule_repair, D1 难度） | 60 tasks × 1 method | SingleAgent-DirectRepair | CVSR=0.000, Obj-F1=1.000, Rel-F1=1.000, Bind-F1=0.100, SRRR=100%, SESR=10% | SRRR vs SESR 揭示 typed repair 的结构化执行价值 |
+| E10 | Asset-routing ID-invariant audit | 55 KF 失败任务 | ID-invariant re-evaluation | 78.2% 为 asset-routing policy errors, 9.1% 为 structural mismatch | 结构正确但资产身份错误是主要失败原因 |
+
+## 实验定位说明
+
+- External300 / test_v2 / multimodel 均为 **controlled methodological evaluation**（author-generated, author-reviewed controlled benchmark），不是 field-validated 的温室数字孪生系统实地验证
+- rule_repair 任务全部为 **D1 难度**（单条 R4 违规，prompt 中给出明确修复目标），不是多规则/多难度梯度的修复测试
+- 排除 rule_repair（60 任务）后，External300 KF-SA 差异从 +23.7pp 缩小至 +4.6pp
 
 ## 方法组件清单（基于代码确认）
 

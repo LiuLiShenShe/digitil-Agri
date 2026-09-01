@@ -1,0 +1,43 @@
+{
+  "version": "2.0",
+  "date": "2026-09-01",
+  "paper_version": "canonical_rewrite_v2",
+  "metrics": {
+    "external300": {
+      "kf_cvsr": {"value": 0.717, "source": "ext300_formal_20260825/scored/per_task.jsonl"},
+      "sa_cvsr": {"value": 0.480, "source": "ext300_formal_20260825/scored/per_task.jsonl"},
+      "paired_difference_pp": {"value": 23.67, "ci_95": [18.33, 29.00]},
+      "mcnemar_p": {"value": "8.45e-17", "b": 77, "c": 6},
+      "kf_fatal": 0.000, "sa_fatal": 0.250,
+      "kf_ev_p": 1.000, "sa_ev_p": 0.947,
+      "kf_replay": 0.808, "sa_replay": 0.455
+    },
+    "rule_repair": {
+      "kf_cvsr": 1.000, "sa_cvsr": 0.000,
+      "directrepair_cvsr": 0.000,
+      "directrepair_obj_f1": 1.000,
+      "directrepair_rel_f1": 1.000,
+      "directrepair_bind_f1": 0.100,
+      "srrr": 1.000, "sesr": 0.100,
+      "category_a": 6, "category_c": 54,
+      "difficulty": "D1_all_60_tasks"
+    },
+    "asset_routing": {
+      "kf_cvsr": 0.083,
+      "id_invariant_policy_error_pct": 78.2,
+      "id_invariant_canonical_rel_f1": 0.997,
+      "id_invariant_canonical_bind_f1": 0.994
+    },
+    "excluding_rule_repair": {
+      "kf_cvsr": 0.646, "sa_cvsr": 0.600,
+      "paired_difference_pp": 4.6
+    }
+  },
+  "delimitations": [
+    "No real-world greenhouse deployment",
+    "Author-generated and author-reviewed benchmarks",
+    "D1-only repair subset (no D2-D4)",
+    "Single execution per task-method pair",
+    "test_v2 consulted during development"
+  ]
+}

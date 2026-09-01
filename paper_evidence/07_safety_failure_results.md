@@ -58,6 +58,8 @@ Replay 是 CVSR 的必要条件（不可重放的任务不可能完整有效）�
 
 KF 在所有规则类型上零失败。
 
+**rule_repair 任务难度说明**：所有 60 个 rule_repair 任务均为 D1 难度（单条 R4 违规，prompt 中给出明确修复目标）。SA 的 60 个 R4 失败中，DirectRepair 基线（有修复 prompt 但无 typed repair）同样 0/60 通过，但 SRRR=100%（语义理解正确）vs SESR=10%（结构化输出失败），揭示了 typed repair + deterministic executor 的核心价值。
+
 ## Technical failures
 
 - MiniMax 区块：1 个技术失败（EXT-SC-049/SA 读超时），零分保留
@@ -68,3 +70,10 @@ KF 在所有规则类型上零失败。
 
 - TN21/TN24：方法侧 timestamp 缺失（已修复，Bind-F1 0.333/0.25 → 1.00）
 - TN22/TN23：冻结 evaluator 单位别名缺口（°C/celsius、klux/light），benchmark 契约局限
+
+## 资产路由失败分析（ID-invariant audit）
+
+- 78.2% 的 asset_routing 失败为 **asset-routing policy errors**（添加了不需要的设备同时遗漏了需要的设备），而非结构性构建失败
+- ID-invariant 审计显示 canonical Rel-F1=0.997, Bind-F1=0.994（结构正确），但 78.2% 的路由资产物理身份错误
+- 真正的算法失败（structural mismatch）仅占 ~9.1%
+- 结论：瓶颈是资产识别/路由策略，不是场景图构建

@@ -99,3 +99,13 @@ section,experiment,dataset,model,method,metric,value,ci_lower,ci_upper,p_value,s
 5.7,test_v2,test_v2,DeepSeek,SingleAgent-AllTools,pass5,0.500,,,,"v3_summary.json",true
 5.7,test_v2,test_v2,DeepSeek,KAFarmTwin-TypedRepair,fatal_rate,0.000,,,,"v3_summary.json",true
 5.7,test_v2,test_v2,DeepSeek,SingleAgent-AllTools,fatal_rate,0.320,,,,"v3_summary.json",true
+5.3,External300,External300,DeepSeek,SingleAgent-DirectRepair,cvsr,0.000,,,,"p05r_summary_v2.json",true
+5.3,External300,External300,DeepSeek,SingleAgent-DirectRepair,object_f1,1.000,,,,"p05r_summary_v2.json",true
+5.3,External300,External300,DeepSeek,SingleAgent-DirectRepair,relation_f1,1.000,,,,"p05r_summary_v2.json",true
+5.3,External300,External300,DeepSeek,SingleAgent-DirectRepair,binding_f1,0.100,,,,"p05r_summary_v2.json",true
+5.3,External300,External300,DeepSeek,SingleAgent-DirectRepair,srrr,1.000,,,,"p05r_summary_v2.json",true
+5.3,External300,External300,DeepSeek,SingleAgent-DirectRepair,sesr,0.100,,,,"p05r_summary_v2.json",true
+5.2,External300,External300_excl_rule_repair,DeepSeek,KAFarmTwin-TypedRepair,cvsr,0.646,,,,"derived from External300_CANONICAL_METRICS.json",true
+5.2,External300,External300_excl_rule_repair,DeepSeek,SingleAgent-AllTools,cvsr,0.600,,,,"derived from External300_CANONICAL_METRICS.json",true
+5.2,External300,External300_excl_rule_repair,DeepSeek,paired,delta,0.046,,,,"derived from External300_CANONICAL_METRICS.json",true
+5.5,External300,asset_routing_audit,DeepSeek,audit,id_invariant_policy_error_pct,0.782,,,,"asset_routing_summary.json",true

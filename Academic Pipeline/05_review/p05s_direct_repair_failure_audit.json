@@ -1,0 +1,20 @@
+{
+  "method": "SingleAgent-DirectRepair",
+  "benchmark": "External300 rule_repair (60 tasks)",
+  "total_tasks": 60,
+  "cvsr_pass": 0,
+  "cvsr_rate": 0.0,
+  "taxonomy": {
+    "A_SEMANTICALLY_COMPLETE_EVIDENCE_FAIL": 6,
+    "C_LLM_OMITS_BINDINGS": 54
+  },
+  "semantic_understanding_rate": 1.0,
+  "binding_production_rate": 0.1,
+  "evidence_production_rate": 0.0,
+  "mean_object_f1": 1.0,
+  "mean_relation_f1": 1.0,
+  "mean_binding_f1": 0.1,
+  "mean_evidence_precision": 0.0,
+  "diagnosis": "The LLM correctly repairs ALL objects (F1=1.0) and relations (F1=1.0) but fails to produce structured bindings in 90% of tasks (54/60). The remaining 10% (6/60) produce correct bindings but lack execution evidence (trace). This confirms the paper's thesis: unconstrained LLMs understand semantic repair but cannot reliably produce schema-compliant structured output. KAFarmTwin's typed operators bridge this gap.",
+  "runner_bug_note": "Original v1 results showed object_p=0.0, object_r=1.0 for all 60 tasks. Root cause: runner passed 'public' task dict (lacking required_nodes) to evaluate_task, causing evaluator to see empty required list. After fix (passing gold record), Object F1=1.0 for all 60 tasks."
+}

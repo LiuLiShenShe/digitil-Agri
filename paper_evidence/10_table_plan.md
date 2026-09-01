@@ -44,7 +44,7 @@
 - **Rows**: rule_repair, data_binding, memory_query, scene_construction, asset_routing
 - **Cols**: KF CVSR, SA CVSR, Δ
 - **Data source**: `External300_CANONICAL_METRICS.json` by_type
-- **Claim**: 优势集中于规则修复类
+- **Claim**: 优势集中于规则修复类（D1 难度，排除后差异缩小至 +4.6pp）
 - **Location**: 正文
 
 ### Table 6: test_v2 Multi-baseline Comparison

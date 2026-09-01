@@ -1,0 +1,15 @@
+{
+  "method": "SingleAgent-DirectRepair",
+  "total_tasks": 60,
+  "pass": 0,
+  "fail": 60,
+  "cvsr": 0.0,
+  "fatal_violations_total": 43,
+  "mean_object_p": 1.0,
+  "mean_object_r": 1.0,
+  "mean_object_f1": 1.0,
+  "mean_relation_f1": 1.0,
+  "mean_binding_f1": 0.1,
+  "note": "Re-scored with gold-injected task dict (v1 had runner bug: public dict lacked required_nodes)",
+  "benchmark": "External300 rule_repair (60 tasks)"
+}

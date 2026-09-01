@@ -21,7 +21,7 @@
 | GenericMultiAgent | 0.010 | 0.4613 | 0.1999 | 0.0433 | 0.800 | 0.310 | 0.790 | 0.0000 | $0.0011 |
 | ReAct | 0.000 | 0.0000 | 0.0000 | 0.0000 | 0.400 | 0.000 | 0.000 | 0.0000 | $0.0026 |
 
-## External300 精简对比（仅 KF vs SA，最强公平基线）
+## External300 精简对比（仅 KF vs SA）
 
 | Method | CVSR | Obj-F1 | Rel-F1 | Bind-F1 | Fatal | Replay | Cost $ |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -30,6 +30,6 @@
 
 ## 论文选择
 
-- **正文保留**：SingleAgent-AllTools 作为最强公平基线（External300 主实验 + test_v2）
+- **正文保留**：SingleAgent-AllTools 作为同工具集无约束对照（External300 主实验 + test_v2）
 - **test_v2 正文简述**：ReAct/GenericMulti/GenericRepair 的对比用于说明"无约束 LLM 智能体的局限"
 - **不新增 baseline**：所有 baseline 均已完成

@@ -1,0 +1,28 @@
+{
+  "total_tasks": 60,
+  "passed": 5,
+  "failed": 55,
+  "cause_distribution_all": {
+    "ID_ONLY_OR_CANONICALIZATION": 15,
+    "ASSET_ROUTING_POLICY_ERROR": 43,
+    "MIXED": 2
+  },
+  "cause_distribution_failed": {
+    "ID_ONLY_OR_CANONICALIZATION": 11,
+    "ASSET_ROUTING_POLICY_ERROR": 43,
+    "MIXED": 1
+  },
+  "id_only_or_canonicalization_failed": 11,
+  "id_only_pct": 20.0,
+  "canonical_metrics_failed": {
+    "object_f1_mean": 0.8095,
+    "relation_f1_mean": 0.997,
+    "binding_f1_mean": 0.9939
+  },
+  "original_metrics_failed": {
+    "object_f1_mean": 0.4055,
+    "relation_f1_mean": 0.7661,
+    "binding_f1_mean": 0.9727
+  },
+  "rerun_decision": "RERUN_NOT_REQUIRED"
+}

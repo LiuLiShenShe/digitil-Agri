@@ -1,0 +1,61 @@
+task_id,original_object_f1,original_relation_f1,original_binding_f1,cvsr,matched_gold_objects,unmatched_gold_objects,matched_kf_objects,extra_kf_objects,total_gold_nodes,total_kf_nodes,canonical_object_precision,canonical_object_recall,canonical_object_f1,matched_edges,total_gold_edges,total_kf_edges,canonical_relation_precision,canonical_relation_recall,canonical_relation_f1,matched_bindings,total_gold_bindings,total_kf_bindings,canonical_binding_f1,asset_key_match,gold_has_asset_requirement,failure_cause,evidence
+EXT-AR-001,0.2778,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-002,0.2727,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-003,0.2692,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-004,0.2667,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-005,1.0,1.0,1.0,True,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-006,0.125,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-007,1.0,1.0,0.5,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-008,1.0,1.0,1.0,True,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-009,0.3043,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-010,1.0,1.0,1.0,True,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-011,0.2903,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-012,0.1379,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-013,0.1515,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-014,0.375,1.0,1.0,False,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-015,1.0,1.0,1.0,True,4,0,4,0,4,4,1.0,1.0,1.0,3,3,3,1.0,1.0,1.0,2,2,2,1.0,True,True,ID_ONLY_OR_CANONICALIZATION,matched
+EXT-AR-016,0.32,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR016_missing_1']; extra_kf=['fogger_5']
+EXT-AR-017,0.9655,0.75,0.6667,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR017_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-018,0.1481,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR018_missing_1']; extra_kf=['supplementallight_5']
+EXT-AR-019,0.1613,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR019_missing_1']; extra_kf=['fogger_5']
+EXT-AR-020,0.9714,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR020_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-021,0.3889,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR021_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-022,0.3636,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR022_missing_1']; extra_kf=['fogger_5']
+EXT-AR-023,0.3462,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR023_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-024,0.1667,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR024_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-025,0.1786,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR025_missing_1']; extra_kf=['fogger_5']
+EXT-AR-026,0.1875,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR026_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-027,0.1944,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR027_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-028,0.4211,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR028_missing_1']; extra_kf=['fogger_5']
+EXT-AR-029,0.3913,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR029_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-030,0.9524,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR030_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-031,0.2,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR031_missing_1']; extra_kf=['fogger_5']
+EXT-AR-032,0.9655,0.75,0.6667,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR032_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-033,0.2121,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR033_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-034,0.2162,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR034_missing_1']; extra_kf=['fogger_5']
+EXT-AR-035,0.95,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR035_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-036,0.2222,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR036_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-037,0.2273,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR037_missing_1']; extra_kf=['fogger_5']
+EXT-AR-038,0.2308,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR038_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-039,0.2333,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR039_missing_1']; extra_kf=['supplementallight_5']
+EXT-AR-040,0.9706,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR040_missing_1']; extra_kf=['fogger_5']
+EXT-AR-041,0.2368,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR041_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-042,0.2667,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR042_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-043,0.2632,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR043_missing_1']; extra_kf=['fogger_5']
+EXT-AR-044,0.2609,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR044_missing_1']; extra_kf=['circulation_fan_5']
+EXT-AR-045,0.963,0.75,1.0,False,4,1,4,1,5,5,0.8,0.8,0.8,4,4,4,1.0,1.0,1.0,3,3,3,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,unmatched_gold=['EAR045_missing_1']; extra_kf=['supplemental_light_5']
+EXT-AR-046,0.25,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR046_missing_1', 'EAR046_missing_2']; extra_kf=['circulation_fan_5', 'nutrient_doser_6']"
+EXT-AR-047,0.25,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR047_missing_1', 'EAR047_missing_2']; extra_kf=['shading_screen_5', 'thermal_camera_6']"
+EXT-AR-048,0.1176,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR048_missing_1', 'EAR048_missing_2']; extra_kf=['supplemental_light_5', 'fogger_6']"
+EXT-AR-049,0.8824,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR049_missing_1', 'EAR049_missing_2']; extra_kf=['circulation_fan_5', 'nutrient_doser_6']"
+EXT-AR-050,0.9545,0.8333,0.6667,True,6,0,6,2,6,8,0.75,1.0,0.8571,5,5,7,0.7143,1.0,0.8333,4,4,8,0.6667,True,True,MIXED,"extra_kf=['camera_5', 'device_6']"
+EXT-AR-051,0.28,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR051_missing_1', 'EAR051_missing_2']; extra_kf=['supplementallight_5', 'fogger_6']"
+EXT-AR-052,0.2759,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR052_missing_1', 'EAR052_missing_2']; extra_kf=['circulation_fan_5', 'nutrient_doser_6']"
+EXT-AR-053,0.2727,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR053_missing_1', 'EAR053_missing_2']; extra_kf=['shading_screen_5', 'thermal_camera_6']"
+EXT-AR-054,0.129,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR054_missing_1', 'EAR054_missing_2']; extra_kf=['supplemental_light_5', 'fogger_6']"
+EXT-AR-055,0.9429,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR055_missing_1', 'EAR055_missing_2']; extra_kf=['circulation_fan_5', 'nutrient_doser_6']"
+EXT-AR-056,0.3333,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR056_missing_1', 'EAR056_missing_2']; extra_kf=['shading_screen_5', 'thermal_camera_6']"
+EXT-AR-057,0.3182,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR057_missing_1', 'EAR057_missing_2']; extra_kf=['supplementallight_5', 'fogger_6']"
+EXT-AR-058,0.9231,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR058_missing_1', 'EAR058_missing_2']; extra_kf=['circulation_fan_5', 'nutrient_doser_6']"
+EXT-AR-059,0.3548,0.8333,0.6667,False,6,0,6,2,6,8,0.75,1.0,0.8571,5,5,7,0.7143,1.0,0.8333,4,4,8,0.6667,True,True,MIXED,"extra_kf=['camera_5', 'device_6']"
+EXT-AR-060,0.9286,0.6,1.0,False,4,2,4,2,6,6,0.6667,0.6667,0.6667,5,5,5,1.0,1.0,1.0,4,4,4,1.0,True,True,ASSET_ROUTING_POLICY_ERROR,"unmatched_gold=['EAR060_missing_1', 'EAR060_missing_2']; extra_kf=['supplemental_light_5', 'fogger_6']"

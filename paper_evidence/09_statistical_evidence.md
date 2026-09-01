@@ -23,3 +23,4 @@
 4. **McNemar**：仅对 discordant pairs（b+c）做精确二项检验，不用近似
 5. **跨模型聚合**：cluster bootstrap by task_id（300 任务被五个模型复用，非 1500 独立样本）
 6. **bootstrap seed**：全部使用 20260804，可复现
+7. **rule_repair 排除效应**：External300 上 rule_repair（60 任务，全部 D1 难度）KF=1.000 vs SA=0.000 贡献了 +23.7pp 差异中的大部分。排除 rule_repair 后，KF-SA 差异缩小至 +4.6pp（KF 0.646 vs SA 0.600，n=240）。DirectRepair 基线在同样 D1 任务上 CVSR=0.000，但 SRRR=100% vs SESR=10%，揭示了 typed repair 的结构化执行价值。

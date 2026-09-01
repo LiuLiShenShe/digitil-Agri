@@ -48,6 +48,8 @@ Cluster bootstrap（四新模型均值，按 task_id 聚类，2000 resamples）�
 - KF rule_repair CVSR = 1.00（5/5 模型）
 - SA rule_repair CVSR = 0.00（5/5 模型）
 - 这是协议性差异（类型化修复闭环机制），不是模型能力差异
+- **注意**：rule_repair 任务全部为 D1 难度（单条 R4 违规，prompt 给出明确修复目标）。DirectRepair 基线在同样 60 个 D1 任务上 CVSR=0.000，但 SRRR=100%（Obj-F1=1.000, Rel-F1=1.000）vs SESR=10%（Bind-F1=0.100），证明 typed repair 的价值在于结构化执行而非语义理解。
+- 排除 rule_repair 后，External300 KF-SA 差异从 +23.7pp 缩小至 +4.6pp。
 
 ## 6.5 data_binding
 

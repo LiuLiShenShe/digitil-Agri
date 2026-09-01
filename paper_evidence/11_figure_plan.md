@@ -15,8 +15,9 @@
 - **X**: 任务类别（rule_repair, data_binding, memory_query, scene_construction, asset_routing）
 - **Y**: CVSR (0–1.0)
 - **Data source**: `External300_CANONICAL_METRICS.json` by_type
-- **Location**: 正文 Section 5.4
+- **Location**: 正文 Section 5.5
 - **Status**: 需用现有数据绘制
+- **Note**: rule_repair 为 D1 难度；asset_routing 失败中 78.2% 为 policy errors
 
 ### Fig 3: 消融实验 CVSR + Fatal Rate 对照
 - **Purpose**: 展示三个组件各自的贡献维度

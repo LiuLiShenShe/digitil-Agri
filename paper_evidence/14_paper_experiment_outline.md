@@ -8,16 +8,17 @@
 - **Table 1**: Dataset and Setup
 
 ### 5.2 Main Results（主实验结果）
-- **Scientific question**: KAFarmTwin 是否优于最强公平基线？
+- **Scientific question**: KAFarmTwin 是否优于 SingleAgent？
 - 内容：External300 KF vs SA 总体结果；配对统计（Δ, CI, McNemar）；成本比较
 - **Table 2**: External300 Main Results
 - **Claim M1, M3**
+- **注意**：优势集中于 rule_repair（D1 难度，60/71 额外成功）；排除后差异缩小至 +4.6pp
 
 ### 5.3 Safety and Failure Analysis（安全性和失败分析）
 - **Scientific question**: 优势的核心机制是什么？是性能提升还是安全性提升？
-- 内容：Fatal Rate, Evidence Precision, Replay Success 对比；rule_repair 分析；失败类型矩阵；证据链（知识约束 → Fatal↓ → Replay↑ → CVSR↑）
+- 内容：Fatal Rate, Evidence Precision, Replay Success 对比；rule_repair 分析（D1 难度）；DirectRepair 诊断（SRRR=100% vs SESR=10%）；失败类型矩阵；证据链（知识约束 → Fatal↓ → Replay↑ → CVSR↑）；asset-routing policy errors（78.2%）
 - **Fig 5**: Fatal vs Replay
-- **Claim M2**
+- **Claim M2, C01d**
 
 ### 5.4 Ablation Study（消融实验）
 - **Scientific question**: 方法的哪些组件贡献了什么？
@@ -28,10 +29,10 @@
 
 ### 5.5 External300 Category Analysis（分类分析）
 - **Scientific question**: 优势在哪些任务类型上？局限在哪里？
-- 内容：五类 CVSR breakdown；rule_repair 完全一致；asset_routing 绝对水平低；data_binding/memory_query 天花板
+- 内容：五类 CVSR breakdown；rule_repair 完全一致（D1 难度，排除后差异缩小至 +4.6pp）；DirectRepair SRRR=100% vs SESR=10%；asset_routing 绝对水平低（78.2% 失败为 policy errors）；data_binding/memory_query 天花板
 - **Table 5**: Category Breakdown
 - **Fig 2**: Category CVSR
-- **Claim C09**
+- **Claim C09, C01q, C01d**
 
 ### 5.6 Cross-Model-Family Generalization（跨模型家族泛化）
 - **Scientific question**: 方法是否依赖单一模型？
@@ -68,4 +69,4 @@
                                             5.8 诚实边界
 ```
 
-核心叙事线：**方法有效（5.2）→ 机制清晰（5.3）→ 组件可归因（5.4）→ 分类有信息量（5.5）→ 跨模型稳健（5.6）→ 多基线验证（5.7）→ 边界诚实（5.8）**
+核心叙事线：**方法有效（5.2）→ 机制清晰（5.3, DirectRepair 诊断）→ 组件可归因（5.4）→ 分类有信息量（5.5, D1 caveat + policy error）→ 跨模型稳健（5.6）→ 多基线验证（5.7）→ 边界诚实（5.8）**
