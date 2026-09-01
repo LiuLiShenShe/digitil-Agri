@@ -1,0 +1,76 @@
+{
+  "total_tasks": 60,
+  "total_records": 120,
+  "kf_success": 60,
+  "sa_success": 0,
+  "sa_llm_calls_all_zero": true,
+  "sa_construction_path": "bare_seed_no_repair (by design, single_agent.py:40-53)",
+  "baseline_applicability": {
+    "A_BASELINE_INCAPABLE_BY_DESIGN": 60
+  },
+  "template_distribution": {
+    "Pump → irrigation asset fix": 15,
+    "Irrigation → irrigation asset fix": 15,
+    "Camera → camera asset fix": 15,
+    "Sensor → sensor asset fix": 15
+  },
+  "difficulty_distribution": {
+    "D1": 60
+  },
+  "explicit_fix_in_prompt": "60/60",
+  "all_tasks_R4": true,
+  "defensible_interpretation": "The 60-task subset is a controlled mechanism test showing that the KAFarmTwin typed repair path can reliably execute supported single-step R4 corrections when the repair target is unambiguous.",
+  "baseline_comparison_note": "The 60/60 vs 0/60 comparison primarily measures the presence of an explicit repair loop vs an execution path that performs no repair; it should not be interpreted as a general comparison of semantic repair reasoning ability.",
+  "decomposed_external300": {
+    "all_300": {
+      "kf": 215,
+      "sa": 144,
+      "total": 300,
+      "delta_pp": 23.7
+    },
+    "excluding_rule_repair_240": {
+      "kf": 155,
+      "sa": 144,
+      "total": 240,
+      "delta_pp": 4.6
+    },
+    "per_category": {
+      "scene_construction": {
+        "kf": 30,
+        "sa": 24,
+        "n": 60,
+        "delta_pp": 10.0,
+        "net": 6
+      },
+      "asset_routing": {
+        "kf": 5,
+        "sa": 0,
+        "n": 60,
+        "delta_pp": 8.333333333333332,
+        "net": 5
+      },
+      "data_binding": {
+        "kf": 60,
+        "sa": 60,
+        "n": 60,
+        "delta_pp": 0.0,
+        "net": 0
+      },
+      "rule_repair": {
+        "kf": 60,
+        "sa": 0,
+        "n": 60,
+        "delta_pp": 100.0,
+        "net": 60
+      },
+      "memory_query": {
+        "kf": 60,
+        "sa": 60,
+        "n": 60,
+        "delta_pp": 0.0,
+        "net": 0
+      }
+    }
+  },
+  "rerun_decision": "RERUN_NOT_REQUIRED"
+}

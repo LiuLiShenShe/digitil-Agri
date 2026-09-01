@@ -1,0 +1,55 @@
+{
+  "all_300": {
+    "kf_pass": 215,
+    "sa_pass": 144,
+    "total": 300,
+    "kf_cvsr": 0.7167,
+    "sa_cvsr": 0.48,
+    "delta_pp": 23.7
+  },
+  "excluding_rule_repair": {
+    "kf_pass": 155,
+    "sa_pass": 144,
+    "total": 240,
+    "kf_cvsr": 0.6458,
+    "sa_cvsr": 0.6,
+    "delta_pp": 4.6
+  },
+  "per_category": {
+    "scene_construction": {
+      "kf": 30,
+      "sa": 24,
+      "n": 60,
+      "delta_pp": 10.0,
+      "net": 6
+    },
+    "asset_routing": {
+      "kf": 5,
+      "sa": 0,
+      "n": 60,
+      "delta_pp": 8.333333333333332,
+      "net": 5
+    },
+    "data_binding": {
+      "kf": 60,
+      "sa": 60,
+      "n": 60,
+      "delta_pp": 0.0,
+      "net": 0
+    },
+    "rule_repair": {
+      "kf": 60,
+      "sa": 0,
+      "n": 60,
+      "delta_pp": 100.0,
+      "net": 60
+    },
+    "memory_query": {
+      "kf": 60,
+      "sa": 60,
+      "n": 60,
+      "delta_pp": 0.0,
+      "net": 0
+    }
+  }
+}

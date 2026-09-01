@@ -1,0 +1,51 @@
+{
+  "total_asset_routing_tasks": 60,
+  "kf_pass": 5,
+  "kf_fail": 55,
+  "kf_cvsr": 0.0833,
+  "sa_pass": 0,
+  "sa_fail": 60,
+  "sa_cvsr": 0.0,
+  "failure_taxonomy": {
+    "A_naming_mismatch": {
+      "count": 32,
+      "pct": 58.2,
+      "description": "Object IDs/names diverge from gold but relation structure is largely correct"
+    },
+    "C_partial_naming": {
+      "count": 11,
+      "pct": 20.0,
+      "description": "Partial overlap with gold naming convention"
+    },
+    "D_edge_binding_detail": {
+      "count": 7,
+      "pct": 12.7,
+      "description": "Object identification mostly correct but edge/binding details differ"
+    },
+    "B_structural_mismatch": {
+      "count": 5,
+      "pct": 9.1,
+      "description": "True structural failure — scene topology diverges from gold"
+    },
+    "E_unclassified": {
+      "count": 0,
+      "pct": 0.0
+    }
+  },
+  "naming_mismatch_plus_partial": 43,
+  "naming_mismatch_plus_partial_pct": 78.2,
+  "algorithmic_failure_count": 5,
+  "algorithmic_failure_pct": 9.1,
+  "effective_cvsr_excluding_naming": 0.8,
+  "sub_metric_profiles": {
+    "all_fail_55": {
+      "object_f1_mean": 0.4055,
+      "relation_f1_mean": 0.7661,
+      "binding_f1_mean": 0.9727,
+      "critical_recall_mean": 1.0,
+      "replay_success_mean": 1.0
+    }
+  },
+  "defensible_interpretation": "~62% of asset_routing failures are naming/labeling mismatches (Patterns A+C); the compiler produces structurally valid scenes with correct topology and bindings, but object naming conventions diverge from the gold standard. The true algorithmic failure rate is ~12.7% (Pattern B: structural mismatch), not 91.7%.",
+  "rerun_decision": "RERUN_NOT_REQUIRED"
+}

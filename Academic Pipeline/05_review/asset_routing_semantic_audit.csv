@@ -1,0 +1,56 @@
+task_id,pattern,detail,object_f1,relation_f1,binding_f1,critical_recall,replay_success,evidence_precision,fatal_violations,nonfatal_violations,cvsr
+EXT-AR-013,A_NAMING_MISMATCH,"low obj=0.151, decent rel=1.000 — naming diverges",0.1515,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-028,C_PARTIAL_NAMING,"mid obj=0.421, decent rel=0.750 — partial overlap",0.4211,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-048,A_NAMING_MISMATCH,"low obj=0.118, decent rel=0.600 — naming diverges",0.1176,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-009,C_PARTIAL_NAMING,"mid obj=0.304, decent rel=1.000 — partial overlap",0.3043,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-019,A_NAMING_MISMATCH,"low obj=0.161, decent rel=0.750 — naming diverges",0.1613,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-040,E_UNCLASSIFIED,"obj=0.971, rel=0.750, bind=1.000",0.9706,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-002,A_NAMING_MISMATCH,"low obj=0.273, decent rel=1.000 — naming diverges",0.2727,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-059,C_PARTIAL_NAMING,"mid obj=0.355, decent rel=0.833 — partial overlap",0.3548,0.8333,0.6667,1.0,1.0,1.0,0,0,False
+EXT-AR-021,C_PARTIAL_NAMING,"mid obj=0.389, decent rel=0.750 — partial overlap",0.3889,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-041,A_NAMING_MISMATCH,"low obj=0.237, decent rel=0.750 — naming diverges",0.2368,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-045,E_UNCLASSIFIED,"obj=0.963, rel=0.750, bind=1.000",0.963,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-054,A_NAMING_MISMATCH,"low obj=0.129, decent rel=0.600 — naming diverges",0.129,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-052,A_NAMING_MISMATCH,"low obj=0.276, decent rel=0.600 — naming diverges",0.2759,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-016,C_PARTIAL_NAMING,"mid obj=0.320, decent rel=0.750 — partial overlap",0.32,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-060,D_EDGE_BINDING_DETAIL,decent obj=0.929 but rel=0.600/bind=1.000 weak,0.9286,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-030,E_UNCLASSIFIED,"obj=0.952, rel=0.750, bind=1.000",0.9524,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-007,D_EDGE_BINDING_DETAIL,decent obj=1.000 but rel=1.000/bind=0.500 weak,1.0,1.0,0.5,1.0,1.0,1.0,0,0,False
+EXT-AR-022,C_PARTIAL_NAMING,"mid obj=0.364, decent rel=0.750 — partial overlap",0.3636,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-025,A_NAMING_MISMATCH,"low obj=0.179, decent rel=0.750 — naming diverges",0.1786,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-027,A_NAMING_MISMATCH,"low obj=0.194, decent rel=0.750 — naming diverges",0.1944,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-053,A_NAMING_MISMATCH,"low obj=0.273, decent rel=0.600 — naming diverges",0.2727,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-039,A_NAMING_MISMATCH,"low obj=0.233, decent rel=0.750 — naming diverges",0.2333,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-035,E_UNCLASSIFIED,"obj=0.950, rel=0.750, bind=1.000",0.95,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-056,C_PARTIAL_NAMING,"mid obj=0.333, decent rel=0.600 — partial overlap",0.3333,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-036,A_NAMING_MISMATCH,"low obj=0.222, decent rel=0.750 — naming diverges",0.2222,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-051,A_NAMING_MISMATCH,"low obj=0.280, decent rel=0.600 — naming diverges",0.28,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-001,A_NAMING_MISMATCH,"low obj=0.278, decent rel=1.000 — naming diverges",0.2778,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-018,A_NAMING_MISMATCH,"low obj=0.148, decent rel=0.750 — naming diverges",0.1481,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-042,A_NAMING_MISMATCH,"low obj=0.267, decent rel=0.750 — naming diverges",0.2667,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-004,A_NAMING_MISMATCH,"low obj=0.267, decent rel=1.000 — naming diverges",0.2667,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-043,A_NAMING_MISMATCH,"low obj=0.263, decent rel=0.750 — naming diverges",0.2632,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-026,A_NAMING_MISMATCH,"low obj=0.188, decent rel=0.750 — naming diverges",0.1875,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-046,A_NAMING_MISMATCH,"low obj=0.250, decent rel=0.600 — naming diverges",0.25,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-057,C_PARTIAL_NAMING,"mid obj=0.318, decent rel=0.600 — partial overlap",0.3182,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-024,A_NAMING_MISMATCH,"low obj=0.167, decent rel=0.750 — naming diverges",0.1667,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-049,D_EDGE_BINDING_DETAIL,decent obj=0.882 but rel=0.600/bind=1.000 weak,0.8824,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-020,E_UNCLASSIFIED,"obj=0.971, rel=0.750, bind=1.000",0.9714,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-003,A_NAMING_MISMATCH,"low obj=0.269, decent rel=1.000 — naming diverges",0.2692,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-023,C_PARTIAL_NAMING,"mid obj=0.346, decent rel=0.750 — partial overlap",0.3462,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-033,A_NAMING_MISMATCH,"low obj=0.212, decent rel=0.750 — naming diverges",0.2121,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-006,A_NAMING_MISMATCH,"low obj=0.125, decent rel=1.000 — naming diverges",0.125,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-011,A_NAMING_MISMATCH,"low obj=0.290, decent rel=1.000 — naming diverges",0.2903,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-034,A_NAMING_MISMATCH,"low obj=0.216, decent rel=0.750 — naming diverges",0.2162,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-038,A_NAMING_MISMATCH,"low obj=0.231, decent rel=0.750 — naming diverges",0.2308,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-031,A_NAMING_MISMATCH,"low obj=0.200, decent rel=0.750 — naming diverges",0.2,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-029,C_PARTIAL_NAMING,"mid obj=0.391, decent rel=0.750 — partial overlap",0.3913,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-047,A_NAMING_MISMATCH,"low obj=0.250, decent rel=0.600 — naming diverges",0.25,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-032,D_EDGE_BINDING_DETAIL,decent obj=0.966 but rel=0.750/bind=0.667 weak,0.9655,0.75,0.6667,1.0,1.0,1.0,0,0,False
+EXT-AR-044,A_NAMING_MISMATCH,"low obj=0.261, decent rel=0.750 — naming diverges",0.2609,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-014,C_PARTIAL_NAMING,"mid obj=0.375, decent rel=1.000 — partial overlap",0.375,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-037,A_NAMING_MISMATCH,"low obj=0.227, decent rel=0.750 — naming diverges",0.2273,0.75,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-017,D_EDGE_BINDING_DETAIL,decent obj=0.966 but rel=0.750/bind=0.667 weak,0.9655,0.75,0.6667,1.0,1.0,1.0,0,0,False
+EXT-AR-012,A_NAMING_MISMATCH,"low obj=0.138, decent rel=1.000 — naming diverges",0.1379,1.0,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-055,D_EDGE_BINDING_DETAIL,decent obj=0.943 but rel=0.600/bind=1.000 weak,0.9429,0.6,1.0,1.0,1.0,1.0,0,0,False
+EXT-AR-058,D_EDGE_BINDING_DETAIL,decent obj=0.923 but rel=0.600/bind=1.000 weak,0.9231,0.6,1.0,1.0,1.0,1.0,0,0,False
