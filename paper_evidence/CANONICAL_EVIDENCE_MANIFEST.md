@@ -30,7 +30,7 @@ This document is the single source of truth for all numerical claims in the pape
 | Relation-F1 | 1.000 | — | 1.000 | 同上 |
 | Binding-F1 | 1.000 | — | 0.100 | 同上 |
 | SSPR (Semantic Structure Preservation Rate) | 1.000 | — | 1.000 | = 1[Obj-F1=1 ∧ Rel-F1=1]; all 60 tasks preserve structure |
-| SSCR (Structured Completion Success Rate) | 1.000 | — | 0.100 | = 1[Obj-F1=1 ∧ Rel-F1=1 ∧ Bind-F1>0.5]; only 6/60 DirectRepair tasks have complete bindings |
+| SSCR (Structured State Completion Rate) | 1.000 | — | 0.100 | = 1[Obj-F1=1 ∧ Rel-F1=1 ∧ Bind-F1>0.5]; only 6/60 DirectRepair tasks have complete bindings |
 | Category A (structurally complete, no execution trace) | — | — | 6 | Correct nodes + edges + bindings; missing execution evidence |
 | Category C (correct structure, omits bindings) | — | — | 54 | Correct nodes + edges; empty bindings array → R6 fatal |
 
@@ -43,7 +43,7 @@ This document is the single source of truth for all numerical claims in the pape
 | Metric | Value | Source |
 |---|---:|---|
 | KF CVSR | 0.083 | `External300_CANONICAL_METRICS.json` (by_type) |
-| ID-invariant policy error % | 78.2% | ID-invariant audit: canonical asset F1=0.997 but 78.2% of routed assets have wrong physical identity |
+| ID-invariant policy error % | 78.2% | ID-invariant audit: canonical Relation-F1=0.997 but 78.2% of routed assets have wrong physical identity |
 | ID-invariant canonical Rel-F1 | 0.997 | 同上 audit |
 | ID-invariant canonical Bind-F1 | 0.994 | 同上 audit |
 
@@ -55,7 +55,7 @@ This document is the single source of truth for all numerical claims in the pape
 |---|---:|---:|---:|
 | CVSR | 0.646 | 0.600 | +4.6pp |
 
-**Provenance:** Derived by excluding the 60 rule_repair tasks from External300 totals. KF total correct = 0.717 * 300 = 215.1, rule_repair correct = 60, remaining = 155.1/240 = 0.646. SA: 0.480 * 300 = 144, rule_repair correct = 0, remaining = 144/240 = 0.600.
+**Provenance:** Derived by excluding the 60 rule_repair tasks from External300 totals. KF total correct = 215, rule_repair correct = 60, remaining = 155/240 = 0.646. SA: total correct = 144, rule_repair correct = 0, remaining = 144/240 = 0.600.
 
 ---
 

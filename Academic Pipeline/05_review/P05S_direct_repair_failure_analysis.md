@@ -9,7 +9,7 @@
 SingleAgent-DirectRepair (unconstrained LLM, no typed operators, no Knowledge Compiler) achieves CVSR=0/60 on 60 rule_repair tasks. However, this zero pass rate masks a critical distinction:
 
 - **Semantic Structure Preservation Rate = 100%** — the LLM preserves all objects (Object F1 = 1.000) and all relations (Relation F1 = 1.000) across all 60 tasks
-- **Structured Completion Success Rate = 10%** — only 6/60 tasks produce complete structured output (nodes + edges + bindings + execution evidence)
+- **Structured State Completion Rate = 10%** — only 6/60 tasks produce complete structured output (nodes + edges + bindings); CVSR additionally requires execution evidence
 
 The failure is NOT in WHAT to repair (structure preservation), but in producing the structured output format required by the evaluator.
 
@@ -84,12 +84,12 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 | CVSR | 1.000 (60/60) | 0.000 | KF's typed repair + deterministic execution produces valid scenes; DirectRepair cannot |
 | Evidence Precision | 1.000 | 0.000 | **KF's executor generates real traces; LLM fabricates nothing** |
 
-**The gap between DirectRepair and KAFarmTwin is NOT in structure preservation — it is in structured execution.** The LLM output preserves what needs to change but cannot reliably produce the schema-compliant output (especially bindings and execution evidence) that the evaluator requires.
+**The gap between DirectRepair and KAFarmTwin is NOT in structure preservation — it is in structured execution.** The LLM output preserves the required structure but cannot reliably produce the schema-compliant output (especially bindings and execution evidence) that the evaluator requires.
 
 ## 6. Implications for Paper
 
 ### What This Proves
-1. The LLM output has sufficient structure preservation to repair all rule violations in all 60 tasks
+1. The LLM output preserves object and relation structure sufficient to cover all rule violations in all 60 tasks
 2. The bottleneck is NOT structure preservation but structured output production
 3. KAFarmTwin's typed operators and deterministic executor bridge this exact gap
 4. The Knowledge Compiler's role is to translate structure preservation into structured actions
@@ -102,7 +102,7 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 ### Paper Claims to Update
 - ~~"DirectRepair achieves 0/60 CVSR — LLM cannot repair"~~ → "DirectRepair achieves 0/60 CVSR despite 100% structure preservation; failure is in structured output production"
 - Add: "Semantic Structure Preservation Rate = 100%" as a diagnostic metric
-- Add: "Structured Completion Success Rate = 10%" as a complementary metric
+- Add: "Structured State Completion Rate = 10%" as a complementary metric
 
 ## 7. Output Files
 

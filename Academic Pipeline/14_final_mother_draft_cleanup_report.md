@@ -1,10 +1,53 @@
 # FINAL MOTHER-DRAFT CLEANUP REPORT
 
-**Date:** 2026-09-01 | **Status:** Complete | **Constraint:** NEW_MODEL_EXECUTIONS=0 (no model re-runs)
+**Version:** 2.0 | **Date:** 2026-09-01 | **Status:** Complete | **Constraint:** NEW_MODEL_EXECUTIONS=0
 
 ---
 
-## Summary
+## v2 Fixes (Pre-Freeze Polish — 8 items)
+
+All 8 user-identified issues applied. Zero model executions.
+
+### V2.1 SSCR full name corrected
+`Structured Completion Success Rate` → **`Structured State Completion Rate`** (SSCR).
+Abbreviation now strictly matches: **S**tructured **S**tate **C**ompletion **R**ate.
+Applied across: paper (5 occurrences), manifest MD, P05S report.
+
+### V2.2 Binding omission × fatal cross-tab aligned in prose
+§5.4 and Appendix A5 now state:
+> DirectRepair omitted bindings in 54/60 tasks; of these, 43 incurred fatal findings (29 R6, 14 R2) while 11 did not. In the remaining 6 tasks, bindings were correct but execution evidence was absent.
+
+Previously implied all 54 triggered R6 — now accurate.
+
+### V2.3 SSCR definition separated from CVSR
+SSCR definition now reads: "structure plus binding completeness (Obj-F1=1.0 AND Rel-F1=1.0 AND Bind-F1>0.5)".
+Explicit note added: "CVSR additionally requires execution evidence and all validation rules."
+P05S report updated identically.
+
+### V2.4 Residual strong "semantic" expressions softened
+- §6.1: "preserves the repair semantics" → "preserves the required structure"
+- Conclusion: "Semantic correctness alone is insufficient" → "**Object–relation correctness alone is insufficient**"
+- P05S: "what needs to change" → "the required structure"
+- P05S: "sufficient structure preservation to repair" → "preserves object and relation structure sufficient to cover"
+
+### V2.5 §2.9 universal novelty claim removed
+Replaced "but none integrates all four elements for domain-constrained scene construction" with:
+> "The reviewed systems typically address subsets of these elements, whereas KAFarmTwin evaluates their integration within a protected-agriculture scene-construction pipeline."
+
+No universal negative claim remains.
+
+### V2.6 Zellers author corrected
+`Thomson, N.` → **`Thomson, S.`** (Sam Thomson, CVPR 2018 official record).
+
+### V2.7 Manifest provenance: "canonical asset F1" → "canonical Relation-F1"
+Line 46 of MANIFEST.md corrected. The 0.997 value is Relation-F1, not asset F1.
+
+### V2.8 Manifest derivation: integer success counts
+Non-repair 240-task derivation now uses `215 - 60 = 155` and `155/240 = 0.646` instead of `0.717 × 300 = 215.1`.
+
+---
+
+## v1 Summary (original 13-item cleanup)
 
 23-section cleanup of the KAFarmTwin canonical manuscript (`09_final_paper.md`) and all evidence files, eliminating unsupported claims, correcting terminology, fixing reference metadata, and synchronizing evidence.
 
