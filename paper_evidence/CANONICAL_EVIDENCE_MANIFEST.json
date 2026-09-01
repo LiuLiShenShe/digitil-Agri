@@ -18,7 +18,7 @@
       "directrepair_obj_f1": 1.000,
       "directrepair_rel_f1": 1.000,
       "directrepair_bind_f1": 0.100,
-      "srrr": 1.000, "sesr": 0.100,
+      "sspr": 1.000, "sesr": 0.100,
       "category_a": 6, "category_c": 54,
       "difficulty": "D1_all_60_tasks"
     },

@@ -8,7 +8,7 @@
 
 SingleAgent-DirectRepair (unconstrained LLM, no typed operators, no Knowledge Compiler) achieves CVSR=0/60 on 60 rule_repair tasks. However, this zero pass rate masks a critical distinction:
 
-- **Semantic Repair Recognition Rate = 100%** — the LLM correctly identifies and repairs ALL objects (Object F1 = 1.000) and ALL relations (Relation F1 = 1.000) across all 60 tasks
+- **Semantic Structure Preservation Rate = 100%** — the LLM preserves all objects (Object F1 = 1.000) and all relations (Relation F1 = 1.000) across all 60 tasks
 - **Structured Execution Success Rate = 10%** — only 6/60 tasks produce complete structured output (nodes + edges + bindings + execution evidence)
 
 The failure is NOT in understanding WHAT to repair, but in producing the structured output format required by the evaluator.
@@ -81,7 +81,7 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 | Object F1 | 1.000 | 1.000 | Both understand objects |
 | Relation F1 | 1.000 | 1.000 | Both understand relations |
 | Binding F1 | 1.000 | 0.100 | **KF's typed operators produce bindings; LLM cannot** |
-| CVSR | 0.083 (5/60) | 0.000 | KF partially succeeds via deterministic execution |
+| CVSR | 1.000 (60/60) | 0.000 | KF's typed repair + deterministic execution produces valid scenes; DirectRepair cannot |
 | Evidence Precision | 1.000 | 0.000 | **KF's executor generates real traces; LLM fabricates nothing** |
 
 **The gap between DirectRepair and KAFarmTwin is NOT in understanding — it is in structured execution.** The LLM understands what needs to change but cannot reliably produce the schema-compliant output (especially bindings and execution evidence) that the evaluator requires.
@@ -101,7 +101,7 @@ R3 (spatial layout): 157 occurrences across 60 tasks. The LLM does not produce `
 
 ### Paper Claims to Update
 - ~~"DirectRepair achieves 0/60 CVSR — LLM cannot repair"~~ → "DirectRepair achieves 0/60 CVSR despite 100% semantic understanding; failure is in structured output production"
-- Add: "Semantic Repair Recognition Rate = 100%" as a new diagnostic metric
+- Add: "Semantic Structure Preservation Rate = 100%" as a diagnostic metric
 - Add: "Structured Execution Success Rate = 10%" as a complementary metric
 
 ## 7. Output Files

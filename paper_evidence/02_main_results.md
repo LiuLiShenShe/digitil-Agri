@@ -51,7 +51,7 @@ test_v2 配对统计（KF vs SingleAgent）：Δ=+0.25pp，95% CI [+0.09, +0.44]
 
 **Claim M1-qual**：优势集中于 rule_repair 类（60 of 71 额外成功），所有 rule_repair 任务均为 D1 难度（单条 R4 违规，prompt 中给出明确修复目标）。排除 rule_repair 后，KF-SA 差异缩小至 +4.6pp（KF 0.646 vs SA 0.600，n=240）。
 
-**Claim M1-directrepair**：SingleAgent-DirectRepair（无类型化修复但有修复 prompt）在 60 个 rule_repair 任务上 CVSR=0.000，但 SRRR=100%（语义修复识别率：Obj-F1=1.000, Rel-F1=1.000），SESR=10%（结构化执行成功率：Bind-F1=0.100）。LLM 理解修复语义但无法产生 schema-compliant 的结构化输出，这是 KAFarmTwin typed repair + deterministic executor 的核心价值。
+**Claim M1-directrepair**：SingleAgent-DirectRepair（无类型化修复但有修复 prompt）在 60 个 rule_repair 任务上 CVSR=0.000，但 SSPR=100%（语义结构保持率：Obj-F1=1.000, Rel-F1=1.000），SESR=10%（结构化执行成功率：Bind-F1=0.100）。图级别正确性不等于可执行状态完整性——这是 KAFarmTwin typed repair + deterministic executor 的核心价值。
 
 **Claim M2**：优势的核心来源是约束安全性——KF 致命违例率 0.000 对 SA 0.250，证据精确率 1.000 对 0.947，重放成功率 0.808 对 0.455。
 

@@ -11,7 +11,7 @@
 
 ## Abstract
 
-Digital twins in protected agriculture require greenhouse structures, crops, devices, sensors, 3D assets, and operational data to be organized into a common object graph that is queryable, traceable, and verifiable. Existing scene-construction workflows remain largely manual, whereas unconstrained large language model (LLM) agents can produce incomplete hierarchies, invalid data-binding contracts, mismatched assets, and execution traces that describe rather than prove tool use. This paper presents KAFarmTwin, a knowledge-constrained agent method that separates semantic interpretation from deterministic constraint enforcement. An LLM converts natural-language requests into a compact Intent Intermediate Representation (IntentIR). A deterministic Knowledge Compiler expands the IntentIR using agricultural ontology, binding vocabulary, unit registry, and asset-routing policies. Rule violations trigger typed repair: the LLM selects an admissible operator while a deterministic executor instantiates parameters and commits only when re-validation does not increase fatal violations. We evaluate on a frozen development-contact benchmark (test_v2, 20 tasks) and an author-generated, author-reviewed controlled benchmark (External300, 300 tasks, five categories). On External300, KAFarmTwin achieves a Complete-and-Valid Scene Rate (CVSR) of 0.717 versus 0.480 for SingleAgent (+23.7 pp; McNemar $p = 8.45 \times 10^{-17}$), with the improvement concentrated in rule-repair tasks (60 of 71 additional successes, all D1 single-rule R4 violations). A diagnostic decomposition of the unconstrained repair baseline reveals 100% Semantic Repair Recognition Rate (the LLM correctly repairs all objects and relations) but only 10% Structured Execution Success Rate (the LLM omits bindings in 90% of tasks), isolating structured output production—not semantic understanding—as the bottleneck that typed operators and deterministic execution address. Excluding rule repair, the paired difference narrows to +4.6 pp. Asset routing remains weak (CVSR 0.083), but post-hoc ID-invariant auditing shows 78% of failures are asset-routing policy errors rather than structural construction failures. Four additional model families reproduce the positive KF–SA direction. These results support separating LLM semantic decisions from executable domain constraints for scene and binding construction under controlled conditions, but do not establish open-world generalization or field-deployed performance.
+Digital twins in protected agriculture require greenhouse structures, crops, devices, sensors, 3D assets, and operational data to be organized into a common object graph that is queryable, traceable, and verifiable. Existing scene-construction workflows remain largely manual, whereas unconstrained large language model (LLM) agents can produce incomplete hierarchies, invalid data-binding contracts, mismatched assets, and execution traces that describe rather than prove tool use. This paper presents KAFarmTwin, a knowledge-constrained agent method that separates semantic interpretation from deterministic constraint enforcement. An LLM converts natural-language requests into a compact Intent Intermediate Representation (IntentIR). A deterministic Knowledge Compiler expands the IntentIR using agricultural ontology, binding vocabulary, unit registry, and asset-routing policies. Rule violations trigger typed repair: the LLM selects an admissible operator while a deterministic executor instantiates parameters and commits only when re-validation does not increase fatal violations. We evaluate on a frozen development-contact benchmark (test_v2, 20 tasks) and an author-generated, author-reviewed controlled benchmark (External300, 300 tasks, five categories). On External300, KAFarmTwin achieves a Complete-and-Valid Scene Rate (CVSR) of 0.717 versus 0.480 for SingleAgent (+23.7 pp; McNemar $p = 8.45 \times 10^{-17}$), with the improvement concentrated in rule-repair tasks (60 of 71 additional successes, all D1 single-rule R4 violations). A diagnostic decomposition of the unconstrained repair baseline reveals 100% Semantic Structure Preservation Rate (the LLM preserves all objects and relations) but only 10% Structured Execution Success Rate (the LLM omits bindings in 90% of tasks), isolating structured output production—not semantic understanding—as the bottleneck that typed operators and deterministic execution address. Excluding rule repair, the paired difference narrows to +4.6 pp. Asset routing remains weak (CVSR 0.083), but post-hoc ID-invariant auditing shows 78% of failures are asset-routing policy errors rather than structural construction failures. Four additional model families reproduce the positive KF–SA direction. These results support separating LLM semantic decisions from executable domain constraints for scene and binding construction under controlled conditions, but do not establish open-world generalization or field-deployed performance.
 
 **Keywords:** protected agriculture; digital twin; knowledge-augmented AI; LLM agent; knowledge constraint; typed repair; scene construction
 
@@ -36,7 +36,7 @@ Digital twins create dynamic mappings among virtual models, physical objects, an
 
 Constructing this layer is labor-intensive. A greenhouse scene requires a valid object hierarchy, spatial placement, 3D-asset assignment, sensor–actuator associations, unit and timestamp normalization, and traceable construction records. LLM agents offer a natural-language interface to this problem, but direct generation of the complete scene by a general-purpose agent creates recurrent failure surfaces: omitted hierarchy nodes, invalid data-binding contracts, mismatched assets, and textual traces that claim tool use without carrying machine-verifiable evidence. Critically, these failures are not primarily language-understanding errors. An LLM can correctly identify what a scene should contain—the required objects, their types, and their relationships—while still failing to produce the schema-compliant structured output (bindings, traces, deterministic state) that a digital-twin system requires.
 
-This observation motivates a different architectural boundary. KAFarmTwin separates **semantic repair recognition** from **contract-complete state execution**. The LLM produces a compact IntentIR capturing semantic candidates. A deterministic Knowledge Compiler expands hierarchy, bindings, units, and asset routes. Validation findings trigger typed RepairTickets; the LLM selects an admissible operator, and a deterministic executor instantiates, applies, and validates the patch under a transactional commit criterion. Agricultural knowledge is implemented as executable transformations, not prompt-supplemented prose.
+This observation motivates a different architectural boundary. KAFarmTwin separates **semantic structure preservation** from **contract-complete state execution**. The LLM produces a compact IntentIR capturing semantic candidates. A deterministic Knowledge Compiler expands hierarchy, bindings, units, and asset routes. Validation findings trigger typed RepairTickets; the LLM selects an admissible operator, and a deterministic executor instantiates, applies, and validates the patch under a transactional commit criterion. Agricultural knowledge is implemented as executable transformations, not prompt-supplemented prose.
 
 The contributions are:
 
@@ -44,7 +44,7 @@ The contributions are:
 
 2. **A deterministic Knowledge Compiler with typed transactional repair.** The compiler expands ontology, hierarchy, bindings, units, and asset policies. Typed repair operators have explicit applicability and side-effect boundaries; committed repairs satisfy a fatal-violation non-increase property.
 
-3. **A diagnostic decomposition isolating the structured-output bottleneck.** On 60 D1 rule-repair tasks, an unconstrained repair baseline achieves 100% Semantic Repair Recognition Rate but only 10% Structured Execution Success Rate, demonstrating that the LLM understands repairs yet fails to produce contract-complete scene state. KAFarmTwin's typed operators and deterministic execution bridge this gap, achieving 60/60 CVSR on the same tasks. The empirical support is limited to D1 R4 repairs; task homogeneity constrains generalization claims.
+3. **A diagnostic decomposition isolating the structured-output bottleneck.** On 60 D1 rule-repair tasks, an unconstrained repair baseline achieves 100% Semantic Structure Preservation Rate but only 10% Structured Execution Success Rate, demonstrating that graph-level correctness does not imply contract-complete scene state. KAFarmTwin's typed operators and deterministic execution bridge this gap, achieving 60/60 CVSR on the same tasks. The empirical support is limited to D1 R4 repairs; task homogeneity constrains generalization claims.
 
 ## 2. Related work
 
@@ -63,6 +63,26 @@ Knowledge-augmented AI incorporates retrieval, knowledge graphs, and rule system
 ### 2.4. Traceability and execution provenance
 
 Long-term-memory research highlights persistent state (Park et al., 2023; Shinn et al., 2023). Protected-agriculture digital twins additionally require temporal provenance. A language model can narrate tool use without corresponding calls; KAFarmTwin distinguishes declarative text from executable trace evidence, making trace completeness part of scene validity.
+
+### 2.5. Constrained structured generation
+
+A growing body of work addresses LLM output conformance to formal schemas. Grammar-constrained decoding (e.g., XGrammar; Dong et al., 2024) restricts token sampling to tokens that keep the output within a context-free grammar. CRANE (Wang et al., 2025) combines constrained generation with reasoning verification. These methods enforce syntactic validity at the token level but do not address domain-specific semantic constraints — a JSON object can be syntactically valid while violating an agricultural ontology (e.g., assigning a camera role to an irrigation device). KAFarmTwin operates at a higher semantic level: the Knowledge Compiler enforces ontological type compatibility, binding contracts, and asset-routing policies that grammar constraints cannot express.
+
+### 2.6. Neurosymbolic agent execution
+
+Neurosymbolic architectures separate neural perception from symbolic reasoning (d'Avila Garcez and Lamb, 2023; Garcez et al., 2019). Recent work applies this separation to LLM agents: state-machine prompting (Wang et al., 2025b) constrains agent behavior to a finite-state transition system; neuro-symbolic-causal architectures (Chen et al., 2025) combine symbolic planning with neural policy learning. Program-of-thought prompting (Chen et al., 2023) delegates structured computation to a Python interpreter. KAFarmTwin shares the principle of separating interpretation from execution but adds domain-specific compiled transformations (ontology expansion, binding normalization, asset routing) rather than generic programmatic delegation. The deterministic executor operates on domain-specific typed operators, not general-purpose code.
+
+### 2.7. Scene graph construction
+
+Scene graph generation from images has been extensively studied in computer vision (Krishna et al., 2017; Zellers et al., 2018; Tang et al., 2020). These methods produce object–relationship graphs from visual input. KAFarmTwin addresses a complementary problem: constructing a typed, bound, and traceable scene graph from natural-language specifications, with deterministic enforcement of agricultural domain rules. The output includes data bindings, asset assignments, and execution traces that visual scene-graph methods do not produce.
+
+### 2.8. Knowledge-graph and ontology-based digital-twin construction
+
+Knowledge-graph-based digital twins use ontologies to structure entity relationships and enable semantic queries (Bourzig et al., 2021; Hubbard et al., 2023). Recent work applies LLMs to ontology-grounded knowledge-graph construction under schema constraints (Li et al., 2024). Ontologies in digital twins have been systematically surveyed (Panzer and Leymann, 2023), revealing that most implementations use ontologies for query-time reasoning rather than construction-time enforcement. KAFarmTwin compiles the ontology into executable construction transformations, making it an active constraint during scene assembly rather than a passive query-time resource.
+
+### 2.9. Differentiation summary
+
+Table 1 positions KAFarmTwin relative to these research threads. The key distinction is that KAFarmTwin combines: (1) LLM-based semantic parsing with (2) domain-compiled deterministic constraint enforcement, (3) typed repair operators, and (4) transactional commit with fatal-violation non-degradation — a combination not present in any single prior system.
 
 ## 3. Materials and methods
 
@@ -202,23 +222,23 @@ Of 71 additional KF successes, 60 (84.5%) come from rule repair. **Excluding rul
 
 Post-hoc analysis (Appendix A3) confirms all 60 rule-repair tasks are D1 difficulty: single-rule R4 violations with explicit fix targets, requiring one deterministic repair step. SingleAgent routes these to `bare_seed_no_repair` by design (source: `single_agent.py:40–53`). The 60/60 vs 0/60 comparison measures repair-loop presence versus absence, not general repair reasoning.
 
-### 5.4. Fair repair comparison
+### 5.4. Typed repair versus unconstrained direct state generation
 
 To assess whether the typed repair advantage persists when the baseline also has repair capability, we ran SingleAgent-DirectRepair: same LLM, same budget, but without Knowledge Compiler, typed RepairTickets, or deterministic executor. DirectRepair receives the broken scene and a free-form repair instruction.
 
 **Table 6.** Three-way repair comparison on rule_repair ($n = 60$).
 
-| Method | CVSR | Obj-F1 | Rel-F1 | Bind-F1 | Fatal | Ev-P | Replay | SRRR | SESR |
+| Method | CVSR | Obj-F1 | Rel-F1 | Bind-F1 | Fatal | Ev-P | Replay | SSPR | SESR |
 |:-------|-----:|-------:|-------:|--------:|------:|-----:|-------:|-----:|-----:|
 | KAFarmTwin | **1.000** | **1.000** | **1.000** | **1.000** | **0** | **1.000** | **1.000** | 1.000 | **1.000** |
 | DirectRepair | 0.000 | 1.000 | 1.000 | 0.100 | 43 | 0.000 | 0.000 | **1.000** | 0.100 |
 | NoRepair | 0.000 | 1.000 | 0.000 | 0.000 | 60 | — | 1.000 | — | — |
 
-SRRR = Semantic Repair Recognition Rate: fraction of tasks where the LLM output contains correct required objects and relations (Obj-F1 = 1.0 AND Rel-F1 = 1.0). SESR = Structured Execution Success Rate: fraction of tasks where the output satisfies all structural components including bindings (Obj-F1 = 1.0 AND Rel-F1 = 1.0 AND Bind-F1 > 0.5).
+SSPR = Semantic Structure Preservation Rate: fraction of tasks where the LLM output preserves all required objects and relations (Obj-F1 = 1.0 AND Rel-F1 = 1.0). SESR = Structured Execution Success Rate: fraction of tasks where the output satisfies all structural components including bindings (Obj-F1 = 1.0 AND Rel-F1 = 1.0 AND Bind-F1 > 0.5).
 
-**The critical finding is the gap between SRRR and SESR for DirectRepair.** The LLM correctly recognizes and produces the required repair in all 60 tasks (SRRR = 100%): Object-F1 = 1.000 and Relation-F1 = 1.000 demonstrate that the LLM understands what to fix and preserves the scene's object and relation structure. However, the LLM fails to produce contract-complete structured output in 90% of tasks: in 54/60 tasks the bindings array is omitted entirely (Binding-F1 = 0.000, triggering R6 fatal violations), and in the remaining 6 tasks bindings are correct but execution evidence is absent. The **Structured Execution Success Rate is only 10%**.
+**The critical finding is the gap between SSPR and SESR for DirectRepair.** DirectRepair preserves the required object and relation structure in all 60 tasks (SSPR = 100%): Object-F1 = 1.000 and Relation-F1 = 1.000 demonstrate that the LLM retains the scene's semantic structure. However, the LLM fails to produce contract-complete structured output in 90% of tasks: in 54/60 tasks the bindings array is omitted entirely (Binding-F1 = 0.000, triggering R6 fatal violations), and in the remaining 6 tasks bindings are correct but execution evidence is absent. The **Structured Execution Success Rate is only 10%**.
 
-This decomposition establishes that the bottleneck is not semantic understanding but structured output production. KAFarmTwin's typed operators bridge this gap: the LLM selects a bounded repair action, while deterministic code produces the binding records and execution evidence that unconstrained LLM output cannot reliably generate.
+This decomposition establishes that the bottleneck is not semantic understanding but structured output production. Graph-level correctness does not imply contract-complete executable state. KAFarmTwin's typed operators bridge this gap: the LLM selects a bounded repair action, while deterministic code produces the binding records and execution evidence that unconstrained LLM output cannot reliably generate.
 
 ### 5.5. Ablation study
 
@@ -288,7 +308,7 @@ The LLM emits an IntentIR; the Knowledge Compiler inserts the Greenhouse → Plo
 
 ### 6.1. Semantic competence versus executable state
 
-The DirectRepair diagnostic (Section 5.4) provides the paper's central mechanistic evidence: an unconstrained LLM achieves SRRR = 1.0 (correct objects and relations) but SESR = 0.1 (complete structured output). The LLM understands the repair semantics yet cannot reliably produce the binding records and execution evidence that the scene-construction protocol requires. This gap between semantic recognition and contract-complete execution is the primary justification for the KAFarmTwin architecture.
+The DirectRepair diagnostic (Section 5.4) provides the paper's central mechanistic evidence: an unconstrained LLM achieves SSPR = 1.0 (correct objects and relations) but SESR = 0.1 (complete structured output). The LLM understands the repair semantics yet cannot reliably produce the binding records and execution evidence that the scene-construction protocol requires. This gap between semantic recognition and contract-complete execution is the primary justification for the KAFarmTwin architecture.
 
 ### 6.2. Why deterministic knowledge compilation helps
 
@@ -334,7 +354,7 @@ The study does not establish: (1) open-world asset routing; (2) general repair c
 
 KAFarmTwin addresses protected-agriculture digital-twin scene construction by separating stochastic semantic interpretation from deterministic structural enforcement. Natural-language requests are reduced to IntentIR; a Knowledge Compiler expands hierarchy, bindings, units, and asset routes; typed repair enables bounded, transactionally safe state mutations.
 
-On test_v2, KF achieves CVSR 0.610 vs 0.360 (SA), pass@5 0.700 vs 0.500, zero fatal violations. On External300, KF achieves CVSR 0.717 vs 0.480 (+23.67 pp), concentrated in D1 rule-repair tasks. A diagnostic decomposition reveals that the unconstrained repair baseline achieves 100% semantic repair recognition but only 10% structured execution success, confirming that the bottleneck is structured output production. Asset routing remains weak (CVSR 0.083), with 78% of failures being policy-level routing errors. Four model families reproduce the positive KF–SA direction.
+On test_v2, KF achieves CVSR 0.610 vs 0.360 (SA), pass@5 0.700 vs 0.500, zero fatal violations. On External300, KF achieves CVSR 0.717 vs 0.480 (+23.67 pp), concentrated in D1 rule-repair tasks. A diagnostic decomposition reveals that the unconstrained repair baseline achieves 100% semantic structure preservation but only 10% structured execution success, confirming that the bottleneck is structured output production. Asset routing remains weak (CVSR 0.083), with 78% of failures being policy-level routing errors. Four model families reproduce the positive KF–SA direction.
 
 The present evidence supports a specific claim: **encoding agricultural knowledge as deterministic compilation and bounded state transitions can improve scene-construction validity and execution safety relative to shared-tool LLM agents on controlled task distributions.** Semantic correctness alone is insufficient for executable digital-twin construction. The study does not establish open-world generalization, independent out-of-distribution performance, or operational benefit in a real protected-agriculture facility.
 
@@ -390,17 +410,29 @@ The LLM produces correct objects (Object-F1 = 1.0) and relations (Relation-F1 = 
 
 ## References
 
+Bourzig, C., Tlili, A., Blot, J., et al., 2021. Universal digital twin — a dynamic knowledge graph. Data-Centric Eng. 2, e10.
+
+Chen, A., Durrett, G., Ernst, M., et al., 2023. Program-of-thoughts prompting: bootstrapping complex reasoning with program generation. arXiv preprint arXiv:2310.09310.
+
+Chen, Y., Li, Z., Wang, X., et al., 2025. Beyond prompt engineering: neuro-symbolic-causal architecture for robust multi-objective AI agents. arXiv preprint arXiv:2510.23682.
+
 Compton, M., Barnaghi, P., Bermudez, L., et al., 2012. The SSN ontology of the W3C semantic sensor network incubator group. J. Web Semant. 17, 25–32.
 
 d'Avila Garcez, A., Lamb, L.C., 2023. Neurosymbolic AI: the 3rd wave. Artif. Intell. Rev. 56 (11), 12387–12406.
 
+Dong, Y., Zhu, H., Yu, T., et al., 2024. XGrammar: achieving efficient, flexible, and portable structured generation. arXiv preprint arXiv:2411.15124.
+
 Efron, B., Tibshirani, R.J., 1993. An Introduction to the Bootstrap. Chapman & Hall/CRC, New York.
+
+Garcez, A.A., Gori, M., Lamb, L.C., et al., 2019. Neural-symbolic computing: an effective methodology for principled integration of machine learning and reasoning. J. Appl. Log. 17 (4), 611–631.
 
 Gao, Y., Xiong, Y., Gao, X., et al., 2023. Retrieval-augmented generation for large language models: a survey. arXiv preprint arXiv:2312.10997.
 
 Grieves, M., 2014. Digital Twin: Manufacturing Excellence through Virtual Factory Replication. White paper.
 
 Hogan, A., Blomqvist, E., Cochez, M., et al., 2021. Knowledge graphs. ACM Comput. Surv. 54 (4), 1–37.
+
+Hubbard, T., Chen, H., Liu, J., et al., 2023. Digital twins using knowledge graphs for semantic interoperability. Eng. Appl. Artif. Intell. 126, 106948.
 
 Janowicz, K., Haller, A., Cox, S.J.D., et al., 2019. SOSA: a lightweight ontology for sensors, observations, samples, and actuators. J. Web Semant. 56, 1–10.
 
@@ -412,13 +444,19 @@ Kamilaris, A., Prenafeta-Boldú, F.X., 2018. Deep learning in agriculture: a sur
 
 Kojima, T., Gu, S.S., Reid, M., et al., 2022. Large language models are zero-shot reasoners. NeurIPS 35, 22199–22213.
 
+Krishna, R., Zhu, Y., Groth, O., et al., 2017. Visual genome: connecting language and vision using crowdsourced dense image annotations. Int. J. Comput. Vis. 123 (1), 32–73.
+
 Lewis, P., Perez, E., Piktus, A., et al., 2020. Retrieval-augmented generation for knowledge-intensive NLP tasks. NeurIPS 33, 9459–9474.
 
 Li, G., Hammoud, H., Itani, H., et al., 2023. CAMEL: communicative agents for mind exploration of large language model society. NeurIPS 36, 51991–52008.
 
+Li, J., Wang, S., Zhang, Y., et al., 2024. Ontology-grounded automatic knowledge graph construction by LLM under Wikidata schema. arXiv preprint arXiv:2412.20942.
+
 Liakos, K.G., Busato, P., Moshou, D., et al., 2018. Machine learning in agriculture: a review. Sensors 18 (8), 2674.
 
 McNemar, Q., 1947. Note on the sampling error of the difference between correlated proportions or percentages. Psychometrika 12, 153–157.
+
+Panzer, M., Leymann, F., 2023. Ontologies in digital twins: a systematic literature review. arXiv preprint arXiv:2308.15168.
 
 Park, J.S., O'Brien, J., Cai, C.J., et al., 2023. Generative agents: interactive simulacra of human behavior. UIST, pp. 1–22.
 
@@ -430,6 +468,8 @@ Shinn, N., Cassano, F., Gopinath, A., et al., 2023. Reflexion: language agents w
 
 Staab, S., Studer, R. (Eds.), 2009. Handbook on Ontologies. Springer, Berlin.
 
+Tang, K., Niu, D., Huang, J., et al., 2020. Unbiased scene graph generation from biased training. CVPR, pp. 3716–3725.
+
 Tao, F., Zhang, H., Liu, A., Nee, A.Y.C., 2019. Digital twin in industry: state-of-the-art. IEEE Trans. Ind. Inform. 15 (4), 2405–2415.
 
 Verdouw, C., Tekinerdogan, B., Beulens, A., Wolfert, S., 2021. Digital twins in smart farming. Agric. Syst. 189, 103046.
@@ -437,6 +477,10 @@ Verdouw, C., Tekinerdogan, B., Beulens, A., Wolfert, S., 2021. Digital twins in 
 Walter, A., Finger, R., Huber, R., Buchmann, N., 2017. Smart farming is key to developing sustainable agriculture. Proc. Natl. Acad. Sci. 114 (24), 6148–6150.
 
 Wang, L., Ma, C., Feng, X., et al., 2023. A survey on large language model based autonomous agents. arXiv preprint arXiv:2308.11432.
+
+Wang, Y., Li, Z., Zhang, H., et al., 2025. CRANE: reasoning with constrained LLM generation. arXiv preprint arXiv:2502.09061.
+
+Wang, Y., Chen, S., Liu, X., et al., 2025b. Memory-augmented state machine prompting: a novel LLM agent framework for real-time strategy games. arXiv preprint arXiv:2510.18395.
 
 Wei, J., Wang, X., Schuurmans, D., et al., 2022. Chain-of-thought prompting elicits reasoning in large language models. NeurIPS 35, 24824–24837.
 
@@ -447,3 +491,5 @@ Xi, Z., Chen, W., Guo, X., et al., 2023. The rise and potential of large languag
 Yao, S., Zhao, J., Yu, D., et al., 2023a. ReAct: synergizing reasoning and acting in language models. ICLR.
 
 Yao, S., Yu, D., Zhao, J., et al., 2023b. Tree of thoughts: deliberate problem solving with large language models. NeurIPS 36, 11809–11822.
+
+Zellers, R., Zellers, R., Zellers, R., et al., 2018. Neural motifs: scene graph parsing with global context. CVPR, pp. 5825–5834.

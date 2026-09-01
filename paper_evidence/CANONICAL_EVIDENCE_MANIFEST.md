@@ -29,12 +29,12 @@ This document is the single source of truth for all numerical claims in the pape
 | Object-F1 | 1.000 | — | 1.000 | 同上 |
 | Relation-F1 | 1.000 | — | 1.000 | 同上 |
 | Binding-F1 | 1.000 | — | 0.100 | 同上 |
-| SRRR (SA Rule Repair Rate) | — | 1.000 | — | SA 成功格式化修复但结果无效 |
-| SESR (SA Effective Success Rate) | — | 0.100 | — | 仅 6/60 任务有效 |
-| Category A (format-correct, semantic-wrong) | — | 6 | — | SA 修复格式正确但语义错误 |
-| Category C (format-wrong) | — | 54 | — | SA 修复格式即错误 |
+| SSPR (Semantic Structure Preservation Rate) | 1.000 | — | 1.000 | = 1[Obj-F1=1 ∧ Rel-F1=1]; all 60 tasks preserve structure |
+| SESR (Structured Execution Success Rate) | 1.000 | — | 0.100 | = 1[Obj-F1=1 ∧ Rel-F1=1 ∧ Bind-F1>0.5]; only 6/60 DirectRepair tasks have complete bindings |
+| Category A (correct structure, no execution trace) | — | — | 6 | Correct nodes + edges + bindings; missing execution evidence |
+| Category C (correct structure, omits bindings) | — | — | 54 | Correct nodes + edges; empty bindings array → R6 fatal |
 
-**Provenance:** DirectRepair runner bug fix applied -- DirectRepair was rerun with corrected asset resolution. All values from canonical statistics after fix. D1 subset = rule_repair tasks only (no D2-D4 difficulty tiers tested).
+**Provenance:** DirectRepair was RE-SCORED ONLY (no new LLM calls). The original runner passed the `public` task dict (lacking `required_nodes`) to `evaluate_task()`, masking correct output. After re-scoring with gold records, Object-F1=1.000, Rel-F1=1.000 confirmed. All values are from canonical statistics after re-scoring. D1 subset = rule_repair tasks only (no D2-D4 difficulty tiers tested).
 
 ### 1.3 Asset Routing
 
@@ -45,7 +45,7 @@ This document is the single source of truth for all numerical claims in the pape
 | ID-invariant canonical Rel-F1 | 0.997 | 同上 audit |
 | ID-invariant canonical Bind-F1 | 0.994 | 同上 audit |
 
-**Provenance:** Asset routing was audited using an ID-invariant evaluation method -- the evaluator checks whether the *structure* of the asset binding is correct regardless of which specific asset ID is chosen. This reveals that SA's low CVSR comes from policy/routing errors (wrong asset identity), not structural binding errors. The high canonical Rel-F1/Bind-F1 with high policy error confirms the bottleneck is asset identification, not scene graph construction.
+**Provenance:** Asset routing was audited using an ID-invariant evaluation method — the evaluator checks whether the *structure* of the asset binding is correct regardless of which specific asset ID is chosen. This reveals that KF's low CVSR (0.083) comes from policy/routing errors (adding an unrequired device while omitting a required one), not structural binding errors. The high canonical Rel-F1 (0.997) and Bind-F1 (0.994) with 78.2% policy error confirms the bottleneck is asset identification, not scene graph construction.
 
 ### 1.4 Excluding Rule Repair (240 tasks: scene + binding + asset + memory)
 
@@ -64,19 +64,19 @@ This document is the single source of truth for all numerical claims in the pape
 | C01: KF CVSR significantly exceeds SA on External300 | 0.717 vs 0.480, p=8.45e-17 | `external300.kf_cvsr`, `external300.sa_cvsr`, `external300.mcnemar_p` | Directly supported |
 | C02: Advantage stems from constraint safety (Fatal down, Ev-P up, Replay up) | Fatal 0 vs 0.25, Replay 0.808 vs 0.455 | `external300.kf_fatal`, `external300.sa_fatal`, `external300.kf_replay`, `external300.sa_replay` | Directly supported |
 | C03: Cost increase is manageable (<=1.5x) | Token ratio 1.41x, Cost ratio 1.21x | `External300_CANONICAL_METRICS.json` cost fields | Directly supported |
-| C04: Knowledge compiler is decisive for asset construction | A1 asset CVSR 0.95 -> 0.00 | `03_ablation_results.md` A1 breakdown | Directly supported |
+| C04: Knowledge compiler is decisive for the frozen test_v2 asset ablation subset | A1 asset CVSR 0.95 -> 0.00 | `03_ablation_results.md` A1 breakdown | Supported (test_v2 subset only; External300 asset CVSR remains 0.083) |
 | C05: Typed repair contributes safety, not CVSR | Fatal 0 -> 0.22 (A2), CVSR 0.58 > full 0.55 | `03_ablation_results.md` A2 | Directly supported |
 | C06: Ontology constraint improves binding correctness | Bind-F1 0.529 -> 0.453 (A3) | `03_ablation_results.md` A3 | Supported (moderate effect) |
-| C07: Method generalizes across model families | 4/4 models delta > 0, CI lower > 0 | `MULTIMODEL_CANONICAL_STATISTICS_v2.json` | Directly supported |
-| C08: Rule repair universally consistent (KF=1.00, SA=0.00) | 5/5 models identical | `05_external300_results.md` + `06_multimodel_results.md` | Directly supported |
+| C07: Positive KF–SA directional robustness reproduced across evaluated model families under common inference interface | 4/4 models delta > 0, CI lower > 0 | `MULTIMODEL_CANONICAL_STATISTICS_v2.json` | Directly supported (not provider-independent generalization) |
+| C08: D1 R4 rule repair subset showed identical KF/SA direction across five evaluated model families | 5/5 models identical | `05_external300_results.md` + `06_multimodel_results.md` | Supported (D1 subset only; no D2-D4 tested) |
 | C09: Asset routing absolute level remains low | KF asset CVSR <= 0.18 across 5 models | `08_category_results.md` asset_routing | Directly supported (honest limitation) |
 
 ---
 
 ## 3. Provenance Notes
 
-### 3.1 DirectRepair Runner Bug Fix
-The DirectRepair baseline (single-agent with repair prompt but no typed repair loop) was initially run with a bug in asset resolution. After fixing the runner, DirectRepair was rerun. The corrected values show DirectRepair CVSR = 0.000 on rule_repair (same as SA), confirming that typed repair's value is in the *type system*, not just having a repair loop.
+### 3.1 DirectRepair Runner Bug Fix (RE-SCORING ONLY; NO MODEL RERUN)
+The DirectRepair baseline (single-agent with repair prompt but no typed repair loop) was initially scored with a bug: the runner passed the `public` task dict (lacking `required_nodes`) to `evaluate_task()`, causing empty required lists and misleadingly zero Object-F1. **Existing DirectRepair outputs were loaded and RE-SCORED with gold records. No new LLM calls were made.** The corrected values show DirectRepair CVSR = 0.000 on rule_repair (same as SA), but Object-F1 = 1.000 and Rel-F1 = 1.000 — confirming that DirectRepair preserves semantic structure but fails on structured output production (SESR = 10%). Typed repair's value is in the *type system and deterministic executor*, not just having a repair loop.
 
 ### 3.2 ID-Invariant Audit for Asset Routing
 Asset routing CVSR is extremely low for both methods (KF 0.083, SA 0.000). To understand whether the failure is in structural binding or asset identification, an ID-invariant evaluation was conducted:
